@@ -31,7 +31,7 @@ public:
     {
         if (streamType == StreamType::Depth_Stream || streamType == StreamType::IR_Stream)
         {
-            return (1000000 / fps) - 1000;
+            return ((1000000 / fps) - 1000);
         }
         else if (streamType == StreamType::Color_Stream)
         {
