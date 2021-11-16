@@ -704,7 +704,7 @@ public:
 		else
 			r.result = true;
 
-		r.remarks = text + "Total frames dropped: " + to_string(totalFramesDropped) + "\nExpected Frames: " + to_string(expectedFrames) + "\nDrop percentage: " + to_string(100.0 * totalFramesDropped / expectedFrames) + "\nTolerance: " + to_string(_tolerance) + "%\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		r.remarks = text + "Total frames dropped: " + to_string(totalFramesDropped) + "\nExpected Frames: " + to_string(expectedFrames) + "\nDrop percentage: " + to_string(100.0 * totalFramesDropped / expectedFrames) + "%\nTolerance: " + to_string(_tolerance) + "%\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
 		{
@@ -1326,7 +1326,7 @@ public:
 	{
 		ProfileGenerator pG;
 		vector<Profile> combinations = pG.GetControlsProfiles(streamType);
-		cout << "==================== " << combinations.size() << endl;
+		// cout << "==================== " << combinations.size() << endl;
 		return combinations;
 	}
 	vector<vector<Profile>> GetProfiles(vector<StreamType> streamTypes)

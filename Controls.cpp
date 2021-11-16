@@ -31,8 +31,25 @@ public:
     {
         if (streamType == StreamType::Depth_Stream || streamType == StreamType::IR_Stream)
         {
-            return ((1000000 / fps) - 1000);
-        }
+            switch (fps)
+            {
+            case 90:
+                return 100;
+                break;
+            case 60:
+                return 155;
+                break;
+            case 30:
+                return 322;
+                break;
+            case 15:
+                return 655;
+                break;
+            case 5:
+                return 1650;
+                break;
+            }
+          }
         else if (streamType == StreamType::Color_Stream)
         {
             switch (fps)
@@ -50,7 +67,7 @@ public:
                 return 625;
                 break;
             case 5:
-                return 625;
+                return 1250;
                 break;
             }
         }

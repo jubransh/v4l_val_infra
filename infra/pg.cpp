@@ -144,33 +144,33 @@ public:
     ProfileGenerator()
     {
         //============ Depth Only =================
-        // depth.push_back("z16_424x240_15");
-        // depth.push_back("z16_424x240_30");
-        // depth.push_back("z16_424x240_60");
-        // depth.push_back("z16_424x240_90");
+        depth.push_back("z16_424x240_15");
+        depth.push_back("z16_424x240_30");
+        depth.push_back("z16_424x240_60");
+        depth.push_back("z16_424x240_90");
 
-        // depth.push_back("z16_480x270_15");
-        // depth.push_back("z16_480x270_30");
-        // depth.push_back("z16_480x270_60");
-        // depth.push_back("z16_480x270_90");
+        depth.push_back("z16_480x270_15");
+        depth.push_back("z16_480x270_30");
+        depth.push_back("z16_480x270_60");
+        depth.push_back("z16_480x270_90");
 
-        // depth.push_back("z16_640x360_15");
-        // depth.push_back("z16_640x360_30");
-        // depth.push_back("z16_640x360_60");
-        // depth.push_back("z16_640x360_90");
+        depth.push_back("z16_640x360_15");
+        depth.push_back("z16_640x360_30");
+        depth.push_back("z16_640x360_60");
+        depth.push_back("z16_640x360_90");
 
-        // depth.push_back("z16_640x480_15");
-        // depth.push_back("z16_640x480_30");
-        // depth.push_back("z16_640x480_60");
-        // depth.push_back("z16_640x480_90");
+        depth.push_back("z16_640x480_15");
+        depth.push_back("z16_640x480_30");
+        depth.push_back("z16_640x480_60");
+        depth.push_back("z16_640x480_90");
 
-        // depth.push_back("z16_848x480_15");
-        // depth.push_back("z16_848x480_30");
-        // depth.push_back("z16_848x480_60");
+        depth.push_back("z16_848x480_15");
+        depth.push_back("z16_848x480_30");
+        depth.push_back("z16_848x480_60");
         depth.push_back("z16_848x480_90");
 
-        // depth.push_back("z16_1280x720_15");
-        // depth.push_back("z16_1280x720_30");
+        depth.push_back("z16_1280x720_15");
+        depth.push_back("z16_1280x720_30");
 
         //============ IR Only ================
         ir.push_back("y8_424x240_15");
