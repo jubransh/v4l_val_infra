@@ -1,5 +1,4 @@
 // Example program
-//test 4
 #include <iostream>
 #include <string>
 #include <vector>
