@@ -6,6 +6,7 @@ using namespace std;
 #include <fcntl.h>
 #include <chrono>
 #include "CameraInfra.cpp"
+#include "monitor.cpp"
 #include <sstream>
 #include <fstream>
 #include <thread>
@@ -23,12 +24,20 @@ using namespace std;
 string sid = TimeUtils::getDateandTime();
 bool collectFrames = false;
 vector<Frame> depthFramesList, irFramesList, colorFramesList;
+vector<Sample> pnpSamples;
+
 void initFrameLists()
 {
 	depthFramesList.clear();
 	irFramesList.clear();
 	colorFramesList.clear();
 }
+
+void initSamplesList()
+{
+	pnpSamples.clear();
+}
+
 Profile currDepthProfile, currIRProfile, currColorProfile;
 string streamComb;
 void setCurrentProfiles(vector<Profile> ps)
@@ -71,6 +80,12 @@ void setCurrentProfiles(vector<Profile> ps)
 	if (colorStr != "")
 		streamComb += colorStr + "\n";
 }
+
+void addToPnpList(Sample s)
+{
+	pnpSamples.push_back(s);
+}
+
 void AddFrame(Frame frame)
 {
 	if (collectFrames)
@@ -105,8 +120,18 @@ private:
 	static const int tolerance_IDCorrectness = 1; //Tolerance is not used - if one frame has MD error, Metric Fails
 	static const int tolerance_ControlLatency = 5;
 	static const int tolerance_MetaDataCorrectness = 1; //Tolerance is not used - if one frame has MD error, Metric Fails
+	static const int tolerance_CPU = 35;
+	static const int tolerance_Memory = 400;
 
 public:
+	static int get_tolerance_CPU()
+	{
+		return tolerance_CPU;
+	}
+	static int get_tolerance_Memory()
+	{
+		return tolerance_Memory;
+	}
 	static int get_tolerance_FirstFrameDelay()
 	{
 		return tolerance_FirstFrameDelay;
@@ -255,6 +280,138 @@ public:
 	}
 };
 
+class PNPMetricResult
+{
+public:
+	string remarks;
+	bool result;
+	float min,max,average,tolerance;
+	vector<string> getRemarksStrings()
+	{
+		vector<string> result;
+		istringstream f(remarks);
+		string s;
+		while (getline(f, s, '\n'))
+		{
+			result.push_back(s);
+		}
+		return result;
+	}
+};
+
+class PnpMetric
+{
+public:
+	int _tolerance;
+	string _metricName;
+	vector<Sample> _samples;
+	virtual PNPMetricResult calc() = 0;
+	void configure(vector<Sample> samples)
+	{
+		_samples = samples;
+	}
+};
+
+class CPUMetric : public PnpMetric
+{
+public:
+	CPUMetric()
+	{
+		_metricName = "CPU Consumption";
+	}
+	void setParams(int tolerance)
+	{
+		_tolerance = tolerance;
+	}
+	PNPMetricResult calc()
+	{
+		float min = 100;
+		float max = 0;
+		float sum = 0;
+		float average;
+		if (_samples.size() == 0)
+		{
+			throw std::runtime_error("No PNP samples to calculate");
+		}
+		for (int i = 0; i < _samples.size(); i++)
+		{
+			if (_samples[i].Cpu_per < min)
+				min = _samples[i].Cpu_per;
+			if (_samples[i].Cpu_per >= max)
+				max = _samples[i].Cpu_per;
+			sum += _samples[i].Cpu_per;
+		}
+		average = sum / _samples.size();
+
+		PNPMetricResult r;
+		if (average >= _tolerance)
+			r.result = false;
+		else
+			r.result = true;
+		r.average=average;
+		r.min = min;
+		r.max=max;
+		r.tolerance = _tolerance;
+		r.remarks = "Average CPU consumption: " + to_string(average) + "%\nMin CPU consumption: " + to_string(min) + "%\nMax CPU consumption: " + to_string(max) + "%\nTolerance: " + to_string(_tolerance) + "%\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		vector<string> results = r.getRemarksStrings();
+		for (int i = 0; i < results.size(); i++)
+		{
+			Logger::getLogger().log(results[i], "Metric");
+		}
+		return r;
+	}
+};
+
+class MemMetric : public PnpMetric
+{
+public:
+	MemMetric()
+	{
+		_metricName = "Memory Consumption";
+	}
+	void setParams(int tolerance)
+	{
+		_tolerance = tolerance;
+	}
+	PNPMetricResult calc()
+	{
+		float min = -1;
+		float max = 0;
+		float sum = 0;
+		float average;
+		if (_samples.size() == 0)
+		{
+			throw std::runtime_error("No PNP samples to calculate");
+		}
+		for (int i = 0; i < _samples.size(); i++)
+		{
+			if (_samples[i].Mem_MB < min || min == -1)
+				min = _samples[i].Mem_MB;
+			if (_samples[i].Mem_MB >= max)
+				max = _samples[i].Mem_MB;
+			sum += _samples[i].Mem_MB;
+		}
+		average = sum / _samples.size();
+
+		PNPMetricResult r;
+		if (average >= _tolerance)
+			r.result = false;
+		else
+			r.result = true;
+		r.average=average;
+		r.min = min;
+		r.max=max;
+		r.tolerance = _tolerance;
+		r.remarks = "Average Memory consumption: " + to_string(average) + "MB\nMin Memory consumption: " + to_string(min) + "MB\nMax Memory consumption: " + to_string(max) + "MB\nTolerance: " + to_string(_tolerance) + "MB\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		vector<string> results = r.getRemarksStrings();
+		for (int i = 0; i < results.size(); i++)
+		{
+			Logger::getLogger().log(results[i], "Metric");
+		}
+		return r;
+	}
+};
+
 class Metric
 {
 public:
@@ -351,6 +508,7 @@ private:
 	double _changeTime;
 	double _value;
 	string _metaDataName;
+
 public:
 	SequentialFrameDropsMetric()
 	{
@@ -397,15 +555,15 @@ public:
 					break;
 				}
 			}
-			 fps = getFPSByExposure(_currExp);
+			fps = getFPSByExposure(_currExp);
 		}
 		else
 		{
-			fps=_profile.fps;
-			indexOfChange=1;
+			fps = _profile.fps;
+			indexOfChange = 1;
 		}
 
-		double expectedDelta = 1000.0 /fps;
+		double expectedDelta = 1000.0 / fps;
 		int maxDropIndex = 0, maxDrops = 0, totalFramesDropped = 0, sequentialFrameDropEvents = 0, firstSequentialDropIndex = 0;
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
 		for (int i = indexOfChange; i < _frames.size(); i++)
@@ -662,14 +820,14 @@ public:
 					break;
 				}
 			}
-			 fps = getFPSByExposure(_currExp);
+			fps = getFPSByExposure(_currExp);
 		}
 		else
 		{
-			fps=_profile.fps;
-			indexOfChange=1;
+			fps = _profile.fps;
+			indexOfChange = 1;
 		}
-		double expectedDelta = 1000 /fps;
+		double expectedDelta = 1000 / fps;
 		int droppedFrames = 0;
 		int totalFramesDropped = 0;
 		int expectedFrames;
@@ -955,11 +1113,12 @@ public:
 class IDCorrectnessMetric : public Metric
 {
 private:
-bool _autoExposureOff = false;
+	bool _autoExposureOff = false;
 	int _currExp;
 	double _changeTime;
 	double _value;
 	string _metaDataName;
+
 public:
 	IDCorrectnessMetric()
 	{
@@ -1003,12 +1162,12 @@ public:
 					break;
 				}
 			}
-			 fps = getFPSByExposure(_currExp);
+			fps = getFPSByExposure(_currExp);
 		}
 		else
 		{
-			fps=_profile.fps;
-			indexOfChange=1;
+			fps = _profile.fps;
+			indexOfChange = 1;
 		}
 
 		int numberOfReset = 0;
@@ -1206,15 +1365,20 @@ public:
 	string name;
 	ofstream resultCsv;
 	ofstream rawDataCsv;
+	ofstream pnpCsv;
+	bool isPNPtest;
 	bool result;
 	int testDuration;
-	vector<Frame> depthFrames, irFrames, colorFrames;
+	// vector<Frame> depthFrames, irFrames, colorFrames;
+	// vector<Sample> pnpSamples;
 	Profile depthProfile, irProfile, colorProfile;
 	vector<Metric *> metrics;
+	vector<PnpMetric *> pnpMetrics;
 	string testBasePath;
 	Camera cam;
 	void SetUp() override
 	{
+
 		//testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
 		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
@@ -1239,7 +1403,17 @@ public:
 			throw std::runtime_error("Cannot open file: " + rawDataPath);
 		}
 		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,HW TimeStamp,System TimeStamp" << endl;
-
+		if (isPNPtest)
+		{
+			string pnpDataPath = FileUtils::join(testPath, "pnp_data.csv");
+			pnpCsv.open(pnpDataPath, std::ios_base::app);
+			if (pnpCsv.fail())
+			{
+				Logger::getLogger().log("Cannot open pnp data file: " + pnpDataPath, LOG_ERROR);
+				throw std::runtime_error("Cannot open pnp file: " + pnpDataPath);
+			}
+			pnpCsv << "Iteration,Metric name,Average,Max,Min,Tolerance" << endl;
+		}
 		// Creating iterations results csv file
 		Logger::getLogger().log("Creating iteartions results CSV file", "Setup()", LOG_INFO);
 		string resultPath = FileUtils::join(testPath, "result.csv");
@@ -1295,6 +1469,20 @@ public:
 		return result;
 	}
 
+	bool AppendPNPDataCVS(string pnpDataLine)
+	{
+		try
+		{
+			pnpCsv << pnpDataLine << endl;
+			return true;
+		}
+		catch (const std::exception &e)
+		{
+			Logger::getLogger().log("Failed to write to PNP Data file");
+			return false;
+		}
+	}
+
 	bool AppendRAwDataCVS(string rawDataLine)
 	{
 		try
@@ -1322,13 +1510,14 @@ public:
 			return false;
 		}
 	}
+	
 	vector<Profile> GetControlProfiles(StreamType streamType)
 	{
 		ProfileGenerator pG;
 		vector<Profile> combinations = pG.GetControlsProfiles(streamType);
-		// cout << "==================== " << combinations.size() << endl;
 		return combinations;
 	}
+	
 	vector<vector<Profile>> GetProfiles(vector<StreamType> streamTypes)
 	{
 		ProfileGenerator pG;
@@ -1438,6 +1627,8 @@ public:
 			return profiles;
 		}
 	}
+
+
 	bool CalcMetrics(int iteration)
 	{
 		string iterationStatus = "Pass";
@@ -1447,6 +1638,23 @@ public:
 		vector<string> failedMetrics;
 		failedMetrics.clear();
 		//update the result csv
+		for (int i = 0; i < pnpMetrics.size(); i++)
+		{
+			pnpMetrics[i]->configure(pnpSamples);
+			PNPMetricResult r = pnpMetrics[i]->calc();
+			if (r.result == false)
+			{
+				iterationStatus = "Fail";
+				failedMetrics.push_back("Metric: " + pnpMetrics[i]->_metricName + " Failed");
+			}
+			string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",PNP," + pnpMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+			iterationResults.push_back(iRes);
+
+			rawline = "";
+				rawline += to_string(iteration) + ","+pnpMetrics[i]->_metricName+","+to_string(r.average)+","+to_string(r.max)+","+to_string(r.min)+","+to_string(r.tolerance);
+					
+				AppendPNPDataCVS(rawline);
+		}
 		for (int i = 0; i < metrics.size(); i++)
 		{
 			if (currDepthProfile.fps != 0)
