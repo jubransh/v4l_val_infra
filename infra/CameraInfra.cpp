@@ -945,6 +945,40 @@ public:
         return cR;
     }
 
+    int GetAsicTemperature()
+    {
+        HWMonitorCommand hmc = {0};
+
+        hmc.dataSize = 0;
+        hmc.opCode = 0x7A;
+        hmc.parameter1 = 0x0;
+        hmc.parameter2 = 0x0;
+        auto cR = SendHWMonitorCommand(hmc);
+        if (cR.Result)
+            return cR.Data[0];
+        else
+        {
+        Logger::getLogger().log("Failed to get Asic temperature from Camera", "Camera",LOG_ERROR);
+        throw std::runtime_error("Failed to get Asic temperature from Camera"); 
+        }
+    }
+    int GetProjectorTemperature()
+    {
+        HWMonitorCommand hmc = {0};
+
+        hmc.dataSize = 0;
+        hmc.opCode = 0x2A;
+        hmc.parameter1 = 0x0;
+        hmc.parameter2 = 0x0;
+        auto cR = SendHWMonitorCommand(hmc);
+        if (cR.Result)
+            return cR.Data[0];
+        else
+        {
+        Logger::getLogger().log("Failed to get Projector temperature from Camera", "Camera",LOG_ERROR);
+        throw std::runtime_error("Failed to get Projector temperature from Camera"); 
+        }
+    }
     //For debugging
     void PrintBytes(uint8_t buff[], int len)
     {

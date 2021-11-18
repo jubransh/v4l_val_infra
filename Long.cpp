@@ -28,7 +28,7 @@ public:
     }
     void configure(int StreamDuration)
     {
-        testDuration = StreamDuration;// * 60 * 60; //StreamDuration is in hours, test duration in seconds
+        testDuration = StreamDuration;
     }
     void run(vector<StreamType> streams)
     {
@@ -37,30 +37,24 @@ public:
         string failedIterations = "Test Failed in Iterations: ";
 
         SequentialFrameDropsMetric met_seq;
-        // FramesArrivedMetric met_arrived;
-        // FirstFrameDelayMetric met_delay;
         FpsValidityMetric met_fps;
-        // FrameSizeMetric met_frame_size;
         FrameDropIntervalMetric met_drop_interval;
         FrameDropsPercentageMetric met_drop_percent;
-        // IDCorrectnessMetric met_id_cor;
-        // MetaDataCorrectnessMetric met_md_cor;
 
         CPUMetric met_cpu;
         MemMetric met_mem;
+        AsicTempMetric met_asic_temp;
+        ProjTempMetric met_projector_temp;
 
 
         metrics.push_back(&met_seq);
-        // metrics.push_back(&met_arrived);
         metrics.push_back(&met_drop_interval);
         metrics.push_back(&met_drop_percent);
-        // metrics.push_back(&met_delay);
         metrics.push_back(&met_fps);
-        // metrics.push_back(&met_frame_size);
-        // metrics.push_back(&met_id_cor);
-        // metrics.push_back(&met_md_cor);
         pnpMetrics.push_back(&met_cpu);
         pnpMetrics.push_back(&met_mem);
+        pnpMetrics.push_back(&met_asic_temp);
+        pnpMetrics.push_back(&met_projector_temp);
         
 
         Sensor depthSensor = cam.GetDepthSensor();
@@ -132,20 +126,21 @@ public:
             collectFrames = false;
             Logger::getLogger().log("Stopping PNP measurements","Test");
             sysMon2.StopMeasurment();
+            Logger::getLogger().log("Getting Asic temperature","Test");
+            asicSamples.push_back(cam.GetAsicTemperature());
+            Logger::getLogger().log("Getting Projector temperature","Test");
+            projectorSamples.push_back(cam.GetProjectorTemperature());
             long startCalcTime = TimeUtils::getCurrentTimestamp();
 
             met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
-            // met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, testDuration);
-            // met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(), startTime);
             met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
-            // met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
             met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
             met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
-            // met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
 
             met_cpu.setParams(MetricDefaultTolerances::get_tolerance_CPU());
             met_mem.setParams(MetricDefaultTolerances::get_tolerance_Memory());
-            // met_md_cor.setParams(1);
+            met_asic_temp.setParams(MetricDefaultTolerances::get_tolerance_asic_temperature());
+            met_projector_temp.setParams(MetricDefaultTolerances::get_tolerance_projector_temperature());
             bool result = CalcMetrics(j);
             if (!result)
             {
@@ -157,7 +152,6 @@ public:
             Logger::getLogger().log("Calculations took: "+to_string(calcDuration)+"Seconds","Test");
             Logger::getLogger().log("Going to sleep for the rest of the iteration duration("+to_string(iterationDuration)+"Seconds), for: "+to_string(iterationDuration/2 - calcDuration)+"Seconds","Test");
             std::this_thread::sleep_for(std::chrono::seconds(iterationDuration/2 - calcDuration));
-            //Logger::getLogger().log("Iteration :" + to_string(j) + " Done - Iteration Result: " + to_string(result), "Run");
         }
         if (DepthUsed || IRUsed)
         {
@@ -181,7 +175,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(10*60*60);
+    configure(3*60);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::Color_Stream);

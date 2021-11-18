@@ -24,7 +24,10 @@ using namespace std;
 string sid = TimeUtils::getDateandTime();
 bool collectFrames = false;
 vector<Frame> depthFramesList, irFramesList, colorFramesList;
-vector<Sample> pnpSamples;
+vector<float> cpuSamples;
+vector<float> memSamples;
+vector<float> asicSamples;
+vector<float> projectorSamples;
 
 void initFrameLists()
 {
@@ -35,7 +38,10 @@ void initFrameLists()
 
 void initSamplesList()
 {
-	pnpSamples.clear();
+	cpuSamples.clear();
+	memSamples.clear();
+	asicSamples.clear();
+	projectorSamples.clear();
 }
 
 Profile currDepthProfile, currIRProfile, currColorProfile;
@@ -83,7 +89,8 @@ void setCurrentProfiles(vector<Profile> ps)
 
 void addToPnpList(Sample s)
 {
-	pnpSamples.push_back(s);
+	cpuSamples.push_back(s.Cpu_per);
+	memSamples.push_back(s.Mem_MB);
 }
 
 void AddFrame(Frame frame)
@@ -122,8 +129,18 @@ private:
 	static const int tolerance_MetaDataCorrectness = 1; //Tolerance is not used - if one frame has MD error, Metric Fails
 	static const int tolerance_CPU = 35;
 	static const int tolerance_Memory = 400;
+	static const int tolerance_asic_temperature = 100;
+	static const int tolerance_projector_temperature = 100;
 
 public:
+	static int get_tolerance_asic_temperature()
+	{
+		return tolerance_asic_temperature;
+	}
+	static int get_tolerance_projector_temperature()
+	{
+		return tolerance_projector_temperature;
+	}
 	static int get_tolerance_CPU()
 	{
 		return tolerance_CPU;
@@ -285,7 +302,7 @@ class PNPMetricResult
 public:
 	string remarks;
 	bool result;
-	float min,max,average,tolerance;
+	float min, max, average, tolerance;
 	vector<string> getRemarksStrings()
 	{
 		vector<string> result;
@@ -304,9 +321,9 @@ class PnpMetric
 public:
 	int _tolerance;
 	string _metricName;
-	vector<Sample> _samples;
+	vector<float> _samples;
 	virtual PNPMetricResult calc() = 0;
-	void configure(vector<Sample> samples)
+	void configure(vector<float> samples)
 	{
 		_samples = samples;
 	}
@@ -335,11 +352,11 @@ public:
 		}
 		for (int i = 0; i < _samples.size(); i++)
 		{
-			if (_samples[i].Cpu_per < min)
-				min = _samples[i].Cpu_per;
-			if (_samples[i].Cpu_per >= max)
-				max = _samples[i].Cpu_per;
-			sum += _samples[i].Cpu_per;
+			if (_samples[i] < min)
+				min = _samples[i];
+			if (_samples[i] >= max)
+				max = _samples[i];
+			sum += _samples[i];
 		}
 		average = sum / _samples.size();
 
@@ -348,9 +365,9 @@ public:
 			r.result = false;
 		else
 			r.result = true;
-		r.average=average;
+		r.average = average;
 		r.min = min;
-		r.max=max;
+		r.max = max;
 		r.tolerance = _tolerance;
 		r.remarks = "Average CPU consumption: " + to_string(average) + "%\nMin CPU consumption: " + to_string(min) + "%\nMax CPU consumption: " + to_string(max) + "%\nTolerance: " + to_string(_tolerance) + "%\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
@@ -385,11 +402,11 @@ public:
 		}
 		for (int i = 0; i < _samples.size(); i++)
 		{
-			if (_samples[i].Mem_MB < min || min == -1)
-				min = _samples[i].Mem_MB;
-			if (_samples[i].Mem_MB >= max)
-				max = _samples[i].Mem_MB;
-			sum += _samples[i].Mem_MB;
+			if (_samples[i] < min || min == -1)
+				min = _samples[i];
+			if (_samples[i] >= max)
+				max = _samples[i];
+			sum += _samples[i];
 		}
 		average = sum / _samples.size();
 
@@ -398,11 +415,112 @@ public:
 			r.result = false;
 		else
 			r.result = true;
-		r.average=average;
+		r.average = average;
 		r.min = min;
-		r.max=max;
+		r.max = max;
 		r.tolerance = _tolerance;
 		r.remarks = "Average Memory consumption: " + to_string(average) + "MB\nMin Memory consumption: " + to_string(min) + "MB\nMax Memory consumption: " + to_string(max) + "MB\nTolerance: " + to_string(_tolerance) + "MB\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		vector<string> results = r.getRemarksStrings();
+		for (int i = 0; i < results.size(); i++)
+		{
+			Logger::getLogger().log(results[i], "Metric");
+		}
+		return r;
+	}
+};
+
+class AsicTempMetric : public PnpMetric
+{
+public:
+	int sample = -1;
+	AsicTempMetric()
+	{
+		_metricName = "Asic Temperature";
+	}
+	void setParams(int tolerance)
+	{
+		_tolerance = tolerance;
+	}
+	PNPMetricResult calc()
+	{
+		float min = -1;
+		float max = 0;
+		float sum = 0;
+		float average;
+		if (_samples.size() == 0)
+		{
+			throw std::runtime_error("No ASIC Temperature samples to calculate");
+		}
+		for (int i = 0; i < _samples.size(); i++)
+		{
+			if (_samples[i] < min || min == -1)
+				min = _samples[i];
+			if (_samples[i] >= max)
+				max = _samples[i];
+			sum += _samples[i];
+		}
+		average = sum / _samples.size();
+
+		PNPMetricResult r;
+		if (average >= _tolerance)
+			r.result = false;
+		else
+			r.result = true;
+		r.average = average;
+		r.min = min;
+		r.max = max;
+		r.tolerance = _tolerance;
+		r.remarks = "Average Asic temperature: " + to_string(average) + "\nMin Asic temperature: " + to_string(min) + "\nMax Asic temperature: " + to_string(max) + "\nTolerance: " + to_string(_tolerance) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		vector<string> results = r.getRemarksStrings();
+		for (int i = 0; i < results.size(); i++)
+		{
+			Logger::getLogger().log(results[i], "Metric");
+		}
+		return r;
+	}
+};
+
+class ProjTempMetric : public PnpMetric
+{
+public:
+	ProjTempMetric()
+	{
+		_metricName = "Projector Temperature";
+	}
+	void setParams(int tolerance)
+	{
+		_tolerance = tolerance;
+	}
+	PNPMetricResult calc()
+	{
+		float min = -1;
+		float max = 0;
+		float sum = 0;
+		float average;
+		if (_samples.size() == 0)
+		{
+			throw std::runtime_error("No Projector Temperature samples to calculate");
+		}
+		for (int i = 0; i < _samples.size(); i++)
+		{
+			if (_samples[i] < min || min == -1)
+				min = _samples[i];
+			if (_samples[i] >= max)
+				max = _samples[i];
+			sum += _samples[i];
+		}
+		average = sum / _samples.size();
+
+		PNPMetricResult r;
+		if (average >= _tolerance)
+			r.result = false;
+		else
+			r.result = true;
+		r.average = average;
+		r.min = min;
+		r.max = max;
+		r.tolerance = _tolerance;
+		r.remarks = "Average Proj temperature: " + to_string(average) + "\nMin Proj temperature: " + to_string(min) + "\nMax Proj temperature: " + to_string(max) + "\nTolerance: " + to_string(_tolerance) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
 		{
@@ -576,8 +694,9 @@ public:
 			else
 			{
 				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+				if (actualDelta < 0)
+					continue;
 			}
-			// TODO round(actualDelta / expectedDelta) - 1
 			droppedFrames = round(actualDelta / expectedDelta) - 1;
 			if (droppedFrames > 0)
 				totalFramesDropped += droppedFrames;
@@ -672,6 +791,8 @@ public:
 				else
 				{
 					actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+					if (actualDelta < 0)
+						continue;
 					currTS = _frames[i].frameMD.Timestamp;
 				}
 				if (actualDelta > 2.5 * expectedDelta)
@@ -726,6 +847,8 @@ public:
 				else
 				{
 					actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+					if (actualDelta < 0)
+						continue;
 					currTS = _frames[i].frameMD.Timestamp;
 				}
 				if (actualDelta > 2.5 * expectedDelta)
@@ -846,6 +969,8 @@ public:
 			else
 			{
 				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+				if (actualDelta < 0)
+					continue;
 			}
 
 			droppedFrames = (actualDelta / expectedDelta) - 1;
@@ -920,6 +1045,8 @@ public:
 			else
 			{
 				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+				if (actualDelta < 0)
+					continue;
 			}
 			// TODO round(actualDelta / expectedDelta)
 			droppedFrames = round(actualDelta / expectedDelta) - 1;
@@ -988,6 +1115,7 @@ public:
 		if (_frames.size() == 0)
 			throw std::runtime_error("Frames array is empty");
 
+		int skippedFrames = 0;
 		string text = "";
 		MetricResult r;
 		double expectedDelta;
@@ -1005,10 +1133,15 @@ public:
 				}
 				else
 				{
+					if ((_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) < 0)
+					{
+						skippedFrames++;
+						continue;
+					}
 					sumOfDeltas += (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
 				}
 			}
-			averageDelta = sumOfDeltas / (_frames.size() - 1);
+			averageDelta = sumOfDeltas / (_frames.size() - skippedFrames - 1);
 
 			percentage = abs((1 - (averageDelta / expectedDelta)) * 100);
 			if (percentage >= _tolerance)
@@ -1040,6 +1173,11 @@ public:
 				}
 				else
 				{
+					if ((_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) < 0)
+					{
+						skippedFrames++;
+						continue;
+					}
 					sumOfDeltas += (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
 				}
 			}
@@ -1193,8 +1331,10 @@ public:
 			{
 				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
 			}
-
-			droppedFrames = round(actualDelta / expectedDelta) - 1;
+			if (actualDelta < 0)
+				droppedFrames = 0;
+			else
+				droppedFrames = round(actualDelta / expectedDelta) - 1;
 
 			if (_frames[i].ID == 0)
 			{
@@ -1448,6 +1588,11 @@ public:
 		Sensor depthSensor = cam.GetDepthSensor();
 		Sensor colorSensor = cam.GetColorSensor();
 
+		Logger::getLogger().log("Disabling AutoExposure priority for Color Sensor", "Setup()");
+		res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO_PRIORITY, 0);
+		Logger::getLogger().log("Disabling AutoExposure priority for Color Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
+		result = result && res;
+
 		Logger::getLogger().log("Enabling AutoExposure for Color Sensor", "Setup()");
 		res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
 		Logger::getLogger().log("Enabling AutoExposure for Color Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
@@ -1510,14 +1655,14 @@ public:
 			return false;
 		}
 	}
-	
+
 	vector<Profile> GetControlProfiles(StreamType streamType)
 	{
 		ProfileGenerator pG;
 		vector<Profile> combinations = pG.GetControlsProfiles(streamType);
 		return combinations;
 	}
-	
+
 	vector<vector<Profile>> GetProfiles(vector<StreamType> streamTypes)
 	{
 		ProfileGenerator pG;
@@ -1628,7 +1773,6 @@ public:
 		}
 	}
 
-
 	bool CalcMetrics(int iteration)
 	{
 		string iterationStatus = "Pass";
@@ -1640,7 +1784,15 @@ public:
 		//update the result csv
 		for (int i = 0; i < pnpMetrics.size(); i++)
 		{
-			pnpMetrics[i]->configure(pnpSamples);
+			if (pnpMetrics[i]->_metricName == "CPU Consumption")
+				pnpMetrics[i]->configure(cpuSamples);
+			else if (pnpMetrics[i]->_metricName == "Memory Consumption")
+				pnpMetrics[i]->configure(memSamples);
+			else if (pnpMetrics[i]->_metricName == "Asic Temperature")
+				pnpMetrics[i]->configure(asicSamples);
+			else if (pnpMetrics[i]->_metricName == "Projector Temperature")
+				pnpMetrics[i]->configure(projectorSamples);
+
 			PNPMetricResult r = pnpMetrics[i]->calc();
 			if (r.result == false)
 			{
@@ -1651,9 +1803,9 @@ public:
 			iterationResults.push_back(iRes);
 
 			rawline = "";
-				rawline += to_string(iteration) + ","+pnpMetrics[i]->_metricName+","+to_string(r.average)+","+to_string(r.max)+","+to_string(r.min)+","+to_string(r.tolerance);
-					
-				AppendPNPDataCVS(rawline);
+			rawline += to_string(iteration) + "," + pnpMetrics[i]->_metricName + "," + to_string(r.average) + "," + to_string(r.max) + "," + to_string(r.min) + "," + to_string(r.tolerance);
+
+			AppendPNPDataCVS(rawline);
 		}
 		for (int i = 0; i < metrics.size(); i++)
 		{
