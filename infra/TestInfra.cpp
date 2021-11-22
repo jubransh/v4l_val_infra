@@ -26,6 +26,7 @@ bool collectFrames = false;
 vector<Frame> depthFramesList, irFramesList, colorFramesList;
 vector<float> cpuSamples;
 vector<float> memSamples;
+double memoryBaseLine=0;
 vector<float> asicSamples;
 vector<float> projectorSamples;
 
@@ -90,7 +91,7 @@ void setCurrentProfiles(vector<Profile> ps)
 void addToPnpList(Sample s)
 {
 	cpuSamples.push_back(s.Cpu_per);
-	memSamples.push_back(s.Mem_MB);
+	memSamples.push_back(s.Mem_MB - memoryBaseLine);
 }
 
 void AddFrame(Frame frame)
@@ -1518,7 +1519,7 @@ public:
 	Camera cam;
 	void SetUp() override
 	{
-
+		memoryBaseLine=0;
 		//testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
 		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
@@ -1905,5 +1906,23 @@ public:
 			}
 			return false;
 		}
+	}
+
+	void CalculateMemoryBaseLine()
+	{
+		// vector<int> tempMemUsed;
+		SystemMonitor sysMon;
+		int mem, sum=0;
+		Logger::getLogger().log("Calculating Memory Base Line", "Test");
+		for (int i=0;i<10;i++)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+			mem=sysMon.get_used_mem();
+			sum+=mem;
+			Logger::getLogger().log("measurement: "+to_string(i)+" out of 10 is:"+to_string(mem), "Test");
+
+		}
+		memoryBaseLine = sum/10.0;
+		Logger::getLogger().log("Memory Base Line was set to "+ to_string(memoryBaseLine), "Test");
 	}
 };

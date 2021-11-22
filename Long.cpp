@@ -1,23 +1,23 @@
-#include <ctime>
-#include <sys/mman.h>
-#include "MetaData.h"
+// #include <ctime>
+// #include <sys/mman.h>
+// #include "MetaData.h"
 
 using namespace std;
-#include <gtest/gtest.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <linux/videodev2.h>
-#include <linux/v4l2-subdev.h>
-#include <errno.h>
-#include <cstdint>
-#include <vector>
-#include <algorithm>
-#include <array>
-#include <thread> // std::this_thread::sleep_for
-#include <chrono> // std::chrono::seconds
-#include <thread>
-#include "infra/TestInfra.cpp"
+// #include <gtest/gtest.h>
+// #include <fcntl.h>
+// #include <sys/ioctl.h>
+// #include <unistd.h>
+// #include <linux/videodev2.h>
+// #include <linux/v4l2-subdev.h>
+// #include <errno.h>
+// #include <cstdint>
+// #include <vector>
+// #include <algorithm>
+// #include <array>
+// #include <thread> // std::this_thread::sleep_for
+// #include <chrono> // std::chrono::seconds
+// #include <thread>
+// #include "infra/TestInfra.cpp"
 
 class LongTest : public TestBase
 {
@@ -32,6 +32,7 @@ public:
     }
     void run(vector<StreamType> streams)
     {
+        CalculateMemoryBaseLine();
         int iterationDuration = 60;
         bool testStatus = true;
         string failedIterations = "Test Failed in Iterations: ";
@@ -175,7 +176,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(3*60);
+    configure(10*60*60);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::Color_Stream);
