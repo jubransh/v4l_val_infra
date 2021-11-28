@@ -190,47 +190,88 @@ struct CommandResult
     bool Result;
 };
 
-class Metadata
+struct CommonMetadata
 {
-public:
     int frameId = 0;
     double CRC = 0;
-    double exposureTime = 0;
-    double Gain = 0;
-    double LaserPowerMode = 0;
-    double ManualLaserPower = 0;
-    double AutoExposure = 0;
-    double AutoExposureMode = 0;
     double Size = 0;
     double Timestamp = 0;
     int Type = 0;
     bool DataCorrectness = false;
-    double getMetaDataByString(string name)
+    double exposureTime = 0;
+    double Gain = 0;
+    double AutoExposure = 0;
+    double AutoExposureMode = 0;
+};
+
+struct ColorMetadata
+{
+    double BackLighCompensation = 0;
+    double Brightness = 0;
+    double Contrast = 0;
+    double Gamma = 0;
+    double Hue = 0;
+    double Saturation = 0;
+    double Sharpness = 0;
+    double WhiteBalance = 0;
+};
+
+struct DepthMetadata
+{
+    double LaserPowerMode = 0;
+    double ManualLaserPower = 0;
+};
+
+class Metadata
+{
+public:
+    CommonMetadata commonMetadata;
+    ColorMetadata colorMetadata;
+    DepthMetadata depthMetadata;
+
+double getMetaDataByString(string name)
     {
         if (name == "frameId")
-            return frameId;
+            return commonMetadata.frameId;
         else if (name == "CRC")
-            return CRC;
+            return commonMetadata.CRC;
         else if (name == "exposureTime")
-            return exposureTime;
+            return commonMetadata.exposureTime;
         else if (name == "Gain")
-            return Gain;
-        else if (name == "LaserPowerMode")
-            return LaserPowerMode;
+            return commonMetadata.Gain;
+        else if (name == "LaserPowerMode" )
+            return depthMetadata.LaserPowerMode;
         else if (name == "ManualLaserPower")
-            return ManualLaserPower;
+            return depthMetadata.ManualLaserPower;
         else if (name == "AutoExposure")
-            return AutoExposure;
+            return commonMetadata.AutoExposure;
         else if (name == "AutoExposureMode")
-            return AutoExposureMode;
+            return commonMetadata.AutoExposureMode;
         else if (name == "Size")
-            return Size;
+            return commonMetadata.Size;
         else if (name == "Timestamp")
-            return Timestamp;
+            return commonMetadata.Timestamp;
         else if (name == "Type")
-            return Type;
+            return commonMetadata.Type;
         else if (name == "DataCorrectness")
-            return DataCorrectness;
+            return commonMetadata.DataCorrectness;
+        else if (name == "BackLighCompensation")
+            return colorMetadata.BackLighCompensation;
+        else if (name == "Brightness")
+            return colorMetadata.Brightness;
+        else if (name == "Contrast")
+            return colorMetadata.Contrast;
+        else if (name == "Gamma")
+            return colorMetadata.Gamma;
+        else if (name == "Hue")
+            return colorMetadata.Hue;
+        else if (name == "Saturation")
+            return colorMetadata.Saturation;
+        else if (name == "Sharpness")
+            return colorMetadata.Sharpness;
+        else if (name == "WhiteBalance")
+            return colorMetadata.WhiteBalance;
+
 
         Logger::getLogger().log("Failed to get MetaData : " + name, LOG_ERROR);
         throw std::runtime_error("Failed to get MetaData : " + name);
@@ -609,7 +650,7 @@ public:
                                                {
                                                    if (ioctl(metaFileDescriptor, VIDIOC_STREAMON, &mdType) != 0)
                                                    {
-                                                       Logger::getLogger().log("Stream VIDIOC_STREAMON Filed", "Sensor", LOG_ERROR);
+                                                       Logger::getLogger().log("Stream VIDIOC_STREAMON Failed", "Sensor", LOG_ERROR);
                                                        throw std::runtime_error("Failed to Start MD stream\n");
                                                    }
                                                    else
@@ -677,16 +718,30 @@ public:
                                                        STMetaDataDepthYNormalMode *ptr = static_cast<STMetaDataDepthYNormalMode *>(
                                                            metaDataBuffers[mdV4l2Buffer.index]);
 
-                                                       md.Timestamp = ptr->captureStats.hwTimestamp;
-                                                       md.exposureTime = ptr->captureStats.ExposureTime;
-
-                                                       md.AutoExposureMode = ptr->intelDepthControl.autoExposureMode;
-                                                       md.Gain = ptr->intelDepthControl.manualGain;
-                                                       md.LaserPowerMode = (uint16_t)ptr->intelDepthControl.projectorMode;
-                                                       md.ManualLaserPower = ptr->intelDepthControl.laserPower;
-                                                       md.frameId = ptr->intelCaptureTiming.frameCounter;
-                                                       md.CRC = ptr->crc32;
+                                                       md.commonMetadata.Timestamp = ptr->captureStats.hwTimestamp;
+                                                       md.commonMetadata.exposureTime = ptr->captureStats.ExposureTime;
+                                                       md.commonMetadata.AutoExposureMode = ptr->intelDepthControl.autoExposureMode;
+                                                       md.commonMetadata.Gain = ptr->intelDepthControl.manualGain;
+                                                       md.commonMetadata.frameId = ptr->intelCaptureTiming.frameCounter;
+                                                       md.commonMetadata.CRC = ptr->crc32;
                                                        // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
+                                                   if (type==SensorType::Depth)
+                                                   {
+                                                       md.depthMetadata.LaserPowerMode = (uint16_t)ptr->intelDepthControl.projectorMode;
+                                                       md.depthMetadata.ManualLaserPower = ptr->intelDepthControl.laserPower;
+                                                   }
+                                                    if (type==SensorType::Color)
+                                                   {
+                                                       md.colorMetadata.BackLighCompensation = 0;
+                                                       md.colorMetadata.Brightness = 0;
+                                                       md.colorMetadata.Contrast = 0;
+                                                       md.colorMetadata.Gamma = 0;
+                                                       md.colorMetadata.Hue = 0;
+                                                       md.colorMetadata.Saturation = 0;
+                                                       md.colorMetadata.Sharpness = 0;
+                                                       md.colorMetadata.WhiteBalance = 0;
+                                                   }
+                                                   
                                                    }
                                                    frame.frameMD = md;
 
@@ -958,8 +1013,8 @@ public:
             return cR.Data[0];
         else
         {
-        Logger::getLogger().log("Failed to get Asic temperature from Camera", "Camera",LOG_ERROR);
-        throw std::runtime_error("Failed to get Asic temperature from Camera"); 
+            Logger::getLogger().log("Failed to get Asic temperature from Camera", "Camera", LOG_ERROR);
+            throw std::runtime_error("Failed to get Asic temperature from Camera");
         }
     }
     int GetProjectorTemperature()
@@ -975,8 +1030,8 @@ public:
             return cR.Data[0];
         else
         {
-        Logger::getLogger().log("Failed to get Projector temperature from Camera", "Camera",LOG_ERROR);
-        throw std::runtime_error("Failed to get Projector temperature from Camera"); 
+            Logger::getLogger().log("Failed to get Projector temperature from Camera", "Camera", LOG_ERROR);
+            throw std::runtime_error("Failed to get Projector temperature from Camera");
         }
     }
     //For debugging

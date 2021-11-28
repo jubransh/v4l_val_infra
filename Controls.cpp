@@ -219,7 +219,7 @@ public:
                 collectFrames = false;
 
                 cntrlMetric.setParams(5, changeTime, cntrl._mDName, cntrl._values[i]);
-                if (!(cntrl._controlName == "Exposure"))
+                if (!(cntrl._controlName == "Exposure" || cntrl._controlName == "Color_Exposure" ))
                 {
                     fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
                     frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
@@ -295,6 +295,67 @@ TEST_F(ControlsTest, LaserPowerMode)
 {
     configure(10);
     run(StreamType::Depth_Stream, "LaserPowerMode");
+}
+////////////////////////////////////////////////////////////////////////////
+// Color Controls - Still not ready
+TEST_F(ControlsTest, BackLighCompensation)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "BackLighCompensation");
+}
+
+TEST_F(ControlsTest, Brightness)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Brightness");
+}
+
+TEST_F(ControlsTest, Contrast)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Contrast");
+}
+
+TEST_F(ControlsTest, Color_Exposure)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Color_Exposure");
+}
+
+TEST_F(ControlsTest, Color_Gain)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Color_Gain");
+}
+
+TEST_F(ControlsTest, Gamma)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Gamma");
+}
+
+TEST_F(ControlsTest, Hue)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Hue");
+}
+
+TEST_F(ControlsTest, Saturation)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Saturation");
+}
+
+TEST_F(ControlsTest, Sharpness)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "Sharpness");
+}
+
+TEST_F(ControlsTest, WhiteBalance)
+{
+    configure(10);
+    run(StreamType::Color_Stream, "WhiteBalance");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -447,4 +508,58 @@ TEST_F(ControlsSetGetTest, LaserPowerMode_Set_Get)
 {
     // configure(10);
     run(StreamType::Depth_Stream, "LaserPowerMode");
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///  Color Set Get tests - Still not ready
+
+
+TEST_F(ControlsSetGetTest, BackLighCompensation_Set_Get)
+{
+    run(StreamType::Color_Stream, "BackLighCompensation");
+}
+
+TEST_F(ControlsSetGetTest, Brightness_Set_Get)
+{
+    run(StreamType::Color_Stream, "Brightness");
+}
+
+TEST_F(ControlsSetGetTest, Contrast_Set_Get)
+{
+    run(StreamType::Color_Stream, "Contrast");
+}
+
+TEST_F(ControlsSetGetTest, Color_Exposure_Set_Get)
+{
+    run(StreamType::Color_Stream, "Color_Exposure");
+}
+
+TEST_F(ControlsSetGetTest, Color_Gain_Set_Get)
+{
+    run(StreamType::Color_Stream, "Color_Gain");
+}
+
+TEST_F(ControlsSetGetTest, Gamma_Set_Get)
+{
+    run(StreamType::Color_Stream, "Gamma");
+}
+
+TEST_F(ControlsSetGetTest, Hue_Set_Get)
+{
+    run(StreamType::Color_Stream, "Hue");
+}
+
+TEST_F(ControlsSetGetTest, Saturation_Set_Get)
+{
+    run(StreamType::Color_Stream, "Saturation");
+}
+
+TEST_F(ControlsSetGetTest, Sharpness_Set_Get)
+{
+    run(StreamType::Color_Stream, "Sharpness");
+}
+
+TEST_F(ControlsSetGetTest, WhiteBalance_Set_Get)
+{
+    run(StreamType::Color_Stream, "WhiteBalance");
 }

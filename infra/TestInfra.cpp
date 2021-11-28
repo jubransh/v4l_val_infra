@@ -694,7 +694,7 @@ public:
 			}
 			else
 			{
-				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+				actualDelta = (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 				if (actualDelta < 0)
 					continue;
 			}
@@ -791,10 +791,10 @@ public:
 				}
 				else
 				{
-					actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+					actualDelta = (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 					if (actualDelta < 0)
 						continue;
-					currTS = _frames[i].frameMD.Timestamp;
+					currTS = _frames[i].frameMD.getMetaDataByString("Timestamp");
 				}
 				if (actualDelta > 2.5 * expectedDelta)
 				{
@@ -847,10 +847,10 @@ public:
 				}
 				else
 				{
-					actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+					actualDelta = (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 					if (actualDelta < 0)
 						continue;
-					currTS = _frames[i].frameMD.Timestamp;
+					currTS = _frames[i].frameMD.getMetaDataByString("Timestamp");
 				}
 				if (actualDelta > 2.5 * expectedDelta)
 				{
@@ -958,7 +958,7 @@ public:
 		if (_useSystemTs)
 			expectedFrames = fps * (_frames[_frames.size() - 1].systemTimestamp - _frames[indexOfChange].systemTimestamp) / 1000;
 		else
-			expectedFrames = fps * (_frames[_frames.size() - 1].frameMD.Timestamp - _frames[indexOfChange].frameMD.Timestamp) / 1000 / 1000;
+			expectedFrames = fps * (_frames[_frames.size() - 1].frameMD.getMetaDataByString("Timestamp") - _frames[indexOfChange].frameMD.getMetaDataByString("Timestamp")) / 1000 / 1000;
 		// Calculate # of frames dropped
 		for (int i = indexOfChange; i < _frames.size(); i++)
 		{
@@ -969,7 +969,7 @@ public:
 			}
 			else
 			{
-				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+				actualDelta = (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 				if (actualDelta < 0)
 					continue;
 			}
@@ -1045,7 +1045,7 @@ public:
 			}
 			else
 			{
-				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+				actualDelta = (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 				if (actualDelta < 0)
 					continue;
 			}
@@ -1134,12 +1134,12 @@ public:
 				}
 				else
 				{
-					if ((_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) < 0)
+					if ((_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) < 0)
 					{
 						skippedFrames++;
 						continue;
 					}
-					sumOfDeltas += (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+					sumOfDeltas += (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 				}
 			}
 			averageDelta = sumOfDeltas / (_frames.size() - skippedFrames - 1);
@@ -1174,12 +1174,12 @@ public:
 				}
 				else
 				{
-					if ((_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) < 0)
+					if ((_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) < 0)
 					{
 						skippedFrames++;
 						continue;
 					}
-					sumOfDeltas += (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+					sumOfDeltas += (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 				}
 			}
 			averageDelta = sumOfDeltas / (_frames.size() - 1 - indexOfChange);
@@ -1330,7 +1330,7 @@ public:
 			}
 			else
 			{
-				actualDelta = (_frames[i].frameMD.Timestamp - _frames[i - 1].frameMD.Timestamp) / 1000.0;
+				actualDelta = (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 			}
 			if (actualDelta < 0)
 				droppedFrames = 0;
@@ -1474,7 +1474,7 @@ public:
 		for (int i = 0; i < _frames.size(); i++)
 		{
 
-			if (!_frames[i].frameMD.DataCorrectness)
+			if (!_frames[i].frameMD.getMetaDataByString("DataCorrectness"))
 			{
 				numberOfcorruptFrames++;
 				if (indexOfFirstCorrupted == -1)
@@ -1507,7 +1507,7 @@ public:
 	ofstream resultCsv;
 	ofstream rawDataCsv;
 	ofstream pnpCsv;
-	bool isPNPtest;
+	bool isPNPtest=false;
 	bool result;
 	int testDuration;
 	// vector<Frame> depthFrames, irFrames, colorFrames;
@@ -1866,7 +1866,7 @@ public:
 			{
 				rawline = "";
 				rawline += to_string(iteration) + ",\"" + streamComb + "\",Depth," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "x" +
-						   to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.Gain) + "," + to_string(depthFramesList[i].frameMD.AutoExposureMode) + "," + to_string(depthFramesList[i].frameMD.exposureTime) + "," + to_string(depthFramesList[i].frameMD.LaserPowerMode) + "," + to_string(depthFramesList[i].frameMD.ManualLaserPower) + "," + to_string(depthFramesList[i].ID) + "," + to_string(depthFramesList[i].frameMD.Timestamp) + "," + to_string(depthFramesList[i].systemTimestamp);
+						   to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(depthFramesList[i].ID) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(depthFramesList[i].systemTimestamp);
 				AppendRAwDataCVS(rawline);
 			}
 		}
@@ -1877,7 +1877,7 @@ public:
 			{
 				rawline = "";
 				rawline += to_string(iteration) + ",\"" + streamComb + "\",IR," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "x" +
-						   to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.Gain) + "," + to_string(irFramesList[i].frameMD.AutoExposureMode) + "," + to_string(irFramesList[i].frameMD.exposureTime) + "," + to_string(irFramesList[i].frameMD.LaserPowerMode) + "," + to_string(irFramesList[i].frameMD.ManualLaserPower) + "," + to_string(irFramesList[i].ID) + "," + to_string(irFramesList[i].frameMD.Timestamp) + "," + to_string(irFramesList[i].systemTimestamp);
+						   to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(irFramesList[i].ID) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(irFramesList[i].systemTimestamp);
 
 				AppendRAwDataCVS(rawline);
 			}
@@ -1889,7 +1889,7 @@ public:
 			{
 				rawline = "";
 				rawline += to_string(iteration) + ",\"" + streamComb + "\",Color," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "x" +
-						   to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.Gain) + "," + to_string(colorFramesList[i].frameMD.AutoExposureMode) + "," + to_string(colorFramesList[i].frameMD.exposureTime) + "," + to_string(colorFramesList[i].frameMD.LaserPowerMode) + "," + to_string(colorFramesList[i].frameMD.ManualLaserPower) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].frameMD.Timestamp) + "," + to_string(colorFramesList[i].systemTimestamp);
+						   to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp);
 
 				AppendRAwDataCVS(rawline);
 			}
