@@ -218,7 +218,7 @@ public:
 
                 collectFrames = false;
 
-                cntrlMetric.setParams(5, changeTime, cntrl._mDName, cntrl._values[i]);
+                
                 if (!(cntrl._controlName == "Exposure" || cntrl._controlName == "Color_Exposure" ))
                 {
                     fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
@@ -226,14 +226,21 @@ public:
                     frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
                     seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
                     idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
+                    cntrlMetric.setParams(5, changeTime, cntrl._mDName, cntrl._values[i]);
                 }
                 else
                 {
+                    double prevExposure;
+                    if (i==0)
+                    prevExposure= cntrl._values[cntrl._values.size()-1];
+                    else
+                    prevExposure = cntrl._values[i-1];
                     fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+                    cntrlMetric.setParams(5, changeTime, cntrl._mDName, cntrl._values[i],prevExposure);
                 }
 
                 frmSizeMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());

@@ -26,7 +26,7 @@ bool collectFrames = false;
 vector<Frame> depthFramesList, irFramesList, colorFramesList;
 vector<float> cpuSamples;
 vector<float> memSamples;
-double memoryBaseLine=0;
+double memoryBaseLine = 0;
 vector<float> asicSamples;
 vector<float> projectorSamples;
 
@@ -1378,8 +1378,10 @@ public:
 class ControlLatencyMetric : public Metric
 {
 private:
+	bool _autoExposureOff = false;
 	double _changeTime;
 	double _value;
+	double _prev_exposure;
 	string _metaDataName;
 
 public:
@@ -1400,6 +1402,17 @@ public:
 			value = value * 100;
 		_value = value;
 	}
+	void setParams(int tolerance, double changeTime, string metaDataName, double value, double prev_exposure)
+	{
+		_tolerance = tolerance;
+		_changeTime = changeTime;
+		_metaDataName = metaDataName;
+		if (_metaDataName == "exposureTime")
+			value = value * 100;
+		_value = value;
+		_prev_exposure = prev_exposure;
+		_autoExposureOff = true;
+	}
 	MetricResult calc()
 	{
 		if (_profile.fps == 0)
@@ -1407,9 +1420,23 @@ public:
 		if (_frames.size() == 0)
 			throw std::runtime_error("Frames array is empty");
 		int actualLatency = -1;
+		int actualFrames = -1;
 		int indexOfChange = -1;
 		int indexOfSet = -1;
 		Logger::getLogger().log("Calculating metric: " + _metricName + " on " + _profile.GetText(), "Metric");
+
+		double fps;
+		if (_autoExposureOff)
+		{
+			fps = getFPSByExposure(_prev_exposure);
+		}
+		else
+		{
+			fps = _profile.fps;
+		}
+
+		double expectedDelta = 1000/ fps;
+
 		for (int i = 0; i < _frames.size(); i++)
 		{
 			if (_frames[i].systemTimestamp >= _changeTime)
@@ -1423,13 +1450,14 @@ public:
 			if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 			{
 				indexOfChange = _frames[i].ID;
-				// actualLatency = _frames[i].ID - indexOfSet;
+				actualFrames= round((_frames[i].systemTimestamp - _changeTime)/expectedDelta);
+				//actualLatency = _frames[i].ID - indexOfSet;
 				break;
 			}
 		}
 		MetricResult r;
 		actualLatency = indexOfChange - indexOfSet;
-		if (actualLatency >= 0 && actualLatency < _tolerance)
+		if (actualFrames >= 0 && actualFrames <= _tolerance)
 			r.result = true;
 		else
 			r.result = false;
@@ -1437,7 +1465,7 @@ public:
 		r.remarks = "Control name: " + _metaDataName + "\nRequested value: " + to_string(_value) +
 					"\nControl Set at TS: " + to_string(_changeTime) + "\nFrame compatible with the TS: " + to_string(indexOfSet) +
 					"\nControl Actually changed at frame: " + to_string(indexOfChange) + "\nTolerance: " + to_string(_tolerance) +
-					"\nControl Latency: " + to_string(actualLatency) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+					"\nControl Latency By Index: " + to_string(actualLatency) + "\nControl Latency by system timestamp: " + to_string(actualFrames) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
 		{
@@ -1507,7 +1535,7 @@ public:
 	ofstream resultCsv;
 	ofstream rawDataCsv;
 	ofstream pnpCsv;
-	bool isPNPtest=false;
+	bool isPNPtest = false;
 	bool result;
 	int testDuration;
 	// vector<Frame> depthFrames, irFrames, colorFrames;
@@ -1519,7 +1547,7 @@ public:
 	Camera cam;
 	void SetUp() override
 	{
-		memoryBaseLine=0;
+		memoryBaseLine = 0;
 		//testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
 		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
@@ -1912,17 +1940,16 @@ public:
 	{
 		// vector<int> tempMemUsed;
 		SystemMonitor sysMon;
-		int mem, sum=0;
+		int mem, sum = 0;
 		Logger::getLogger().log("Calculating Memory Base Line", "Test");
-		for (int i=0;i<10;i++)
+		for (int i = 0; i < 10; i++)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-			mem=sysMon.get_used_mem();
-			sum+=mem;
-			Logger::getLogger().log("measurement: "+to_string(i)+" out of 10 is:"+to_string(mem), "Test");
-
+			mem = sysMon.get_used_mem();
+			sum += mem;
+			Logger::getLogger().log("measurement: " + to_string(i) + " out of 10 is:" + to_string(mem), "Test");
 		}
-		memoryBaseLine = sum/10.0;
-		Logger::getLogger().log("Memory Base Line was set to "+ to_string(memoryBaseLine), "Test");
+		memoryBaseLine = sum / 10.0;
+		Logger::getLogger().log("Memory Base Line was set to " + to_string(memoryBaseLine), "Test");
 	}
 };
