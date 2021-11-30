@@ -30,6 +30,16 @@ double memoryBaseLine = 0;
 vector<float> asicSamples;
 vector<float> projectorSamples;
 
+bool stringIsInVector(string str, vector<string> vect)
+{
+	for (int i = 0; i < vect.size(); i++)
+	{
+		if (str == vect[i])
+			return true;
+	}
+	return false;
+}
+
 void initFrameLists()
 {
 	depthFramesList.clear();
@@ -120,14 +130,14 @@ class MetricDefaultTolerances
 private:
 	static const int tolerance_FirstFrameDelay = 1000;
 	static const int tolerance_SequentialFrameDrops = 2;
-	static const int tolerance_FrameDropInterval = 1; //Tolerance is always 1 hard coded - what changes is the interval
+	static const int tolerance_FrameDropInterval = 1; // Tolerance is always 1 hard coded - what changes is the interval
 	static const int tolerance_FrameDropsPercentage = 5;
 	static const int tolerance_FramesArrived = 1;
 	static const int tolerance_FpsValidity = 5;
 	static const int tolerance_FrameSize = 1;
-	static const int tolerance_IDCorrectness = 1; //Tolerance is not used - if one frame has MD error, Metric Fails
+	static const int tolerance_IDCorrectness = 1; // Tolerance is not used - if one frame has MD error, Metric Fails
 	static const int tolerance_ControlLatency = 5;
-	static const int tolerance_MetaDataCorrectness = 1; //Tolerance is not used - if one frame has MD error, Metric Fails
+	static const int tolerance_MetaDataCorrectness = 1; // Tolerance is not used - if one frame has MD error, Metric Fails
 	static const int tolerance_CPU = 35;
 	static const int tolerance_Memory = 400;
 	static const int tolerance_asic_temperature = 100;
@@ -1410,7 +1420,7 @@ public:
 		if (_metaDataName == "exposureTime")
 			value = value * 100;
 		_value = value;
-		_prev_exposure = prev_exposure;
+		_prev_exposure = prev_exposure * 100;
 		_autoExposureOff = true;
 	}
 	MetricResult calc()
@@ -1434,14 +1444,15 @@ public:
 		{
 			fps = _profile.fps;
 		}
-
-		double expectedDelta = 1000/ fps;
-
+		double tsOfChangeFrame = -1;
+		double expectedDelta = 1000 / fps;
+		// Logger::getLogger().log("prev_exposure:" + to_string(_prev_exposure) + " - expectedDelta:" + to_string(expectedDelta) + " - FPS:" + to_string(fps), "Metric");
 		for (int i = 0; i < _frames.size(); i++)
 		{
 			if (_frames[i].systemTimestamp >= _changeTime)
 			{
 				indexOfSet = _frames[i - 1].ID;
+				tsOfChangeFrame = _frames[i - 1].systemTimestamp;
 				break;
 			}
 		}
@@ -1450,8 +1461,8 @@ public:
 			if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 			{
 				indexOfChange = _frames[i].ID;
-				actualFrames= round((_frames[i].systemTimestamp - _changeTime)/expectedDelta);
-				//actualLatency = _frames[i].ID - indexOfSet;
+				actualFrames = round(double((_frames[i - 1].systemTimestamp - tsOfChangeFrame)) / expectedDelta) + 1;
+				// actualLatency = _frames[i].ID - indexOfSet;
 				break;
 			}
 		}
@@ -1543,12 +1554,13 @@ public:
 	Profile depthProfile, irProfile, colorProfile;
 	vector<Metric *> metrics;
 	vector<PnpMetric *> pnpMetrics;
+	vector<string> depthNonMandatoryMetrics, irNonMandatoryMetrics, colorNonMandatoryMetrics, pnpNonMandatoryMetrics;
 	string testBasePath;
 	Camera cam;
 	void SetUp() override
 	{
 		memoryBaseLine = 0;
-		//testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
+		// testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
 		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
@@ -1685,6 +1697,26 @@ public:
 		}
 	}
 
+	void IgnoreMetric(string metricName, StreamType type)
+	{
+		switch (type)
+		{
+		case StreamType::Depth_Stream:
+			depthNonMandatoryMetrics.push_back(metricName);
+			break;
+		case StreamType::IR_Stream:
+			irNonMandatoryMetrics.push_back(metricName);
+			break;
+		case StreamType::Color_Stream:
+			colorNonMandatoryMetrics.push_back(metricName);
+			break;
+		}
+	}
+	void IgnorePNPMetric(string metricName)
+	{
+			pnpNonMandatoryMetrics.push_back(metricName);
+	}
+
 	vector<Profile> GetControlProfiles(StreamType streamType)
 	{
 		ProfileGenerator pG;
@@ -1721,7 +1753,7 @@ public:
 			dP.fps = 30;
 			dP.streamType = StreamType::Depth_Stream;
 			profiles.push_back(dP);
-			//second profile
+			// second profile
 			r = {0};
 			r.width = 640;
 			r.height = 480;
@@ -1751,7 +1783,7 @@ public:
 			dP.fps = 30;
 			dP.streamType = StreamType::IR_Stream;
 			profiles.push_back(dP);
-			//second profile
+			// second profile
 			r = {0};
 			r.width = 640;
 			r.height = 480;
@@ -1781,7 +1813,7 @@ public:
 			dP.fps = 30;
 			dP.streamType = StreamType::Color_Stream;
 			profiles.push_back(dP);
-			//second profile
+			// second profile
 			r = {0};
 			r.width = 640;
 			r.height = 480;
@@ -1810,7 +1842,7 @@ public:
 		iterationResults.clear();
 		vector<string> failedMetrics;
 		failedMetrics.clear();
-		//update the result csv
+		// update the result csv
 		for (int i = 0; i < pnpMetrics.size(); i++)
 		{
 			if (pnpMetrics[i]->_metricName == "CPU Consumption")
@@ -1825,7 +1857,13 @@ public:
 			PNPMetricResult r = pnpMetrics[i]->calc();
 			if (r.result == false)
 			{
-				iterationStatus = "Fail";
+				if (!stringIsInVector(pnpMetrics[i]->_metricName, pnpNonMandatoryMetrics))
+					iterationStatus = "Fail";
+				else
+				{
+					Logger::getLogger().log("Metric: " + pnpMetrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+				}
+
 				failedMetrics.push_back("Metric: " + pnpMetrics[i]->_metricName + " Failed");
 			}
 			string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",PNP," + pnpMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -1845,7 +1883,14 @@ public:
 				MetricResult r = metrics[i]->calc();
 				if (r.result == false)
 				{
-					iterationStatus = "Fail";
+					if (!stringIsInVector(metrics[i]->_metricName, depthNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + metrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
 					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on Depth stream");
 				}
 				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -1859,7 +1904,14 @@ public:
 				MetricResult r = metrics[i]->calc();
 				if (r.result == false)
 				{
-					iterationStatus = "Fail";
+					if (!stringIsInVector(metrics[i]->_metricName, irNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + metrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
 					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on IR stream");
 				}
 				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -1872,7 +1924,14 @@ public:
 				MetricResult r = metrics[i]->calc();
 				if (r.result == false)
 				{
-					iterationStatus = "Fail";
+					if (!stringIsInVector(metrics[i]->_metricName, colorNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + metrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
 					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on Color stream");
 				}
 				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -1884,8 +1943,8 @@ public:
 		{
 			AppendIterationResultCVS(iterationResults[j] + iterationStatus);
 		}
-		//Iteration,stream Combination, Stream Type,Image Format,Resolution,FPS,Frame Index,HW TimeStamp,System TimeStamp
-		// "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,HW TimeStamp,System TimeStamp" << endl;
+		// Iteration,stream Combination, Stream Type,Image Format,Resolution,FPS,Frame Index,HW TimeStamp,System TimeStamp
+		//  "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,HW TimeStamp,System TimeStamp" << endl;
 
 		if (currDepthProfile.fps != 0)
 		{

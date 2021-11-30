@@ -176,9 +176,10 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(10*60*60);
+    configure(3*60);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::Color_Stream);
+    // IgnorePNPMetric("CPU Consumption");
     run(streams);
 }

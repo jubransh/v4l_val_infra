@@ -49,7 +49,7 @@ public:
                 return 1650;
                 break;
             }
-          }
+        }
         else if (streamType == StreamType::Color_Stream)
         {
             switch (fps)
@@ -212,35 +212,36 @@ public:
                     res = depthSensor.SetControl(cntrl._controlID, cntrl._values[i]);
                 else if (ColorUsed)
                     res = colorSensor.SetControl(cntrl._controlID, cntrl._values[i]);
+
                 Logger::getLogger().log("Setting Control: " + (res) ? "Passed" : "Failed", "Test");
                 Logger::getLogger().log("Sleep after setting control: " + cntrl._controlName + " for " + to_string(testDuration / 2) + " seconds", "Test");
                 std::this_thread::sleep_for(std::chrono::seconds(testDuration / 2));
 
                 collectFrames = false;
 
-                
-                if (!(cntrl._controlName == "Exposure" || cntrl._controlName == "Color_Exposure" ))
+                if (!(cntrl._controlName == "Exposure" || cntrl._controlName == "Color_Exposure"))
                 {
                     fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
                     frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
                     frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
                     seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
                     idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
-                    cntrlMetric.setParams(5, changeTime, cntrl._mDName, cntrl._values[i]);
+                    cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i]);
                 }
                 else
                 {
                     double prevExposure;
-                    if (i==0)
-                    prevExposure= cntrl._values[cntrl._values.size()-1];
+                    if (i == 0)
+                        prevExposure = cntrl._values[cntrl._values.size() - 1];
                     else
-                    prevExposure = cntrl._values[i-1];
+                        prevExposure = cntrl._values[i - 1];
+
                     fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
-                    cntrlMetric.setParams(5, changeTime, cntrl._mDName, cntrl._values[i],prevExposure);
+                    cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevExposure);
                 }
 
                 frmSizeMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
@@ -282,42 +283,47 @@ public:
     }
 };
 
-TEST_F(ControlsTest, Gain)
+TEST_F(ControlsTest, Depth_Gain)
 {
     configure(10);
+
     run(StreamType::Depth_Stream, "Gain");
 }
-TEST_F(ControlsTest, Exposure)
+TEST_F(ControlsTest, Depth_Exposure)
 {
     configure(10);
+    // IgnoreMetric("ID Correctness", StreamType::Depth_Stream);
+    // IgnoreMetric("Frame drops interval", StreamType::Depth_Stream);
+    // IgnoreMetric("Sequential frame drops", StreamType::Depth_Stream);
+    // IgnoreMetric("FPS Validity", StreamType::Depth_Stream);
     run(StreamType::Depth_Stream, "Exposure");
 }
-TEST_F(ControlsTest, LaserPower)
+TEST_F(ControlsTest, Depth_LaserPower)
 {
     configure(10);
     run(StreamType::Depth_Stream, "LaserPower");
 }
 
-TEST_F(ControlsTest, LaserPowerMode)
+TEST_F(ControlsTest, Depth_LaserPowerMode)
 {
     configure(10);
     run(StreamType::Depth_Stream, "LaserPowerMode");
 }
 ////////////////////////////////////////////////////////////////////////////
 // Color Controls - Still not ready
-TEST_F(ControlsTest, BackLighCompensation)
+TEST_F(ControlsTest, Color_BackLighCompensation)
 {
     configure(10);
     run(StreamType::Color_Stream, "BackLighCompensation");
 }
 
-TEST_F(ControlsTest, Brightness)
+TEST_F(ControlsTest, Color_Brightness)
 {
     configure(10);
     run(StreamType::Color_Stream, "Brightness");
 }
 
-TEST_F(ControlsTest, Contrast)
+TEST_F(ControlsTest, Color_Contrast)
 {
     configure(10);
     run(StreamType::Color_Stream, "Contrast");
@@ -335,31 +341,31 @@ TEST_F(ControlsTest, Color_Gain)
     run(StreamType::Color_Stream, "Color_Gain");
 }
 
-TEST_F(ControlsTest, Gamma)
+TEST_F(ControlsTest, Color_Gamma)
 {
     configure(10);
     run(StreamType::Color_Stream, "Gamma");
 }
 
-TEST_F(ControlsTest, Hue)
+TEST_F(ControlsTest, Color_Hue)
 {
     configure(10);
     run(StreamType::Color_Stream, "Hue");
 }
 
-TEST_F(ControlsTest, Saturation)
+TEST_F(ControlsTest, Color_Saturation)
 {
     configure(10);
     run(StreamType::Color_Stream, "Saturation");
 }
 
-TEST_F(ControlsTest, Sharpness)
+TEST_F(ControlsTest, Color_Sharpness)
 {
     configure(10);
     run(StreamType::Color_Stream, "Sharpness");
 }
 
-TEST_F(ControlsTest, WhiteBalance)
+TEST_F(ControlsTest, Color_WhiteBalance)
 {
     configure(10);
     run(StreamType::Color_Stream, "WhiteBalance");
@@ -495,23 +501,23 @@ public:
     }
 };
 
-TEST_F(ControlsSetGetTest, Gain_Set_Get)
+TEST_F(ControlsSetGetTest, Depth_Gain_Set_Get)
 {
     // configure(10);
     run(StreamType::Depth_Stream, "Gain");
 }
-TEST_F(ControlsSetGetTest, Exposure_Set_Get)
+TEST_F(ControlsSetGetTest, Depth_Exposure_Set_Get)
 {
     // configure(10);
     run(StreamType::Depth_Stream, "Exposure");
 }
-TEST_F(ControlsSetGetTest, LaserPower_Set_Get)
+TEST_F(ControlsSetGetTest, Depth_LaserPower_Set_Get)
 {
     // configure(10);
     run(StreamType::Depth_Stream, "LaserPower");
 }
 
-TEST_F(ControlsSetGetTest, LaserPowerMode_Set_Get)
+TEST_F(ControlsSetGetTest, Depth_LaserPowerMode_Set_Get)
 {
     // configure(10);
     run(StreamType::Depth_Stream, "LaserPowerMode");
@@ -520,18 +526,17 @@ TEST_F(ControlsSetGetTest, LaserPowerMode_Set_Get)
 ///////////////////////////////////////////////////////////////////////////////
 ///  Color Set Get tests - Still not ready
 
-
-TEST_F(ControlsSetGetTest, BackLighCompensation_Set_Get)
+TEST_F(ControlsSetGetTest, Color_BackLighCompensation_Set_Get)
 {
     run(StreamType::Color_Stream, "BackLighCompensation");
 }
 
-TEST_F(ControlsSetGetTest, Brightness_Set_Get)
+TEST_F(ControlsSetGetTest, Color_Brightness_Set_Get)
 {
     run(StreamType::Color_Stream, "Brightness");
 }
 
-TEST_F(ControlsSetGetTest, Contrast_Set_Get)
+TEST_F(ControlsSetGetTest, Color_Contrast_Set_Get)
 {
     run(StreamType::Color_Stream, "Contrast");
 }
@@ -546,27 +551,27 @@ TEST_F(ControlsSetGetTest, Color_Gain_Set_Get)
     run(StreamType::Color_Stream, "Color_Gain");
 }
 
-TEST_F(ControlsSetGetTest, Gamma_Set_Get)
+TEST_F(ControlsSetGetTest, Color_Gamma_Set_Get)
 {
     run(StreamType::Color_Stream, "Gamma");
 }
 
-TEST_F(ControlsSetGetTest, Hue_Set_Get)
+TEST_F(ControlsSetGetTest, Color_Hue_Set_Get)
 {
     run(StreamType::Color_Stream, "Hue");
 }
 
-TEST_F(ControlsSetGetTest, Saturation_Set_Get)
+TEST_F(ControlsSetGetTest, Color_Saturation_Set_Get)
 {
     run(StreamType::Color_Stream, "Saturation");
 }
 
-TEST_F(ControlsSetGetTest, Sharpness_Set_Get)
+TEST_F(ControlsSetGetTest, Color_Sharpness_Set_Get)
 {
     run(StreamType::Color_Stream, "Sharpness");
 }
 
-TEST_F(ControlsSetGetTest, WhiteBalance_Set_Get)
+TEST_F(ControlsSetGetTest, Color_WhiteBalance_Set_Get)
 {
     run(StreamType::Color_Stream, "WhiteBalance");
 }

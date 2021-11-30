@@ -229,7 +229,7 @@ public:
     ColorMetadata colorMetadata;
     DepthMetadata depthMetadata;
 
-double getMetaDataByString(string name)
+    double getMetaDataByString(string name)
     {
         if (name == "frameId")
             return commonMetadata.frameId;
@@ -239,7 +239,7 @@ double getMetaDataByString(string name)
             return commonMetadata.exposureTime;
         else if (name == "Gain")
             return commonMetadata.Gain;
-        else if (name == "LaserPowerMode" )
+        else if (name == "LaserPowerMode")
             return depthMetadata.LaserPowerMode;
         else if (name == "ManualLaserPower")
             return depthMetadata.ManualLaserPower;
@@ -271,7 +271,6 @@ double getMetaDataByString(string name)
             return colorMetadata.Sharpness;
         else if (name == "WhiteBalance")
             return colorMetadata.WhiteBalance;
-
 
         Logger::getLogger().log("Failed to get MetaData : " + name, LOG_ERROR);
         throw std::runtime_error("Failed to get MetaData : " + name);
@@ -725,23 +724,22 @@ public:
                                                        md.commonMetadata.frameId = ptr->intelCaptureTiming.frameCounter;
                                                        md.commonMetadata.CRC = ptr->crc32;
                                                        // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
-                                                   if (type==SensorType::Depth)
-                                                   {
-                                                       md.depthMetadata.LaserPowerMode = (uint16_t)ptr->intelDepthControl.projectorMode;
-                                                       md.depthMetadata.ManualLaserPower = ptr->intelDepthControl.laserPower;
-                                                   }
-                                                    if (type==SensorType::Color)
-                                                   {
-                                                       md.colorMetadata.BackLighCompensation = 0;
-                                                       md.colorMetadata.Brightness = 0;
-                                                       md.colorMetadata.Contrast = 0;
-                                                       md.colorMetadata.Gamma = 0;
-                                                       md.colorMetadata.Hue = 0;
-                                                       md.colorMetadata.Saturation = 0;
-                                                       md.colorMetadata.Sharpness = 0;
-                                                       md.colorMetadata.WhiteBalance = 0;
-                                                   }
-                                                   
+                                                       if (type == SensorType::Depth)
+                                                       {
+                                                           md.depthMetadata.LaserPowerMode = (uint16_t)ptr->intelDepthControl.projectorMode;
+                                                           md.depthMetadata.ManualLaserPower = ptr->intelDepthControl.laserPower;
+                                                       }
+                                                       if (type == SensorType::Color)
+                                                       {
+                                                           md.colorMetadata.BackLighCompensation = 0;
+                                                           md.colorMetadata.Brightness = 0;
+                                                           md.colorMetadata.Contrast = 0;
+                                                           md.colorMetadata.Gamma = 0;
+                                                           md.colorMetadata.Hue = 0;
+                                                           md.colorMetadata.Saturation = 0;
+                                                           md.colorMetadata.Sharpness = 0;
+                                                           md.colorMetadata.WhiteBalance = 0;
+                                                       }
                                                    }
                                                    frame.frameMD = md;
 
