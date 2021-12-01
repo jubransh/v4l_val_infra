@@ -25,6 +25,7 @@ class ControlsTest : public TestBase
 public:
     void configure(int StreamDuration)
     {
+        Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
     }
     int getMaxAllowedExposure(int fps, StreamType streamType)
@@ -78,7 +79,6 @@ public:
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
         Logger::getLogger().log("               " + name + " Controls while Streaming Test ", "Test", LOG_INFO);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
-        bool testStatus = true;
         bool res;
         int maxAllowedtExposure;
         string failedIterations = "Test Failed in Iterations: ";
@@ -386,7 +386,6 @@ public:
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
         Logger::getLogger().log("               " + name + " Controls Set/Get Test ", "Test", LOG_INFO);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
-        bool testStatus = true;
         bool res;
         string failedIterations = "Test Failed in Iterations: ";
         ControlConf cntrl;

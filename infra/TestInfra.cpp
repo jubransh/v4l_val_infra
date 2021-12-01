@@ -22,6 +22,7 @@ using namespace std;
 #endif
 
 string sid = TimeUtils::getDateandTime();
+bool is_tests_res_created = false;
 bool collectFrames = false;
 vector<Frame> depthFramesList, irFramesList, colorFramesList;
 vector<float> cpuSamples;
@@ -1547,7 +1548,7 @@ public:
 	ofstream rawDataCsv;
 	ofstream pnpCsv;
 	bool isPNPtest = false;
-	bool result;
+	bool testStatus = true;
 	int testDuration;
 	// vector<Frame> depthFrames, irFrames, colorFrames;
 	// vector<Sample> pnpSamples;
@@ -1586,6 +1587,7 @@ public:
 		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,HW TimeStamp,System TimeStamp" << endl;
 		if (isPNPtest)
 		{
+			Logger::getLogger().log("Creating PNP data CSV file", "Setup()", LOG_INFO);
 			string pnpDataPath = FileUtils::join(testPath, "pnp_data.csv");
 			pnpCsv.open(pnpDataPath, std::ios_base::app);
 			if (pnpCsv.fail())
@@ -1607,6 +1609,9 @@ public:
 		resultCsv << "Iteration,Stream Combination,Stream Duration,Tested Stream,Metric name,Metric status,Remarks,Iteration status" << endl;
 		Logger::getLogger().log("Initializing camera", "Setup()");
 		cam.Init();
+		Logger::getLogger().log("Camera Serial:" + cam.GetSerialNumber(), "Setup()");
+		Logger::getLogger().log("Camera FW version:" + cam.GetFwVersion(), "Setup()");
+
 		bool rstDefaults = ResetDefaults();
 		if (!rstDefaults)
 			Logger::getLogger().log("Failed to Reset default controls", "Setup()", LOG_WARNING);
@@ -1617,6 +1622,20 @@ public:
 		resultCsv.close();
 		Logger::getLogger().log("Closing raw data CSV file", "TearDown()", LOG_INFO);
 		rawDataCsv.close();
+
+		string TestsResultsPath = FileUtils::join(testBasePath, "tests_results.csv");
+		ofstream TestsResults;
+		TestsResults.open(TestsResultsPath, std::ios_base::app);
+		if (!is_tests_res_created)
+		{
+			is_tests_res_created = true;
+			TestsResults << "Test name" << "," << "Test status" << endl;
+		}
+		if (testStatus)
+			TestsResults << name << "," << "Pass" << endl;
+		else
+			TestsResults << name << "," << "Fail" << endl;
+
 		Logger::getLogger().log("Closing Log file", "TearDown()", LOG_INFO);
 		Logger::getLogger().close();
 	}
@@ -1714,7 +1733,7 @@ public:
 	}
 	void IgnorePNPMetric(string metricName)
 	{
-			pnpNonMandatoryMetrics.push_back(metricName);
+		pnpNonMandatoryMetrics.push_back(metricName);
 	}
 
 	vector<Profile> GetControlProfiles(StreamType streamType)

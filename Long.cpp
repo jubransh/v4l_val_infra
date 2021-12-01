@@ -28,13 +28,13 @@ public:
     }
     void configure(int StreamDuration)
     {
+        Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
     }
     void run(vector<StreamType> streams)
     {
         CalculateMemoryBaseLine();
         int iterationDuration = 60;
-        bool testStatus = true;
         string failedIterations = "Test Failed in Iterations: ";
 
         SequentialFrameDropsMetric met_seq;
@@ -176,7 +176,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(3*60);
+    configure(10*60*60);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::Color_Stream);

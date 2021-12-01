@@ -26,8 +26,20 @@ public:
     bool _isRandom;
     void configure(int StreamDuration, int Iterations, bool isRandom)
     {
+        Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
+        Logger::getLogger().log("Configuring test iterations to: " + to_string(Iterations), "Test", LOG_INFO);
         _iterations = Iterations;
+        switch (isRandom)
+        {
+        case 1:
+            Logger::getLogger().log("Configuring stability test type to: Random", "Test", LOG_INFO);
+            break;
+        
+        case 0:
+            Logger::getLogger().log("Configuring stability test type to: Normal", "Test", LOG_INFO);
+            break;
+        }
         _isRandom = isRandom;
     }
     vector<Profile> getRandomProfile(vector<vector<StreamType>> streams)
@@ -55,7 +67,6 @@ public:
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
         Logger::getLogger().log("               " + name +" Stability Test ", "Test", LOG_INFO);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
-        bool testStatus = true;
         string failedIterations = "Test Failed in Iterations: ";
 
         SequentialFrameDropsMetric met_seq;

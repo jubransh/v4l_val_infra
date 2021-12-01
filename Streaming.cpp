@@ -24,12 +24,11 @@ class StreamingTest : public TestBase
 public:
     void configure(int StreamDuration)
     {
+        Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
     }
     void run(vector<StreamType> streams)
     {
-        
-        bool testStatus = true;
         string failedIterations = "Test Failed in Iterations: ";
 
         SequentialFrameDropsMetric met_seq;

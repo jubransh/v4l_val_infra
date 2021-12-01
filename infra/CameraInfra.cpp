@@ -890,10 +890,10 @@ public:
         auto fd = depthSensor.GetFileDescriptor();
 
         int res = ioctl(fd, VIDIOC_G_EXT_CTRLS, &ext);
-        // if (res != 0)
-        //     throw std::runtime_error("Failed to Read FW Version");
+        if (res != 0)
+            throw std::runtime_error("Failed to Read FW Version");
 
-        // fwVersion = uintToVersion(fwVersion_uint);
+        fwVersion = uintToVersion(fwVersion_uint);
         //=================================================================
     }
 
