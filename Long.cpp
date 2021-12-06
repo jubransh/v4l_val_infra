@@ -22,14 +22,16 @@ using namespace std;
 class LongTest : public TestBase
 {
 public:
+    bool _captureTempWhileStream;
     LongTest()
     {
         isPNPtest = true;
     }
-    void configure(int StreamDuration)
+    void configure(int StreamDuration, bool captureTempWhileStream)
     {
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
+        _captureTempWhileStream = captureTempWhileStream;
     }
     void run(vector<StreamType> streams)
     {
@@ -47,7 +49,6 @@ public:
         AsicTempMetric met_asic_temp;
         ProjTempMetric met_projector_temp;
 
-
         metrics.push_back(&met_seq);
         metrics.push_back(&met_drop_interval);
         metrics.push_back(&met_drop_percent);
@@ -56,7 +57,6 @@ public:
         pnpMetrics.push_back(&met_mem);
         pnpMetrics.push_back(&met_asic_temp);
         pnpMetrics.push_back(&met_projector_temp);
-        
 
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor colorSensor = cam.GetColorSensor();
@@ -110,7 +110,7 @@ public:
         {
             colorSensor.Start(AddFrame);
         }
-        
+
         int Iterations = testDuration / iterationDuration;
         for (int j = 0; j < Iterations; j++)
         {
@@ -118,19 +118,36 @@ public:
             initFrameLists();
             initSamplesList();
             SystemMonitor sysMon2;
-            Logger::getLogger().log("Starting PNP measurements","Test");
-            sysMon2.StartMeasurment(addToPnpList,250);
+            Logger::getLogger().log("Starting PNP measurements", "Test");
+            sysMon2.StartMeasurment(addToPnpList, 250);
             collectFrames = true;
-            Logger::getLogger().log("collecting frames for half iteration duration("+to_string(iterationDuration/2)+"Seconds)","Test");
-            std::this_thread::sleep_for(std::chrono::seconds(iterationDuration/2));
+            Logger::getLogger().log("collecting frames for half iteration duration(" + to_string(iterationDuration / 2) + "Seconds)", "Test");
+            int duration = iterationDuration / 2;
+            if (!_captureTempWhileStream)
+                std::this_thread::sleep_for(std::chrono::seconds(duration));
+            else
+            {
+                for (int d = 0; d < duration; d++)
+                {
+                    Logger::getLogger().log("Getting Asic temperature", "Test");
+                    asicSamples.push_back(cam.GetAsicTemperature());
+                    Logger::getLogger().log("Getting Projector temperature", "Test");
+                    projectorSamples.push_back(cam.GetProjectorTemperature());
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+            }
 
             collectFrames = false;
-            Logger::getLogger().log("Stopping PNP measurements","Test");
+            Logger::getLogger().log("Stopping PNP measurements", "Test");
             sysMon2.StopMeasurment();
-            Logger::getLogger().log("Getting Asic temperature","Test");
-            asicSamples.push_back(cam.GetAsicTemperature());
-            Logger::getLogger().log("Getting Projector temperature","Test");
-            projectorSamples.push_back(cam.GetProjectorTemperature());
+            if (!_captureTempWhileStream)
+            {
+                Logger::getLogger().log("Getting Asic temperature", "Test");
+                asicSamples.push_back(cam.GetAsicTemperature());
+                Logger::getLogger().log("Getting Projector temperature", "Test");
+                projectorSamples.push_back(cam.GetProjectorTemperature());
+            }
+
             long startCalcTime = TimeUtils::getCurrentTimestamp();
 
             met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
@@ -149,10 +166,10 @@ public:
                 failedIterations += to_string(j) + ", ";
             }
             long endCalcTime = TimeUtils::getCurrentTimestamp();
-            long calcDuration = (endCalcTime - startCalcTime)/1000;
-            Logger::getLogger().log("Calculations took: "+to_string(calcDuration)+"Seconds","Test");
-            Logger::getLogger().log("Going to sleep for the rest of the iteration duration("+to_string(iterationDuration)+"Seconds), for: "+to_string(iterationDuration/2 - calcDuration)+"Seconds","Test");
-            std::this_thread::sleep_for(std::chrono::seconds(iterationDuration/2 - calcDuration));
+            long calcDuration = (endCalcTime - startCalcTime) / 1000;
+            Logger::getLogger().log("Calculations took: " + to_string(calcDuration) + "Seconds", "Test");
+            Logger::getLogger().log("Going to sleep for the rest of the iteration duration(" + to_string(iterationDuration) + "Seconds), for: " + to_string(iterationDuration / 2 - calcDuration) + "Seconds", "Test");
+            std::this_thread::sleep_for(std::chrono::seconds(iterationDuration / 2 - calcDuration));
         }
         if (DepthUsed || IRUsed)
         {
@@ -176,7 +193,17 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(10*60*60);
+    configure(3 * 60, false);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::Color_Stream);
+    // IgnorePNPMetric("CPU Consumption");
+    run(streams);
+}
+
+TEST_F(LongTest, TempCaptureLongStreamTest)
+{
+    configure(3 * 60, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::Color_Stream);
