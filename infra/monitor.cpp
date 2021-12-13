@@ -205,28 +205,28 @@ void sampleArrived(Sample s)
 
 }
 
-int main(int argC, char** argV) 
-{  
+// int main(int argC, char** argV) 
+// {  
 
-    SystemMonitor sm;
+//     SystemMonitor sm;
 
-    cout << "cpu= " << sm.GetCpuPercentage()<< " ";
-    sleep(1);
+//     cout << "cpu= " << sm.GetCpuPercentage()<< " ";
+//     sleep(1);
 
-    cout << "cpu= " << sm.GetCpuPercentage();
-    sleep(1);
+//     cout << "cpu= " << sm.GetCpuPercentage();
+//     sleep(1);
 
-    cout << "cpu= " << sm.GetCpuPercentage();
-    sleep(1);
+//     cout << "cpu= " << sm.GetCpuPercentage();
+//     sleep(1);
 
 
-    int frequency_ms = 200;
-    // sm.StartMeasurment(sampleArrived, frequency_ms);
+//     int frequency_ms = 200;
+//     // sm.StartMeasurment(sampleArrived, frequency_ms);
 
-    // std::this_thread::sleep_for(std::chrono::seconds(2));
+//     // std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    // sm.StopMeasurment();
+//     // sm.StopMeasurment();
 
-    return 0;
+//     return 0;
 
-}
+// }

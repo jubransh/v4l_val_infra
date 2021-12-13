@@ -1,23 +1,31 @@
-#include <ctime>
-#include <sys/mman.h>
-#include "MetaData.h"
+// #include <ctime>
+// #include <sys/mman.h>
+// #include "MetaData.h"
 
 using namespace std;
-#include <gtest/gtest.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <linux/videodev2.h>
-#include <linux/v4l2-subdev.h>
-#include <errno.h>
-#include <cstdint>
-#include <vector>
-#include <algorithm>
-#include <array>
-#include <thread> // std::this_thread::sleep_for
-#include <chrono> // std::chrono::seconds
-#include <thread>
-#include "infra/TestInfra.cpp"
+// #include <gtest/gtest.h>
+// #include <fcntl.h>
+// #include <sys/ioctl.h>
+// #include <unistd.h>
+// #include <linux/videodev2.h>
+// #include <linux/v4l2-subdev.h>
+// #include <errno.h>
+// #include <cstdint>
+// #include <vector>
+// #include <algorithm>
+// #include <array>
+// #include <thread> // std::this_thread::sleep_for
+// #include <chrono> // std::chrono::seconds
+// #include <thread>
+// #include "infra/TestInfra.cpp"
+
+vector<long> tsMeasurements;
+void collectPNPMeasurements(Sample s)
+{
+    tsMeasurements.push_back(TimeUtils::getCurrentTimestamp());
+    cpuSamples.push_back(s.Cpu_per);
+    memSamples.push_back(s.Mem_MB - memoryBaseLine);
+}
 
 class StabilityTest : public TestBase
 {
@@ -26,8 +34,20 @@ public:
     bool _isRandom;
     void configure(int StreamDuration, int Iterations, bool isRandom)
     {
+        Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
+        Logger::getLogger().log("Configuring test iterations to: " + to_string(Iterations), "Test", LOG_INFO);
         _iterations = Iterations;
+        switch (isRandom)
+        {
+        case 1:
+            Logger::getLogger().log("Configuring stability test type to: Random", "Test", LOG_INFO);
+            break;
+
+        case 0:
+            Logger::getLogger().log("Configuring stability test type to: Normal", "Test", LOG_INFO);
+            break;
+        }
         _isRandom = isRandom;
     }
     vector<Profile> getRandomProfile(vector<vector<StreamType>> streams)
@@ -48,14 +68,40 @@ public:
         return allProfilesComb[randNum];
     }
 
+    void runWithPNP(vector<vector<StreamType>> streams)
+    {
+        SystemMonitor sysMon;
+        Logger::getLogger().log("Starting PNP measurements", "Test");
+        cpuSamples.clear();
+        memSamples.clear();
+        tsMeasurements.clear();
+        sysMon.StartMeasurment(collectPNPMeasurements, 1000);
+
+        run(streams);
+
+        string testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
+        name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+
+        // Creating test folder
+        string testPath = FileUtils::join(testBasePath, name);
+        sysMon.StopMeasurment();
+        ofstream pnpDataCsv;
+        string pnpDataPath = FileUtils::join(testPath, "pnp_data.csv");
+        pnpDataCsv.open(pnpDataPath, std::ios_base::app);
+        pnpDataCsv << "Timestamp,Memory consumption(MB),CPU consumption(%)\n";
+        for (int i = 0; i < memSamples.size(); i++)
+        {
+            pnpDataCsv << tsMeasurements[i] << "," << memSamples[i] << "," << cpuSamples[i] << "\n";
+        }
+    }
+
     void run(vector<vector<StreamType>> streams)
     {
         string name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
         vector<Profile> StreamCollection;
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
-        Logger::getLogger().log("               " + name +" Stability Test ", "Test", LOG_INFO);
+        Logger::getLogger().log("               " + name + " Stability Test ", "Test", LOG_INFO);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
-        bool testStatus = true;
         string failedIterations = "Test Failed in Iterations: ";
 
         SequentialFrameDropsMetric met_seq;
@@ -148,10 +194,10 @@ public:
                 colorSensor.Stop();
                 colorSensor.Close();
             }
-            
+
             met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
-            met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(),startTime, testDuration);
-            met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(),startTime);
+            met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, testDuration);
+            met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(), startTime);
             met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
             met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
             met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
@@ -162,12 +208,12 @@ public:
             if (!result)
             {
                 testStatus = false;
-                failedIterations+= to_string(i)+", ";
+                failedIterations += to_string(i) + ", ";
             }
         }
 
         Logger::getLogger().log("Test Summary:", "Run");
-        Logger::getLogger().log( testStatus?"Pass":"Fail", "Run");
+        Logger::getLogger().log(testStatus ? "Pass" : "Fail", "Run");
         if (!testStatus)
         {
             // for (int i; i<failedIterations.size();i++)
@@ -215,6 +261,25 @@ TEST_F(StabilityTest, Random)
     run(streams);
 }
 
+TEST_F(StabilityTest, PnpRandom)
+{
+    vector<vector<StreamType>> streams;
+    vector<StreamType> sT;
+    sT.push_back(StreamType::Depth_Stream);
+    vector<StreamType> sT3;
+    sT3.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT2;
+    sT2.push_back(StreamType::IR_Stream);
+    vector<StreamType> sT4;
+    sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::Color_Stream);
+    streams.push_back(sT);
+    streams.push_back(sT2);
+    streams.push_back(sT3);
+    streams.push_back(sT4);
+    configure(10, 10, true);
+    runWithPNP(streams);
+}
 TEST_F(StabilityTest, Test)
 {
     // configure(5);
@@ -224,29 +289,29 @@ TEST_F(StabilityTest, Test)
     sT.push_back(StreamType::Color_Stream);
     streams.push_back(sT);
     vector<Profile> stream = getRandomProfile(streams);
-     SequentialFrameDropsMetric met_seq;
-        FramesArrivedMetric met_arrived;
-        FirstFrameDelayMetric met_delay;
-        FpsValidityMetric met_fps;
-        FrameSizeMetric met_frame_size;
-        FrameDropIntervalMetric met_drop_interval;
-        FrameDropsPercentageMetric met_drop_percent;
-        IDCorrectnessMetric met_id_cor;
-        // MetaDataCorrectnessMetric met_md_cor;
+    SequentialFrameDropsMetric met_seq;
+    FramesArrivedMetric met_arrived;
+    FirstFrameDelayMetric met_delay;
+    FpsValidityMetric met_fps;
+    FrameSizeMetric met_frame_size;
+    FrameDropIntervalMetric met_drop_interval;
+    FrameDropsPercentageMetric met_drop_percent;
+    IDCorrectnessMetric met_id_cor;
+    // MetaDataCorrectnessMetric met_md_cor;
 
-        metrics.push_back(&met_seq);
-        metrics.push_back(&met_arrived);
-        metrics.push_back(&met_drop_interval);
-        metrics.push_back(&met_drop_percent);
-        metrics.push_back(&met_delay);
-        metrics.push_back(&met_fps);
-        metrics.push_back(&met_frame_size);
-        metrics.push_back(&met_id_cor);
-        // metrics.push_back(&met_md_cor);
+    metrics.push_back(&met_seq);
+    metrics.push_back(&met_arrived);
+    metrics.push_back(&met_drop_interval);
+    metrics.push_back(&met_drop_percent);
+    metrics.push_back(&met_delay);
+    metrics.push_back(&met_fps);
+    metrics.push_back(&met_frame_size);
+    metrics.push_back(&met_id_cor);
+    // metrics.push_back(&met_md_cor);
 
     Sensor depthSensor = cam.GetDepthSensor();
     Sensor colorSensor = cam.GetColorSensor();
-    for(int i=0;i<3; i++)
+    for (int i = 0; i < 3; i++)
     {
         initFrameLists();
         setCurrentProfiles(stream);
@@ -261,23 +326,20 @@ TEST_F(StabilityTest, Test)
         colorSensor.Stop();
         colorSensor.Close();
 
-                    met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
-            met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(),startTime, 3);
-            met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(),startTime);
-            met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
-            met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
-            met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
-            met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
-            met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
-            // met_md_cor.setParams(1);
-            bool result = CalcMetrics(i);
-            // if (!result)
-            // {
-            //     testStatus = false;
-            //     failedIterations+= to_string(i)+", ";
-            // }
+        met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
+        met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, 3);
+        met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(), startTime);
+        met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
+        met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
+        met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
+        met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
+        met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
+        // met_md_cor.setParams(1);
+        bool result = CalcMetrics(i);
+        // if (!result)
+        // {
+        //     testStatus = false;
+        //     failedIterations+= to_string(i)+", ";
+        // }
     }
-    
-
-
 }

@@ -1,35 +1,34 @@
-#include <ctime>
-#include <sys/mman.h>
-#include "MetaData.h"
+// #include <ctime>
+// #include <sys/mman.h>
+// #include "MetaData.h"
 
 using namespace std;
-#include <gtest/gtest.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <linux/videodev2.h>
-#include <linux/v4l2-subdev.h>
-#include <errno.h>
-#include <cstdint>
-#include <vector>
-#include <algorithm>
-#include <array>
-#include <thread> // std::this_thread::sleep_for
-#include <chrono> // std::chrono::seconds
-#include <thread>
-#include "infra/TestInfra.cpp"
+// #include <gtest/gtest.h>
+// #include <fcntl.h>
+// #include <sys/ioctl.h>
+// #include <unistd.h>
+// #include <linux/videodev2.h>
+// #include <linux/v4l2-subdev.h>
+// #include <errno.h>
+// #include <cstdint>
+// #include <vector>
+// #include <algorithm>
+// #include <array>
+// #include <thread> // std::this_thread::sleep_for
+// #include <chrono> // std::chrono::seconds
+// #include <thread>
+// #include "infra/TestInfra.cpp"
 
 class StreamingTest : public TestBase
 {
 public:
     void configure(int StreamDuration)
     {
+        Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
     }
     void run(vector<StreamType> streams)
     {
-        
-        bool testStatus = true;
         string failedIterations = "Test Failed in Iterations: ";
 
         SequentialFrameDropsMetric met_seq;

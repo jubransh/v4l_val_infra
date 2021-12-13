@@ -16,26 +16,8 @@
  * intellectual property rights must be express and approved by Intel in writing.
  */
 
-#include <ctime>
-#include <sys/mman.h>
-#include "MetaData.h"
 
 using namespace std;
-#include <gtest/gtest.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <linux/videodev2.h>
-#include <linux/v4l2-subdev.h>
-#include <errno.h>
-#include <cstdint>
-#include <vector>
-#include <algorithm>
-#include <array>
-#include <thread> // std::this_thread::sleep_for
-#include <chrono> // std::chrono::seconds
-#include <thread>
-#include "infra/TestInfra.cpp"
 
 /*
 TEST_F(TestBase, ColorStreamingTest){
@@ -48,7 +30,7 @@ TEST_F(TestBase, ColorStreamingTest){
     metrics.push_back(&met);
     metrics.push_back(&met2);
     metrics.push_back(&met3);
-    
+
     Camera cam;
     cam.Init();
     Sensor  colorSensor= cam.GetColorSensor();
@@ -73,7 +55,7 @@ TEST_F(TestBase, ColorStreamingTest){
         pR.push_back(profiles[j][0]);
         setCurrentProfiles(pR);
 
-        
+
         colorSensor.Configure(profiles[j][0]);
         long startTime = TimeUtils::getCurrentTimestamp();
         colorSensor.Start(AddFrame);
@@ -107,7 +89,7 @@ TEST_F(TestBase, DepthStreamingTest)
     metrics.push_back(&met);
     metrics.push_back(&met2);
     metrics.push_back(&met3);
-    
+
     Camera cam;
     cam.Init();
     Sensor depthSensor =cam.GetDepthSensor();
@@ -130,7 +112,7 @@ TEST_F(TestBase, DepthStreamingTest)
         pR.push_back(profiles[j][0]);
         setCurrentProfiles(pR);
 
-        
+
         depthSensor.Configure(profiles[j][0]);
         long startTime = TimeUtils::getCurrentTimestamp();
         depthSensor.Start(AddFrame);
@@ -149,10 +131,10 @@ TEST_F(TestBase, DepthStreamingTest)
             testStatus = false;
         Logger::getLogger().log("Iteration :" +to_string(j)+ " Done - Iteration Result: " + to_string(result),"Run");
         depthSensor.Close();
-        
+
     }
 
-    
+
     ASSERT_TRUE(testStatus);
 }
 
@@ -168,7 +150,7 @@ TEST_F(TestBase, IRStreamingTest)
     metrics.push_back(&met);
     metrics.push_back(&met2);
     metrics.push_back(&met3);
-    
+
     Camera cam;
     cam.Init();
     Sensor depthSensor =cam.GetDepthSensor();
@@ -191,7 +173,7 @@ TEST_F(TestBase, IRStreamingTest)
         pR.push_back(profiles[j][0]);
         setCurrentProfiles(pR);
 
-        
+
         depthSensor.Configure(profiles[j][0]);
         long startTime = TimeUtils::getCurrentTimestamp();
         depthSensor.Start(AddFrame);
@@ -210,10 +192,10 @@ TEST_F(TestBase, IRStreamingTest)
             testStatus = false;
         Logger::getLogger().log("Iteration :" +to_string(j)+ " Done - Iteration Result: " + to_string(result),"Run");
         depthSensor.Close();
-        
+
     }
 
-    
+
     ASSERT_TRUE(testStatus);
 }
 
@@ -240,7 +222,7 @@ TEST_F(TestBase, MultiStreamingTest)
     // metrics.push_back(&met6);
     // metrics.push_back(&met7);
     metrics.push_back(&met8);
-    
+
     Camera cam;
     cam.Init();
     Sensor depthSensor= cam.GetDepthSensor();
@@ -270,7 +252,7 @@ TEST_F(TestBase, MultiStreamingTest)
         pR.push_back(profiles[j][1]);
         setCurrentProfiles(pR);
 
-        
+
         depthSensor.Configure(profiles[j][0]);
         colorSensor.Configure(profiles[j][1]);
         long startTime = TimeUtils::getCurrentTimestamp();
@@ -298,9 +280,9 @@ TEST_F(TestBase, MultiStreamingTest)
             testStatus = false;
         Logger::getLogger().log("Iteration :" +to_string(j)+ " Done - Iteration Result: " + to_string(result),"Run");
 
-        
+
     }
-    
+
     ASSERT_TRUE(testStatus);
 }
 
@@ -312,7 +294,8 @@ TEST_F(TestBase, DepthControlTest)
     SequentialFrameDropsMetric met;
     FramesArrivedMetric met2;
     FpsValidityMetric met4;
-    FrameSizeMetric met5;;
+    FrameSizeMetric met5;
+    ;
     FrameDropIntervalMetric met6;
     FrameDropsPercentageMetric met7;
     IDCorrectnessMetric met8;
@@ -330,73 +313,69 @@ TEST_F(TestBase, DepthControlTest)
     metrics.push_back(&met8);
     metrics.push_back(&met9);
     metrics.push_back(&met10);
-    
+
     Camera cam;
     cam.Init();
-    Sensor depthSensor= cam.GetDepthSensor();
+    Sensor depthSensor = cam.GetDepthSensor();
     vector<StreamType> types;
     types.push_back(StreamType::Depth_Stream);
     vector<vector<Profile>> profiles = GetProfiles(types);
 
-    //auto depthProfiles = GetProfiles(StreamType::Depth_Stream);
-    //auto colorProfiles = GetProfiles(StreamType::Color_Stream);
+    // auto depthProfiles = GetProfiles(StreamType::Depth_Stream);
+    // auto colorProfiles = GetProfiles(StreamType::Color_Stream);
     vector<Profile> pR;
     for (int j = 0; j < profiles.size(); j++)
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        
-        
-        Logger::getLogger().log("=================================================","Run",LOG_INFO);
-        Logger::getLogger().log("               MultiStreamingExample ","Run",LOG_INFO);
-        Logger::getLogger().log("=================================================","Run",LOG_INFO);
 
-        Logger::getLogger().log("Started Iteration: " + to_string(j),"Run");
-        Logger::getLogger().log("Depth Profiles Used: " + profiles[j][0].GetText(),"Run");
+        Logger::getLogger().log("=================================================", "Run", LOG_INFO);
+        Logger::getLogger().log("               MultiStreamingExample ", "Run", LOG_INFO);
+        Logger::getLogger().log("=================================================", "Run", LOG_INFO);
+
+        Logger::getLogger().log("Started Iteration: " + to_string(j), "Run");
+        Logger::getLogger().log("Depth Profiles Used: " + profiles[j][0].GetText(), "Run");
         initFrameLists();
 
         pR.clear();
         pR.push_back(profiles[j][0]);
-       
+
         setCurrentProfiles(pR);
 
-        
         depthSensor.Configure(profiles[j][0]);
-         bool res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 120);
+        bool res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 120);
         std::this_thread::sleep_for(std::chrono::seconds(1));
         long startTime = TimeUtils::getCurrentTimestamp();
 
         depthSensor.Start(AddFrame);
 
-        std::this_thread::sleep_for(std::chrono::seconds(testDuration/2));
+        std::this_thread::sleep_for(std::chrono::seconds(testDuration / 2));
         long changeTime = TimeUtils::getCurrentTimestamp();
         res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 150);
-        Logger::getLogger().log("Setting laser power control value was: ","Run");
-        Logger::getLogger().log((res) ? "Succeeded" : "Failed","Run");
+        Logger::getLogger().log("Setting laser power control value was: ", "Run");
+        Logger::getLogger().log((res) ? "Succeeded" : "Failed", "Run");
 
-        std::this_thread::sleep_for(std::chrono::seconds(testDuration/2));
+        std::this_thread::sleep_for(std::chrono::seconds(testDuration / 2));
 
         depthSensor.Stop();
         depthSensor.Close();
-        //std::this_thread::sleep_for(std::chrono::seconds(2));
+        // std::this_thread::sleep_for(std::chrono::seconds(2));
         met.setParams(2);
-        met2.setParams(1,startTime, testDuration);
-        met3.setParams(1000,startTime);
+        met2.setParams(1, startTime, testDuration);
+        met3.setParams(1000, startTime);
         met4.setParams(5);
         met5.setParams(1);
         met6.setParams(1);
         met7.setParams(5);
         met8.setParams(5);
-        met9.setParams(5,changeTime, "ManualLaserPower",150);
+        met9.setParams(5, changeTime, "ManualLaserPower", 150);
         met10.setParams(1);
 
         bool result = CalcMetrics(j);
         if (!result)
             testStatus = false;
-        Logger::getLogger().log("Iteration :" +to_string(j)+ " Done - Iteration Result: " + to_string(result),"Run");
- 
-        
+        Logger::getLogger().log("Iteration :" + to_string(j) + " Done - Iteration Result: " + to_string(result), "Run");
     }
-    
+
     ASSERT_TRUE(testStatus);
 }
 
@@ -419,12 +398,12 @@ protected:
 static double lastDepthTs = 0;
 static double lastColorTs = 0;
 
-//implemetnt the callback
+// implemetnt the callback
 void depthFrameArrived(Frame f)
 {
 
-    //frames.push_back(s);
-    double currTs = f.frameMD.Timestamp;
+    // frames.push_back(s);
+    double currTs = f.frameMD.commonMetadata.Timestamp;
     cout << "Depth Frame #" << f.ID << " Arrived: @ " << currTs << endl;
 
     if (lastDepthTs == 0)
@@ -442,7 +421,7 @@ void depthFrameArrived(Frame f)
 
 void colorFrameArrived(Frame f)
 {
-    //frames.push_back(s);
+    // frames.push_back(s);
     double currTs = f.hwTimestamp;
     cout << "Color Frame #" << f.ID << " Arrived: @ " << f.hwTimestamp << endl;
     if (lastColorTs == 0)
@@ -458,7 +437,7 @@ void colorFrameArrived(Frame f)
     cout << "Color Delta = " << delta << endl;
 }
 
-//for debugging
+// for debugging
 void PrintBytes(vector<uint8_t> v)
 {
 
@@ -467,7 +446,7 @@ void PrintBytes(vector<uint8_t> v)
         if (i % 16 == 0)
             cout << endl;
 
-        //cout << hex << buff[i]  << " " ;
+        // cout << hex << buff[i]  << " " ;
         cout << hex << unsigned(v[i]) << " ";
         // printf("%c ", buff[i]);
     }
@@ -485,10 +464,10 @@ TEST_F(V4L2BasicTest, WriteHWMonitorCommandTest)
 
     HWMonitorCommand hmc = {0};
 
-    //bytes to write (the data bytes array)
+    // bytes to write (the data bytes array)
     uint8_t runtimeTable[] = {0x1, 0x2};
 
-    //Write command (fwb)
+    // Write command (fwb)
     hmc.dataSize = 2;
     hmc.opCode = 0xa;
     hmc.parameter1 = 0x17b000;
@@ -511,7 +490,7 @@ TEST_F(V4L2BasicTest, ReadHWMonitorCommandTest)
 
     HWMonitorCommand hmc = {0};
 
-    //Read command (frb)
+    // Read command (frb)
     hmc.dataSize = 0;
     hmc.opCode = 0x9;
     hmc.parameter1 = 0x0;
@@ -521,6 +500,34 @@ TEST_F(V4L2BasicTest, ReadHWMonitorCommandTest)
     ASSERT_TRUE(cR.Result);
     if (cR.Result)
         PrintBytes(cR.Data);
+}
+
+TEST_F(V4L2BasicTest, GetLaserInfoCommand)
+{
+    cout << "=================================================" << endl;
+    cout << "                  GPWM command " << endl;
+    cout << "=================================================" << endl;
+
+    Camera cam;
+    cam.Init();
+
+    HWMonitorCommand hmc = {0};
+
+    // GPWM command
+    hmc.dataSize = 0;
+    hmc.opCode = 0x19;
+    auto cR = cam.SendHWMonitorCommand(hmc);
+
+    ASSERT_TRUE(cR.Result);
+    if (cR.Result)
+    {
+        int minLaserVal = cR.Data[0] | cR.Data[1] << 8;
+        int maxLaserVal = cR.Data[2] | cR.Data[3] << 8;
+        int laserStepsNo = cR.Data[4] | cR.Data[5] << 8;
+        cout << "Min laser value: " << minLaserVal << endl;
+        cout << "Max laser value: " << maxLaserVal << endl;
+        cout << "Laser number of steps: " << laserStepsNo << endl;
+    }
 }
 
 TEST_F(V4L2BasicTest, SetGetControlsExample)
@@ -539,7 +546,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
 
     cout << "=================================================" << endl;
-    //Print the sensor supported resolutions of depth sensor
+    // Print the sensor supported resolutions of depth sensor
     cout << "Supported Depth resolutions are: " << endl;
     auto sR = depthSensor.GetSupportedResolutions();
     for (int i = 0; i < sR.size(); i++)
@@ -549,7 +556,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
 
     cout << "=================================================" << endl;
-    //Print the sensor supported resolutions of color sensor
+    // Print the sensor supported resolutions of color sensor
     cout << "Supported Color resolutions are: " << endl;
     sR = colorSensor.GetSupportedResolutions();
     for (int i = 0; i < sR.size(); i++)
@@ -559,7 +566,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
 
     cout << "=================================================" << endl;
-    //Print the sensor supported Formats of depth sensor
+    // Print the sensor supported Formats of depth sensor
     cout << "Supported Depth Formats are: " << endl;
     vector<uint32_t> fmt = depthSensor.GetSupportedFormats();
     for (int i = 0; i < fmt.size(); i++)
@@ -569,7 +576,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
 
     cout << "=================================================" << endl;
-    //Print the sensor supported Formats of color sensor
+    // Print the sensor supported Formats of color sensor
     cout << "Supported Color Formats are: " << endl;
     fmt = colorSensor.GetSupportedFormats();
     for (int i = 0; i < fmt.size(); i++)
@@ -578,22 +585,20 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     }
     cout << "=================================================" << endl;
 
-    //Get Laser Power
+    // Get Laser Power
     auto val = depthSensor.GetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER);
     cout << "Curr laser power control value is: " << val << endl;
 
-    //Set Laser power
+    // Set Laser power
     auto res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 150);
     cout << "Setting laser power control value was: " << ((res) ? "Succeeded" : "Failed") << endl;
 
-    //Get Laser Power Again
+    // Get Laser Power Again
     val = depthSensor.GetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER);
     cout << "Curr laser power control value is: " << val << endl;
 
     cout << endl;
 }
-
-
 
 TEST_F(V4L2BasicTest, DepthStreamingExample)
 {
@@ -604,9 +609,9 @@ TEST_F(V4L2BasicTest, DepthStreamingExample)
     Camera cam;
     cam.Init();
     auto depthSensor = cam.GetDepthSensor();
-    //depthSensor.copyFrameData = true;
+    // depthSensor.copyFrameData = true;
 
-    //Depth Configuration
+    // Depth Configuration
     Resolution r = {0};
     r.width = 640;
     r.height = 480;
@@ -615,7 +620,7 @@ TEST_F(V4L2BasicTest, DepthStreamingExample)
     dP.resolution = r;
     dP.fps = 30;
     dP.streamType = StreamType::Depth_Stream;
-    
+
     depthSensor.Configure(dP);
     depthSensor.Start(depthFrameArrived);
 
@@ -624,7 +629,6 @@ TEST_F(V4L2BasicTest, DepthStreamingExample)
     depthSensor.Stop();
     depthSensor.Close();
 }
-
 
 TEST_F(V4L2BasicTest, IRStreamingExample)
 {
@@ -636,7 +640,7 @@ TEST_F(V4L2BasicTest, IRStreamingExample)
     cam.Init(false);
     auto depthSensor = cam.GetDepthSensor();
 
-    //Depth Configuration
+    // Depth Configuration
     Resolution r = {0};
     r.width = 640;
     r.height = 480;
@@ -667,7 +671,7 @@ TEST_F(V4L2BasicTest, ColorStreamingExample)
     cam.Init();
     auto colorSensor = cam.GetColorSensor();
 
-    //Color Configuration
+    // Color Configuration
     Resolution cR = {0};
     cR.width = 640;
     cR.height = 480;
@@ -688,7 +692,6 @@ TEST_F(V4L2BasicTest, ColorStreamingExample)
     colorSensor.Close();
 }
 
-
 TEST_F(V4L2BasicTest, MultiStreamingExample)
 {
     cout << "=================================================" << endl;
@@ -700,7 +703,7 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
     auto depthSensor = cam.GetDepthSensor();
     auto colorSensor = cam.GetColorSensor();
 
-    //Depth Configuration
+    // Depth Configuration
     Resolution r = {0};
     r.width = 640;
     r.height = 480;
@@ -709,7 +712,7 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
     dP.resolution = r;
     dP.fps = 30;
 
-    //Color Configuration
+    // Color Configuration
     Resolution cR = {0};
     cR.width = 640;
     cR.height = 480;
