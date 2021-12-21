@@ -196,6 +196,33 @@ TEST_F(StreamingTest, DepthColorStreamingTest)
     run(streams);
 }
 
+/*
+TEST_F(StreamingTest, ResetTest)
+{
+    Logger::getLogger().log("Reset Test", "Main", LOG_INFO);
+    cout << "=================================================" << endl;
+    cout << "               Reset Test " << endl;
+    cout << "=================================================" << endl;
+
+    Camera cam;
+    cam.Init();
+
+    HWMonitorCommand hmc = {0};
+
+    // Read command (frb)
+    hmc.dataSize = 0;
+    hmc.opCode = 0x20;
+    auto cR = cam.SendHWMonitorCommand(hmc);
+
+    ASSERT_TRUE(cR.Result);
+    if (cR.Result)
+        cout << "Reset Done" << endl;
+    else
+        cout << "Reset Failed" << endl;
+
+
+}*/
+
 // TEST_F(StreamingTest, Test)
 // {
 //     configure(5);

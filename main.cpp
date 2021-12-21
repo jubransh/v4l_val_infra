@@ -1,10 +1,10 @@
 // #include <gtest/gtest.h>
-// #include "V4L2PlayGround.cpp"
 
 // #include "test_example.cpp"
 
 // #include "V4L2StreamingTest.cpp"
 // #include "V4L2ControlsTest.cpp"
+
 
 #include <ctime>
 #include <sys/mman.h>
@@ -32,6 +32,8 @@
 #include "Long.cpp"
 #include"Controls.cpp"
 #include "Stability.cpp"
+#include "V4L2PlayGround.cpp"
+
 
 int main(int argc, char **argv)
 {

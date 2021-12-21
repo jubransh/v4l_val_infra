@@ -69,7 +69,7 @@ private:
 
         if (formatStr=="y8")
             {
-            prof.pixelFormat = V4L2_PIX_FMT_Y8I;
+            prof.pixelFormat = V4L2_PIX_FMT_Y8;
             prof.streamType = StreamType::IR_Stream;
             }
         else if (formatStr=="y12")
