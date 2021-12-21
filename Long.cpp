@@ -59,6 +59,7 @@ public:
         pnpMetrics.push_back(&met_projector_temp);
 
         Sensor depthSensor = cam.GetDepthSensor();
+        Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
 
         vector<Profile> profiles = GetHighestCombination(streams);
@@ -90,7 +91,7 @@ public:
             else if (profiles[j].streamType == StreamType::IR_Stream)
             {
                 Logger::getLogger().log("IR Profile Used: " + profiles[j].GetText(), "Test");
-                depthSensor.Configure(profiles[j]);
+                irSensor.Configure(profiles[j]);
                 pR.push_back(profiles[j]);
             }
             else if (profiles[j].streamType == StreamType::Color_Stream)
@@ -102,9 +103,13 @@ public:
         }
         setCurrentProfiles(pR);
 
-        if (DepthUsed || IRUsed)
+        if (DepthUsed)
         {
             depthSensor.Start(AddFrame);
+        }
+        if (IRUsed)
+        {
+            irSensor.Start(AddFrame);
         }
         if (ColorUsed)
         {
@@ -171,10 +176,15 @@ public:
             Logger::getLogger().log("Going to sleep for the rest of the iteration duration(" + to_string(iterationDuration) + "Seconds), for: " + to_string(iterationDuration / 2 - calcDuration) + "Seconds", "Test");
             std::this_thread::sleep_for(std::chrono::seconds(iterationDuration / 2 - calcDuration));
         }
-        if (DepthUsed || IRUsed)
+        if (DepthUsed)
         {
             depthSensor.Stop();
             depthSensor.Close();
+        }
+        if (IRUsed)
+        {
+            irSensor.Stop();
+            irSensor.Close();
         }
         if (ColorUsed)
         {
@@ -196,6 +206,7 @@ TEST_F(LongTest, LongStreamTest)
     configure(3 * 60, false);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
@@ -206,6 +217,7 @@ TEST_F(LongTest, TempCaptureLongStreamTest)
     configure(3 * 60, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
