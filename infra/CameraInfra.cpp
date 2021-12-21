@@ -69,6 +69,7 @@ enum StreamType
 enum SensorType
 {
     Depth,
+    IR,
     Color
 };
 
@@ -444,6 +445,27 @@ public:
 
             Logger::getLogger().log("Init Sensor Depth Done", "Sensor");
             return dataFileOpened;
+        case SensorType::IR:
+            videoNode = { "/dev/video4" };
+            Logger::getLogger().log("Openning /dev/video4", "Sensor");
+
+            dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+
+            if (openMD)
+            {
+                Logger::getLogger().log("Openning /dev/video5", "Sensor");
+                videoNode = { "/dev/video5" };
+                metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+                // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            }
+            name = "IR Sensor";
+            dataFileOpened = dataFileDescriptor > 0;
+            metaFileOpened = metaFileDescriptor > 0;
+            isClosed = !dataFileOpened;
+
+            Logger::getLogger().log("Init Sensor IR Done", "Sensor");
+            return dataFileOpened;
 
         case SensorType::Color:
             Logger::getLogger().log("Openning /dev/video2", "Sensor");
@@ -527,6 +549,8 @@ public:
         __u32 format;
         if (type == SensorType::Depth)
             format = V4L2_PIX_FMT_Z16;
+        else if (type == SensorType::IR)
+            format = V4L2_PIX_FMT_Y8I;
         else if (type == SensorType::Color)
             format = V4L2_PIX_FMT_YUYV;
 
@@ -862,6 +886,11 @@ public:
         if (depthSensor.Init(SensorType::Depth, openMD))
             sensors.push_back(depthSensor);
 
+        //Try to add IR sensor
+        Sensor irSensor;
+        if (irSensor.Init(SensorType::IR, openMD))
+            sensors.push_back(irSensor);
+
         //Try to add Color sensor
         Sensor colorSensor;
         if (colorSensor.Init(SensorType::Color, openMD))
@@ -910,6 +939,16 @@ public:
                 return sensors[i];
         }
         throw std::runtime_error("Failed to get Depth Sensor ");
+    }
+
+    Sensor GetIRSensor()
+    {
+        for (int i = 0; i < sensors.size(); i++)
+        {
+            if (sensors[i].GetName() == "IR Sensor")
+                return sensors[i];
+        }
+        throw std::runtime_error("Failed to get IR Sensor ");
     }
 
     Sensor GetColorSensor()

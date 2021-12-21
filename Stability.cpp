@@ -125,6 +125,7 @@ public:
         // metrics.push_back(&met_md_cor);
 
         Sensor depthSensor = cam.GetDepthSensor();
+        Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
         bool DepthUsed;
         bool ColorUsed;
@@ -163,7 +164,7 @@ public:
                 else if (StreamCollection[i].streamType == StreamType::IR_Stream)
                 {
                     Logger::getLogger().log("IR Profile Used: " + StreamCollection[i].GetText(), "Test");
-                    depthSensor.Configure(StreamCollection[i]);
+                    irSensor.Configure(StreamCollection[i]);
                 }
                 else if (StreamCollection[i].streamType == StreamType::Color_Stream)
                 {
@@ -173,9 +174,13 @@ public:
             }
             long startTime = TimeUtils::getCurrentTimestamp();
             collectFrames = true;
-            if (DepthUsed || IRUsed)
+            if (DepthUsed)
             {
                 depthSensor.Start(AddFrame);
+            }
+            if (IRUsed)
+            {
+                irSensor.Start(AddFrame);
             }
             if (ColorUsed)
             {
@@ -184,10 +189,15 @@ public:
 
             std::this_thread::sleep_for(std::chrono::seconds(testDuration));
             collectFrames = false;
-            if (DepthUsed || IRUsed)
+            if (DepthUsed)
             {
                 depthSensor.Stop();
                 depthSensor.Close();
+            }
+            if (IRUsed)
+            {
+                irSensor.Stop();
+                irSensor.Close();
             }
             if (ColorUsed)
             {
@@ -232,11 +242,13 @@ TEST_F(StabilityTest, Normal)
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
+    sT.push_back(StreamTYpe::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
-    vector<StreamType> sT2;
-    sT2.push_back(StreamType::IR_Stream);
+    
+    //vector<StreamType> sT2;
+    //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
-    streams.push_back(sT2);
+    //streams.push_back(sT2);
     configure(5, 200, false);
     run(streams);
 }
@@ -246,17 +258,38 @@ TEST_F(StabilityTest, Random)
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
-    vector<StreamType> sT3;
-    sT3.push_back(StreamType::Color_Stream);
     vector<StreamType> sT2;
-    sT2.push_back(StreamType::IR_Stream);
+    sT2.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT3;
+    sT3.push_back(StreamType::IR_Stream);
     vector<StreamType> sT4;
     sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::IR_Stream);
     sT4.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT5;
+    sT5.push_back(StreamType::Depth_Stream);
+    sT5.push_back(StreamType::IR_Stream);
+    //sT5.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT6;
+    sT6.push_back(StreamType::Depth_Stream);
+    //sT6.push_back(StreamType::IR_Stream);
+    sT6.push_back(StreamType::Color_Stream);
+
+    vector<StreamType> sT7;
+    //sT7.push_back(StreamType::Depth_Stream);
+    sT7.push_back(StreamType::IR_Stream);
+    sT7.push_back(StreamType::Color_Stream);
+
+
+
     streams.push_back(sT);
     streams.push_back(sT2);
     streams.push_back(sT3);
     streams.push_back(sT4);
+    streams.push_back(sT5);
+    streams.push_back(sT6);
+    streams.push_back(sT7);
+
     configure(15, 250, true);
     run(streams);
 }
@@ -266,17 +299,35 @@ TEST_F(StabilityTest, PnpRandom)
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
-    vector<StreamType> sT3;
-    sT3.push_back(StreamType::Color_Stream);
     vector<StreamType> sT2;
-    sT2.push_back(StreamType::IR_Stream);
+    sT2.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT3;
+    sT3.push_back(StreamType::IR_Stream);
     vector<StreamType> sT4;
     sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::IR_Stream);
     sT4.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT5;
+    sT5.push_back(StreamType::Depth_Stream);
+    sT5.push_back(StreamType::IR_Stream);
+    //sT5.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT6;
+    sT6.push_back(StreamType::Depth_Stream);
+    //sT6.push_back(StreamType::IR_Stream);
+    sT6.push_back(StreamType::Color_Stream);
+
+    vector<StreamType> sT7;
+    //sT7.push_back(StreamType::Depth_Stream);
+    sT7.push_back(StreamType::IR_Stream);
+    sT7.push_back(StreamType::Color_Stream);
+
     streams.push_back(sT);
     streams.push_back(sT2);
     streams.push_back(sT3);
     streams.push_back(sT4);
+    streams.push_back(sT5);
+    streams.push_back(sT6);
+    streams.push_back(sT7);
     configure(10, 10, true);
     runWithPNP(streams);
 }
