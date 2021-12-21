@@ -113,8 +113,8 @@ public:
     {
         switch (pixelFormat)
         {
-        case V4L2_PIX_FMT_Y8I:
-            return "Y8I";
+        case V4L2_PIX_FMT_Y8:
+            return "Y8";
             break;
 
         case V4L2_PIX_FMT_Y12I:
@@ -137,9 +137,9 @@ public:
         int bpp;
         switch (pixelFormat)
         {
-        case V4L2_PIX_FMT_Y8:
-            bpp = 1;
-            break;
+        // case V4L2_PIX_FMT_Y8:
+        //     bpp = 1;
+        //     break;
 
         default:
             bpp = 2;
@@ -202,6 +202,9 @@ struct CommonMetadata
     double Gain = 0;
     double AutoExposure = 0;
     double AutoExposureMode = 0;
+    double manualExposure = 0;
+    double width = 0;
+    double height = 0;
 };
 
 struct ColorMetadata
@@ -214,10 +217,15 @@ struct ColorMetadata
     double Saturation = 0;
     double Sharpness = 0;
     double WhiteBalance = 0;
+    double LowLightCompensation = 0;
+    double PowerLineFrequency = 0;    
+    double AutoWhiteBalanceTemp = 0;
+
 };
 
 struct DepthMetadata
 {
+    double preset = 0;
     double LaserPowerMode = 0;
     double ManualLaserPower = 0;
 };
@@ -228,6 +236,44 @@ public:
     CommonMetadata commonMetadata;
     ColorMetadata colorMetadata;
     DepthMetadata depthMetadata;
+    void print_MetaData()
+    {
+        string text = "commonMetadata values:";
+        text+="frameID="+to_string(commonMetadata.frameId);
+        text+=", CRC="+to_string(commonMetadata.CRC);
+        text+=", Size="+to_string(commonMetadata.Size);
+        text+=", Timestamp="+to_string(commonMetadata.Timestamp);
+        text+=", Type="+to_string(commonMetadata.Type);
+        text+=", DataCorrectness="+to_string(commonMetadata.DataCorrectness);
+        text+=", exposureTime="+to_string(commonMetadata.exposureTime);
+        text+=", Gain="+to_string(commonMetadata.Gain);
+        text+=", AutoExposure="+to_string(commonMetadata.AutoExposure);
+        text+=", AutoExposureMode="+to_string(commonMetadata.AutoExposureMode);
+        text+=", manualExposure="+to_string(commonMetadata.manualExposure);
+        text+=", width="+to_string(commonMetadata.width);
+        text+=", height="+to_string(commonMetadata.height);
+        Logger::getLogger().log(text, LOG_INFO);
+
+        text = "DepthMetadata values:";
+        text+=", preset="+to_string(depthMetadata.preset);
+        text+=", LaserPowerMode="+to_string(depthMetadata.LaserPowerMode);
+        text+=", ManualLaserPower="+to_string(depthMetadata.ManualLaserPower);
+        Logger::getLogger().log(text, LOG_INFO);
+
+        text = "ColorMetadata values:";
+        text+=", BackLighCompensation="+to_string(colorMetadata.BackLighCompensation);
+        text+=", Brightness="+to_string(colorMetadata.Brightness);
+        text+=", Contrast="+to_string(colorMetadata.Contrast);
+        text+=", Gamma="+to_string(colorMetadata.Gamma);
+        text+=", Hue="+to_string(colorMetadata.Hue);
+        text+=", Saturation="+to_string(colorMetadata.Saturation);
+        text+=", Sharpness="+to_string(colorMetadata.Sharpness);
+        text+=", WhiteBalance="+to_string(colorMetadata.WhiteBalance);
+        text+=", LowLightCompensation="+to_string(colorMetadata.LowLightCompensation);
+        text+=", PowerLineFrequency="+to_string(colorMetadata.PowerLineFrequency);
+        text+=", AutoWhiteBalanceTemp="+to_string(colorMetadata.AutoWhiteBalanceTemp);
+        Logger::getLogger().log(text, LOG_INFO);
+    }
 
     double getMetaDataByString(string name)
     {
@@ -239,6 +285,12 @@ public:
             return commonMetadata.exposureTime;
         else if (name == "Gain")
             return commonMetadata.Gain;
+        else if (name == "width")
+            return commonMetadata.width;
+        else if (name == "height")
+            return commonMetadata.height;
+        else if (name == "preset")
+            return depthMetadata.preset;
         else if (name == "LaserPowerMode")
             return depthMetadata.LaserPowerMode;
         else if (name == "ManualLaserPower")
@@ -247,6 +299,8 @@ public:
             return commonMetadata.AutoExposure;
         else if (name == "AutoExposureMode")
             return commonMetadata.AutoExposureMode;
+        else if (name == "manualExposure")
+            return commonMetadata.manualExposure;
         else if (name == "Size")
             return commonMetadata.Size;
         else if (name == "Timestamp")
@@ -271,6 +325,13 @@ public:
             return colorMetadata.Sharpness;
         else if (name == "WhiteBalance")
             return colorMetadata.WhiteBalance;
+
+        else if (name == "LowLightCompensation")
+            return colorMetadata.LowLightCompensation;
+        else if (name == "PowerLineFrequency")
+            return colorMetadata.PowerLineFrequency;
+        else if (name == "AutoWhiteBalanceTemp")
+            return colorMetadata.AutoWhiteBalanceTemp;
 
         Logger::getLogger().log("Failed to get MetaData : " + name, LOG_ERROR);
         throw std::runtime_error("Failed to get MetaData : " + name);
@@ -451,11 +512,11 @@ public:
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-            //  if (openMD)
-            //  {
-            // videoNode = {"/dev/video3"};
-            // metaFileDescriptor = open(videoNode.c_str(), O_RDWR);
-            // }
+             if (openMD)
+             {
+            videoNode = {"/dev/video3"};
+            metaFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            }
             name = "Color Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
@@ -711,35 +772,66 @@ public:
                                                    //    cout << "FrameID: " << frame.ID << "\r" << flush;
                                                    //    cout << "FrameID: " << frame.ID << endl;
 
-                                                   Metadata md;
+                                                   Metadata md;                                                                                         
+
+
                                                    if (metaFileOpened)
                                                    {
-                                                       STMetaDataDepthYNormalMode *ptr = static_cast<STMetaDataDepthYNormalMode *>(
-                                                           metaDataBuffers[mdV4l2Buffer.index]);
-
-                                                       md.commonMetadata.Timestamp = ptr->captureStats.hwTimestamp;
-                                                       md.commonMetadata.exposureTime = ptr->captureStats.ExposureTime;
-                                                       md.commonMetadata.AutoExposureMode = ptr->intelDepthControl.autoExposureMode;
-                                                       md.commonMetadata.Gain = ptr->intelDepthControl.manualGain;
-                                                       md.commonMetadata.frameId = ptr->intelCaptureTiming.frameCounter;
-                                                       md.commonMetadata.CRC = ptr->crc32;
-                                                       // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
                                                        if (type == SensorType::Depth)
                                                        {
-                                                           md.depthMetadata.LaserPowerMode = (uint16_t)ptr->intelDepthControl.projectorMode;
-                                                           md.depthMetadata.ManualLaserPower = ptr->intelDepthControl.laserPower;
-                                                       }
+                                                            STMetaDataExtMipiDepthIR *ptr = static_cast<STMetaDataExtMipiDepthIR*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
+
+                                                            md.depthMetadata.preset = (uint16_t)ptr->preset;
+                                                            md.depthMetadata.LaserPowerMode = (uint16_t)ptr->projectorMode;
+                                                            md.depthMetadata.ManualLaserPower = ptr->laserPower;
+                                                            
+                                                            md.commonMetadata.manualExposure = ptr->manualExposure;
+                                                            md.commonMetadata.AutoExposureMode = (uint16_t)ptr->autoExposureMode;
+                                                            md.commonMetadata.Gain = (uint16_t)ptr->manualGain;
+                                                        
+                                                            //Common MD
+                                                            md.commonMetadata.Timestamp = ptr->hwTimestamp;
+                                                            md.commonMetadata.exposureTime = ptr->exposureTime;
+                                                            md.commonMetadata.width = ptr->inputWidth;
+                                                            md.commonMetadata.height = ptr->inputHeight;
+                                                            // md.commonMetadata.frameId = ptr->frameCounter;
+                                                            md.commonMetadata.CRC = ptr->crc32;
+                                                            md.commonMetadata.Type = SensorType::Depth;
+
+                                                        }
                                                        if (type == SensorType::Color)
                                                        {
-                                                           md.colorMetadata.BackLighCompensation = 0;
-                                                           md.colorMetadata.Brightness = 0;
-                                                           md.colorMetadata.Contrast = 0;
-                                                           md.colorMetadata.Gamma = 0;
-                                                           md.colorMetadata.Hue = 0;
-                                                           md.colorMetadata.Saturation = 0;
-                                                           md.colorMetadata.Sharpness = 0;
-                                                           md.colorMetadata.WhiteBalance = 0;
-                                                       }
+                                                            STMetaDataExtMipiRgb *ptr = static_cast<STMetaDataExtMipiRgb*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
+
+                                                            md.colorMetadata.BackLighCompensation = (uint16_t)ptr->backlight_Comp;
+                                                            md.colorMetadata.Brightness = (uint16_t)ptr->brightness;
+                                                            md.colorMetadata.Contrast = (uint16_t)ptr->contrast;
+                                                            md.colorMetadata.Gamma = ptr->gamma;
+                                                            md.colorMetadata.Hue = (uint16_t)ptr->hue;
+                                                            md.colorMetadata.Saturation = (uint16_t)ptr->saturation;
+                                                            md.colorMetadata.Sharpness =(uint16_t)ptr->sharpness;
+                                                            md.colorMetadata.WhiteBalance = ptr->manual_WB;                                                            
+                                                            md.colorMetadata.PowerLineFrequency = ptr->powerLineFrequency;
+                                                            md.colorMetadata.LowLightCompensation = ptr->low_Light_comp;
+                                                            md.colorMetadata.AutoWhiteBalanceTemp = ptr->auto_WB_Temp;
+
+                                                            md.commonMetadata.manualExposure = ptr->manual_Exp;
+                                                            md.commonMetadata.AutoExposureMode = (uint16_t)ptr->auto_Exp_Mode;
+                                                            md.commonMetadata.Gain = (uint16_t)ptr->gain;
+
+                                                             //Common MD
+                                                            md.commonMetadata.Timestamp = ptr->hwTimestamp;
+                                                            md.commonMetadata.exposureTime = ptr->manual_Exp;
+                                                            md.commonMetadata.width = ptr->inputWidth;
+                                                            md.commonMetadata.height = ptr->inputHeight;
+                                                            // md.commonMetadata.frameId = ptr->intelCaptureTiming.frameCounter;
+                                                            md.commonMetadata.CRC = ptr->crc32;
+                                                            md.commonMetadata.Type = SensorType::Color;
+
+                                                        }
+
+                                                    //    // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
+
                                                    }
                                                    frame.frameMD = md;
 

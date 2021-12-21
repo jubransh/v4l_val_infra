@@ -109,6 +109,8 @@ void AddFrame(Frame frame)
 {
 	if (collectFrames)
 	{
+		// if (frame.ID==10)
+		// 	frame.frameMD.print_MetaData();
 		switch (frame.streamType)
 		{
 		case StreamType::Depth_Stream:
@@ -1939,7 +1941,8 @@ public:
 			if (currColorProfile.fps != 0)
 			{
 				metrics[i]->configure(currColorProfile, colorFramesList);
-				metrics[i]->_useSystemTs = true;
+				metrics[i]->_useSystemTs = false;
+				// metrics[i]->_useSystemTs = true;
 				MetricResult r = metrics[i]->calc();
 				if (r.result == false)
 				{
