@@ -138,9 +138,9 @@ public:
         int bpp;
         switch (pixelFormat)
         {
-        // case V4L2_PIX_FMT_Y8:
-        //     bpp = 1;
-        //     break;
+        case V4L2_PIX_FMT_Y8:
+            bpp = 1;
+            break;
 
         default:
             bpp = 2;
@@ -783,7 +783,7 @@ public:
                                                    if (copyFrameData)
                                                    {
                                                        frame.Buff = (uint8_t *)malloc(V4l2Buffer.bytesused);
-                                                       memcpy(frame.Buff, &V4l2Buffer.m.userptr, V4l2Buffer.bytesused);
+                                                       memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
                                                    }
 
                                                    frame.systemTimestamp = TimeUtils::getCurrentTimestamp();
@@ -801,7 +801,7 @@ public:
 
                                                    if (metaFileOpened)
                                                    {
-                                                       if (type == SensorType::Depth)
+                                                       if (type == SensorType::Depth or type== SensorType::IR)
                                                        {
                                                             STMetaDataExtMipiDepthIR *ptr = static_cast<STMetaDataExtMipiDepthIR*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
 
@@ -820,7 +820,8 @@ public:
                                                             md.commonMetadata.height = ptr->inputHeight;
                                                             // md.commonMetadata.frameId = ptr->frameCounter;
                                                             md.commonMetadata.CRC = ptr->crc32;
-                                                            md.commonMetadata.Type = SensorType::Depth;
+
+                                                            md.commonMetadata.Type = type;
 
                                                         }
                                                        if (type == SensorType::Color)
@@ -850,7 +851,7 @@ public:
                                                             md.commonMetadata.height = ptr->inputHeight;
                                                             // md.commonMetadata.frameId = ptr->intelCaptureTiming.frameCounter;
                                                             md.commonMetadata.CRC = ptr->crc32;
-                                                            md.commonMetadata.Type = SensorType::Color;
+                                                            md.commonMetadata.Type = type;
 
                                                         }
 

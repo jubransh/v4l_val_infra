@@ -16,7 +16,6 @@
  * intellectual property rights must be express and approved by Intel in writing.
  */
 
-
 using namespace std;
 
 
@@ -45,37 +44,37 @@ void depthFrameArrived(Frame f)
 
     // frames.push_back(s);
     double currTs = f.frameMD.commonMetadata.Timestamp;
-    cout << "Depth Frame #" << f.ID << " Arrived: @ " << currTs << endl;
+    // cout << "Depth Frame #" << f.ID << " Arrived: @ " << currTs << endl;
 
     if (lastDepthTs == 0)
     {
-        cout << "curr = " << currTs << endl;
+        // cout << "curr = " << currTs << endl;
         lastDepthTs = currTs;
         return;
     }
 
     long delta = currTs - lastDepthTs;
     lastDepthTs = currTs;
-
-    cout << "Delta = " << delta << endl;
+    if (delta > 33333 * 1.05 / 2 || delta < 33333 * 0.95 / 2)
+        cout << " Depth Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << " and Frame size is:" << f.size << endl;
 }
 
 void colorFrameArrived(Frame f)
 {
     // frames.push_back(s);
     double currTs = f.hwTimestamp;
-    cout << "Color Frame #" << f.ID << " Arrived: @ " << f.hwTimestamp << endl;
+    // cout << "Color Frame #" << f.ID << " Arrived: @ " << f.hwTimestamp << endl;
     if (lastColorTs == 0)
     {
-        cout << "curr = " << currTs << endl;
+        // cout << "curr = " << currTs << endl;
         lastColorTs = currTs;
         return;
     }
 
     long delta = currTs - lastColorTs;
     lastColorTs = currTs;
-
-    cout << "Color Delta = " << delta << endl;
+    if (delta > 33333 * 1.05 || delta < 33333 * 0.95)
+        cout << " Color Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << endl;
 }
 
 // for debugging
@@ -241,6 +240,101 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << endl;
 }
 
+TEST_F(V4L2BasicTest, SaveImagesDepthStreamingExample)
+{
+    cout << "=================================================" << endl;
+    cout << "               DepthStreamingExample " << endl;
+    cout << "=================================================" << endl;
+
+    Camera cam;
+    cam.Init();
+    Sensor depthSensor = cam.GetDepthSensor();
+    depthSensor.copyFrameData = true;
+    // depthSensor.copyFrameData = true;
+
+    // Depth Configuration
+    Resolution r = {0};
+    r.width = 640;
+    r.height = 480;
+    Profile dP;
+    dP.pixelFormat = V4L2_PIX_FMT_Z16;
+    dP.resolution = r;
+    dP.fps = 60;
+    dP.streamType = StreamType::Depth_Stream;
+
+    depthSensor.Configure(dP);
+    depthSensor.Start(depthFrameArrived);
+
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+
+    depthSensor.Stop();
+    depthSensor.Close();
+}
+
+TEST_F(V4L2BasicTest, SaveImagesIRStreamingExample)
+{
+    cout << "=================================================" << endl;
+    cout << "               IRStreamingExample " << endl;
+    cout << "=================================================" << endl;
+
+    Camera cam;
+    cam.Init(false);
+    auto irSensor = cam.GetIRSensor();
+    irSensor.copyFrameData = true;
+
+    // Depth Configuration
+    Resolution r = {0};
+    r.width = 640;
+    r.height = 480;
+    Profile dP;
+    dP.pixelFormat = V4L2_PIX_FMT_Y8;
+    dP.resolution = r;
+    dP.fps = 30;
+    dP.streamType = StreamType::IR_Stream;
+
+    irSensor.Configure(dP);
+
+    irSensor.Start(depthFrameArrived);
+
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+
+    irSensor.Stop();
+
+    irSensor.Close();
+}
+
+TEST_F(V4L2BasicTest, SaveImagesColorStreamingExample)
+{
+    cout << "=================================================" << endl;
+    cout << "               ColorStreamingExample " << endl;
+    cout << "=================================================" << endl;
+
+    Camera cam;
+    cam.Init();
+    auto colorSensor = cam.GetColorSensor();
+    colorSensor.copyFrameData = true;
+
+    // Color Configuration
+    Resolution cR = {0};
+    cR.width = 640;
+    cR.height = 480;
+    Profile cP;
+    cP.pixelFormat = V4L2_PIX_FMT_YUYV;
+    cP.resolution = cR;
+    cP.fps = 30;
+    cP.streamType = StreamType::Color_Stream;
+
+    colorSensor.Configure(cP);
+
+    colorSensor.Start(colorFrameArrived);
+
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+
+    colorSensor.Stop();
+
+    colorSensor.Close();
+}
+
 TEST_F(V4L2BasicTest, DepthStreamingExample)
 {
     cout << "=================================================" << endl;
@@ -377,6 +471,76 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
     depthSensor.Close();
 }
 
+TEST_F(V4L2BasicTest, StreamTestPattern)
+{
+    cout << "=================================================" << endl;
+    cout << "         Enable Test Pattern command " << endl;
+    cout << "=================================================" << endl;
+
+    Camera cam;
+    cam.Init();
+
+    HWMonitorCommand hmc = {0};
+
+    // GPWM command
+    hmc.dataSize = 0;
+    hmc.opCode = 0x80;  // CUMSOM_CMD
+    hmc.parameter1 = 7; // Test Pattern
+    hmc.parameter2 = 1; // On
+
+    auto depthSensor = cam.GetDepthSensor();
+    auto colorSensor = cam.GetColorSensor();
+
+    // Depth Configuration
+    Resolution r = {0};
+    r.width = 640;
+    r.height = 480;
+    Profile dP;
+    dP.pixelFormat = V4L2_PIX_FMT_Z16;
+    dP.resolution = r;
+    dP.fps = 60;
+
+    // Color Configuration
+    Resolution cR = {0};
+    cR.width = 640;
+    cR.height = 480;
+    Profile cP;
+    cP.pixelFormat = V4L2_PIX_FMT_YUYV;
+    cP.resolution = cR;
+    cP.fps = 30;
+
+    depthSensor.Configure(dP);
+    // colorSensor.Configure(cP);
+
+    depthSensor.Start(depthFrameArrived);
+    // colorSensor.Start(colorFrameArrived);
+
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+    cout << "Enabled Pattern" << endl;
+    auto cResult = cam.SendHWMonitorCommand(hmc);
+
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+    hmc.parameter2 = 0; // Off
+    cout << "Disabled Pattern" << endl;
+    cResult = cam.SendHWMonitorCommand(hmc);
+
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+
+    depthSensor.Stop();
+    // colorSensor.Stop();
+
+    // colorSensor.Close();
+    depthSensor.Close();
+
+    // ASSERT_TRUE(cResult.Result);
+    // if (cResult.Result){
+    //     cout << "Test Pattern Enabled" << endl;
+    // }
+    // else{
+    //     cout << "Disabling Test Pattern Failed" << endl;
+    // }
+}
+
 TEST_F(V4L2BasicTest, EnableTestPattern)
 {
     cout << "=================================================" << endl;
@@ -390,17 +554,19 @@ TEST_F(V4L2BasicTest, EnableTestPattern)
 
     // GPWM command
     hmc.dataSize = 0;
-    hmc.opCode = 0x80;//CUMSOM_CMD
-    hmc.parameter1 = 7;//Test Pattern
-    hmc.parameter2 = 1;//On
+    hmc.opCode = 0x80;  // CUMSOM_CMD
+    hmc.parameter1 = 7; // Test Pattern
+    hmc.parameter2 = 1; // On
 
     auto cR = cam.SendHWMonitorCommand(hmc);
 
     ASSERT_TRUE(cR.Result);
-    if (cR.Result){
+    if (cR.Result)
+    {
         cout << "Test Pattern Enabled" << endl;
     }
-    else{
+    else
+    {
         cout << "Disabling Test Pattern Failed" << endl;
     }
 }
@@ -418,20 +584,21 @@ TEST_F(V4L2BasicTest, DisableTestPattern)
 
     // GPWM command
     hmc.dataSize = 0;
-    hmc.opCode = 0x80;//CUMSOM_CMD
-    hmc.parameter1 = 7;//Test Pattern
-    hmc.parameter2 = 0;//On
+    hmc.opCode = 0x80;  // CUMSOM_CMD
+    hmc.parameter1 = 7; // Test Pattern
+    hmc.parameter2 = 0; // On
 
     auto cR = cam.SendHWMonitorCommand(hmc);
 
     ASSERT_TRUE(cR.Result);
-    if (cR.Result){
+    if (cR.Result)
+    {
         cout << "Test Pattern Disabled" << endl;
     }
-    else{
+    else
+    {
         cout << "Disabling Test Pattern Failed" << endl;
     }
-
 }
 
 TEST_F(V4L2BasicTest, StartStopTestPattern)
@@ -447,37 +614,39 @@ TEST_F(V4L2BasicTest, StartStopTestPattern)
 
     // GPWM command
     hmc.dataSize = 0;
-    hmc.opCode = 0x80;//CUMSOM_CMD
-    hmc.parameter1 = 7;//Test Pattern
-
+    hmc.opCode = 0x80;  // CUMSOM_CMD
+    hmc.parameter1 = 7; // Test Pattern
 
     CommandResult cR;
 
-    for(int i=0; i<10; i++){
-        hmc.parameter2 = 1;//On
+    for (int i = 0; i < 10; i++)
+    {
+        hmc.parameter2 = 1; // On
         cR = cam.SendHWMonitorCommand(hmc);
 
         // ASSERT_TRUE(cR.Result);
-        if (cR.Result){
+        if (cR.Result)
+        {
             cout << "Test Pattern Disabled" << endl;
         }
-        else{
+        else
+        {
             cout << "Disabling Test Pattern Failed" << endl;
         }
-
 
         cout << "Waiting 1 second" << endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-
-        hmc.parameter2 = 0;//Off
+        hmc.parameter2 = 0; // Off
         cR = cam.SendHWMonitorCommand(hmc);
 
         // ASSERT_TRUE(cR.Result);
-        if (cR.Result){
+        if (cR.Result)
+        {
             cout << "Test Pattern Disabled" << endl;
         }
-        else{
+        else
+        {
             cout << "Disabling Test Pattern Failed" << endl;
         }
     }
@@ -496,13 +665,13 @@ TEST_F(V4L2BasicTest, GVD)
 
     // GVD command
     hmc.dataSize = 0;
-    hmc.opCode = 0x10;//GVD
+    hmc.opCode = 0x10; // GVD
 
     auto cR = cam.SendHWMonitorCommand(hmc);
 
     ASSERT_TRUE(cR.Result);
-    if (cR.Result){
+    if (cR.Result)
+    {
         cout << "GVD" << endl;
     }
-
 }

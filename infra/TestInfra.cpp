@@ -1238,11 +1238,19 @@ public:
 		int numberOfcorruptFrames = 0;
 		double expectedFrameSize = _profile.GetSize();
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
+		bool once=false;
 		for (int i = 0; i < _frames.size(); i++)
 		{
 
 			if (_frames[i].size != expectedFrameSize)
-				numberOfcorruptFrames++;
+				{
+					numberOfcorruptFrames++;
+					if (once==false)
+					{
+						Logger::getLogger().log("Frame Size: "+to_string(_frames[i].size)+" || Expected Frame size: "+to_string(expectedFrameSize));
+						once = true;
+					}
+				}
 		}
 		MetricResult r;
 		double percentage = ((numberOfcorruptFrames / _frames.size())) * 100.0;

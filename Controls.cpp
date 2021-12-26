@@ -462,7 +462,7 @@ public:
         cntrl = ControlsGenerator::get_control_conf(controlName);
 
         Sensor depthSensor = cam.GetDepthSensor();
-        Sensor irSensor = cam.GetIRSenSor();
+        Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
 
         bool DepthUsed = false;

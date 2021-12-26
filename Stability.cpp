@@ -242,7 +242,7 @@ TEST_F(StabilityTest, Normal)
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
-    sT.push_back(StreamTYpe::IR_Stream);
+    sT.push_back(StreamType::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
     
     //vector<StreamType> sT2;
