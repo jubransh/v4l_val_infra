@@ -32,6 +32,10 @@ private:
     vector<string> ir;
     vector<string> color;
     vector<string> depth_color;
+    vector<string> ir_color;
+    vector<string> depth_ir;
+    vector<string> depth_ir_color;
+
 
     Profile ParseProfile(std::string profileStr)
     {
@@ -233,6 +237,35 @@ public:
         // color.push_back("yuyv_1280x800_15");
         color.push_back("yuyv_1280x800_30");
 
+//============ Depth +IR =================
+        // depth_ir.push_back("z16_424x240_15+y8_424x240_15");
+        depth_ir.push_back("z16_424x240_30+y8_424x240_30");
+        depth_ir.push_back("z16_424x240_60+y8_424x240_60");
+        depth_ir.push_back("z16_424x240_90+y8_424x240_90");
+
+        // depth_ir.push_back("z16_480x270_15+y8_480x270_15");
+        depth_ir.push_back("z16_480x270_30+y8_480x270_30");
+        depth_ir.push_back("z16_480x270_60+y8_480x270_60");
+        depth_ir.push_back("z16_480x270_90+y8_480x270_90");
+
+        // depth_ir.push_back("z16_640x360_15+y8_640x360_15");
+        depth_ir.push_back("z16_640x360_30+y8_640x360_30");
+        depth_ir.push_back("z16_640x360_60+y8_640x360_60");
+        depth_ir.push_back("z16_640x360_90+y8_640x360_90");
+
+        // depth_ir.push_back("z16_640x480_15+y8_640x480_15");
+        depth_ir.push_back("z16_640x480_30+y8_640x480_30");
+        depth_ir.push_back("z16_640x480_60+y8_640x480_60");
+        depth_ir.push_back("z16_640x480_90+y8_640x480_90");
+
+        // depth_ir.push_back("z16_848x480_15+y8_848x480_15");
+        depth_ir.push_back("z16_848x480_30+y8_848x480_30");
+        depth_ir.push_back("z16_848x480_60+y8_848x480_60");
+        depth_ir.push_back("z16_848x480_90+y8_848x480_90");
+
+        // depth_ir.push_back("z16_1280x720_15+y8_1280x720_15");
+        depth_ir.push_back("z16_1280x720_30+y8_1280x720_30");
+
         //============ Depth + Color =================
         // depth_color.push_back("z16_424x240_15+yuyv_424x240_15");
         depth_color.push_back("z16_424x240_30+yuyv_424x240_30");
@@ -247,6 +280,36 @@ public:
 
         // depth_color.push_back("z16_1280x720_15+yuyv_1280x720_15");
         depth_color.push_back("z16_1280x720_30+yuyv_1280x720_30");
+
+        //============ IR + Color =================
+        // ir_color.push_back("y8_424x240_15+yuyv_424x240_15");
+        ir_color.push_back("y8_424x240_30+yuyv_424x240_30");
+        ir_color.push_back("y8_424x240_60+yuyv_424x240_60");
+        ir_color.push_back("y8_424x240_90+yuyv_424x240_90");
+
+
+        // ir_color.push_back("y8_640x480_15+yuyv_640x480_15");
+        ir_color.push_back("y8_640x480_30+yuyv_640x480_30");
+        ir_color.push_back("y8_640x480_60+yuyv_640x480_60");
+        ir_color.push_back("y8_640x480_90+yuyv_640x480_90");
+
+        // ir_color.push_back("y8_1280x720_15+yuyv_1280x720_15");
+        ir_color.push_back("y8_1280x720_30+yuyv_1280x720_30");
+
+        //============ Depth _ IR + Color =================
+        // depth_ir_color.push_back("z16_424x240_15+y8_424x240_15+yuyv_424x240_15");
+        depth_ir_color.push_back("z16_424x240_30+y8_424x240_30+yuyv_424x240_30");
+        depth_ir_color.push_back("z16_424x240_60+y8_424x240_60+yuyv_424x240_60");
+        depth_ir_color.push_back("z16_424x240_90+y8_424x240_90+yuyv_424x240_90");
+
+
+        // depth_ir_color.push_back("z16_640x480_15+y8_640x480_15+yuyv_640x480_15");
+        depth_ir_color.push_back("z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
+        depth_ir_color.push_back("z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
+        depth_ir_color.push_back("z16_640x480_90+y8_640x480_90+yuyv_640x480_90");
+
+        // depth_ir_color.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15");
+        depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
 
     }
 
@@ -278,10 +341,22 @@ public:
             {
                 return ParseProfilesFromVector(depth_color);
             }
+            else if (findInVector(StreamType::IR_Stream, streamTypes) && findInVector(StreamType::Color_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(ir_color);
+            }
+            else if (findInVector(StreamType::IR_Stream, streamTypes) && findInVector(StreamType::Depth_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(depth_ir);
+            }
             break;
         }
         case 3:
         {
+            if (findInVector(StreamType::Depth_Stream, streamTypes) && findInVector(StreamType::IR_Stream, streamTypes) && findInVector(StreamType::Color_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(depth_ir_color);
+            }
             break;
         }
         default: break;

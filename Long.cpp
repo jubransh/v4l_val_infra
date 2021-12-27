@@ -102,7 +102,10 @@ public:
             }
         }
         setCurrentProfiles(pR);
-
+        if (ColorUsed)
+        {
+            colorSensor.Start(AddFrame);
+        }
         if (DepthUsed)
         {
             depthSensor.Start(AddFrame);
@@ -111,10 +114,7 @@ public:
         {
             irSensor.Start(AddFrame);
         }
-        if (ColorUsed)
-        {
-            colorSensor.Start(AddFrame);
-        }
+        
 
         int Iterations = testDuration / iterationDuration;
         for (int j = 0; j < Iterations; j++)

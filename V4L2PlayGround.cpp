@@ -43,7 +43,7 @@ void depthFrameArrived(Frame f)
 {
 
     // frames.push_back(s);
-    double currTs = f.frameMD.commonMetadata.Timestamp;
+    double currTs = f.systemTimestamp;
     // cout << "Depth Frame #" << f.ID << " Arrived: @ " << currTs << endl;
 
     if (lastDepthTs == 0)
@@ -55,14 +55,34 @@ void depthFrameArrived(Frame f)
 
     long delta = currTs - lastDepthTs;
     lastDepthTs = currTs;
-    if (delta > 33333 * 1.05 / 2 || delta < 33333 * 0.95 / 2)
+    // if (delta > 33333 * 1.05 / 2 || delta < 33333 * 0.95 / 2)
         cout << " Depth Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << " and Frame size is:" << f.size << endl;
+}
+
+void irFrameArrived(Frame f)
+{
+
+    // frames.push_back(s);
+    double currTs = f.systemTimestamp;
+    // cout << "Depth Frame #" << f.ID << " Arrived: @ " << currTs << endl;
+
+    if (lastDepthTs == 0)
+    {
+        // cout << "curr = " << currTs << endl;
+        lastDepthTs = currTs;
+        return;
+    }
+
+    long delta = currTs - lastDepthTs;
+    lastDepthTs = currTs;
+    // if (delta > 33333 * 1.05 / 2 || delta < 33333 * 0.95 / 2)
+        cout << " IR Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << " and Frame size is:" << f.size << endl;
 }
 
 void colorFrameArrived(Frame f)
 {
     // frames.push_back(s);
-    double currTs = f.hwTimestamp;
+    double currTs = f.systemTimestamp;
     // cout << "Color Frame #" << f.ID << " Arrived: @ " << f.hwTimestamp << endl;
     if (lastColorTs == 0)
     {
@@ -73,7 +93,7 @@ void colorFrameArrived(Frame f)
 
     long delta = currTs - lastColorTs;
     lastColorTs = currTs;
-    if (delta > 33333 * 1.05 || delta < 33333 * 0.95)
+    // if (delta > 33333 * 1.05 || delta < 33333 * 0.95)
         cout << " Color Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << endl;
 }
 
@@ -435,8 +455,10 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
 
     Camera cam;
     cam.Init();
+    // cam.Init(false);
     auto depthSensor = cam.GetDepthSensor();
     auto colorSensor = cam.GetColorSensor();
+    auto irSensor = cam.GetIRSensor();
 
     // Depth Configuration
     Resolution r = {0};
@@ -446,6 +468,15 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
     dP.pixelFormat = V4L2_PIX_FMT_Z16;
     dP.resolution = r;
     dP.fps = 30;
+
+    // ir Configuration
+    Resolution IRr = {0};
+    IRr.width = 640;
+    IRr.height = 480;
+    Profile iP;
+    iP.pixelFormat = V4L2_PIX_FMT_Y8;
+    iP.resolution = r;
+    iP.fps = 30; 
 
     // Color Configuration
     Resolution cR = {0};
@@ -458,16 +489,22 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
 
     depthSensor.Configure(dP);
     colorSensor.Configure(cP);
+    irSensor.Configure(iP);
+
+    // colorSensor.Start(colorFrameArrived);
 
     depthSensor.Start(depthFrameArrived);
+    irSensor.Start(irFrameArrived);
     colorSensor.Start(colorFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
     depthSensor.Stop();
+    irSensor.Stop();
     colorSensor.Stop();
 
     colorSensor.Close();
+    irSensor.Close();
     depthSensor.Close();
 }
 

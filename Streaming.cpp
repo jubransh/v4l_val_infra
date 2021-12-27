@@ -106,6 +106,10 @@ public:
 
             long startTime = TimeUtils::getCurrentTimestamp();
             collectFrames=true;
+            if (ColorUsed)
+            {   
+                colorSensor.Start(AddFrame);
+            }
             if (DepthUsed)
             {
                 depthSensor.Start(AddFrame);
@@ -114,10 +118,7 @@ public:
             {
                 irSensor.Start(AddFrame);
             }
-            if (ColorUsed)
-            {   
-                colorSensor.Start(AddFrame);
-            }
+
 
             long startTime2 = TimeUtils::getCurrentTimestamp();
             std::this_thread::sleep_for(std::chrono::seconds(testDuration));
