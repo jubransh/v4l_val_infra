@@ -75,6 +75,8 @@ public:
     }
     void run(StreamType stream, string controlName)
     {
+        try
+        {
         string name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
         Logger::getLogger().log("               " + name + " Controls while Streaming Test ", "Test", LOG_INFO);
@@ -197,6 +199,9 @@ public:
                     Logger::getLogger().log("Setting color exposure value " + (string)(res ? "Passed" : "Failed"), "Test");
                 }
             }
+
+            Logger::getLogger().log("Sleeping for 3 seconds", "Test");
+            std::this_thread::sleep_for(std::chrono::seconds(3));
             pR.clear();
             if (stream == StreamType::Depth_Stream)
             {
@@ -316,6 +321,11 @@ public:
             //         text= text+", ";
             // }
             Logger::getLogger().log(failedIterations, "Run");
+        }
+        }
+        catch(...)
+        {
+            Logger::getLogger().log("Exeption cought", "Run", LOG_ERROR);
         }
 
         ASSERT_TRUE(testStatus);

@@ -219,9 +219,8 @@ struct ColorMetadata
     double Sharpness = 0;
     double WhiteBalance = 0;
     double LowLightCompensation = 0;
-    double PowerLineFrequency = 0;    
+    double PowerLineFrequency = 0;
     double AutoWhiteBalanceTemp = 0;
-
 };
 
 struct DepthMetadata
@@ -240,39 +239,39 @@ public:
     void print_MetaData()
     {
         string text = "commonMetadata values:";
-        text+="frameID="+to_string(commonMetadata.frameId);
-        text+=", CRC="+to_string(commonMetadata.CRC);
-        text+=", Size="+to_string(commonMetadata.Size);
-        text+=", Timestamp="+to_string(commonMetadata.Timestamp);
-        text+=", Type="+to_string(commonMetadata.Type);
-        text+=", DataCorrectness="+to_string(commonMetadata.DataCorrectness);
-        text+=", exposureTime="+to_string(commonMetadata.exposureTime);
-        text+=", Gain="+to_string(commonMetadata.Gain);
-        text+=", AutoExposure="+to_string(commonMetadata.AutoExposure);
-        text+=", AutoExposureMode="+to_string(commonMetadata.AutoExposureMode);
-        text+=", manualExposure="+to_string(commonMetadata.manualExposure);
-        text+=", width="+to_string(commonMetadata.width);
-        text+=", height="+to_string(commonMetadata.height);
+        text += "frameID=" + to_string(commonMetadata.frameId);
+        text += ", CRC=" + to_string(commonMetadata.CRC);
+        text += ", Size=" + to_string(commonMetadata.Size);
+        text += ", Timestamp=" + to_string(commonMetadata.Timestamp);
+        text += ", Type=" + to_string(commonMetadata.Type);
+        text += ", DataCorrectness=" + to_string(commonMetadata.DataCorrectness);
+        text += ", exposureTime=" + to_string(commonMetadata.exposureTime);
+        text += ", Gain=" + to_string(commonMetadata.Gain);
+        text += ", AutoExposure=" + to_string(commonMetadata.AutoExposure);
+        text += ", AutoExposureMode=" + to_string(commonMetadata.AutoExposureMode);
+        text += ", manualExposure=" + to_string(commonMetadata.manualExposure);
+        text += ", width=" + to_string(commonMetadata.width);
+        text += ", height=" + to_string(commonMetadata.height);
         Logger::getLogger().log(text, LOG_INFO);
 
         text = "DepthMetadata values:";
-        text+=", preset="+to_string(depthMetadata.preset);
-        text+=", LaserPowerMode="+to_string(depthMetadata.LaserPowerMode);
-        text+=", ManualLaserPower="+to_string(depthMetadata.ManualLaserPower);
+        text += ", preset=" + to_string(depthMetadata.preset);
+        text += ", LaserPowerMode=" + to_string(depthMetadata.LaserPowerMode);
+        text += ", ManualLaserPower=" + to_string(depthMetadata.ManualLaserPower);
         Logger::getLogger().log(text, LOG_INFO);
 
         text = "ColorMetadata values:";
-        text+=", BackLighCompensation="+to_string(colorMetadata.BackLighCompensation);
-        text+=", Brightness="+to_string(colorMetadata.Brightness);
-        text+=", Contrast="+to_string(colorMetadata.Contrast);
-        text+=", Gamma="+to_string(colorMetadata.Gamma);
-        text+=", Hue="+to_string(colorMetadata.Hue);
-        text+=", Saturation="+to_string(colorMetadata.Saturation);
-        text+=", Sharpness="+to_string(colorMetadata.Sharpness);
-        text+=", WhiteBalance="+to_string(colorMetadata.WhiteBalance);
-        text+=", LowLightCompensation="+to_string(colorMetadata.LowLightCompensation);
-        text+=", PowerLineFrequency="+to_string(colorMetadata.PowerLineFrequency);
-        text+=", AutoWhiteBalanceTemp="+to_string(colorMetadata.AutoWhiteBalanceTemp);
+        text += ", BackLighCompensation=" + to_string(colorMetadata.BackLighCompensation);
+        text += ", Brightness=" + to_string(colorMetadata.Brightness);
+        text += ", Contrast=" + to_string(colorMetadata.Contrast);
+        text += ", Gamma=" + to_string(colorMetadata.Gamma);
+        text += ", Hue=" + to_string(colorMetadata.Hue);
+        text += ", Saturation=" + to_string(colorMetadata.Saturation);
+        text += ", Sharpness=" + to_string(colorMetadata.Sharpness);
+        text += ", WhiteBalance=" + to_string(colorMetadata.WhiteBalance);
+        text += ", LowLightCompensation=" + to_string(colorMetadata.LowLightCompensation);
+        text += ", PowerLineFrequency=" + to_string(colorMetadata.PowerLineFrequency);
+        text += ", AutoWhiteBalanceTemp=" + to_string(colorMetadata.AutoWhiteBalanceTemp);
         Logger::getLogger().log(text, LOG_INFO);
     }
 
@@ -378,13 +377,12 @@ private:
         int result = -1;
         bool isDone = false;
 
-        //thread open_thread(open, __path,__oflag);
+        // thread open_thread(open, __path,__oflag);
         thread open_thread([&]()
                            {
                                result = open(__path, __oflag);
                                Logger::getLogger().log("Open Sensor Succeeded");
-                               isDone = true;
-                           });
+                               isDone = true; });
 
         tm[t_name] = open_thread.native_handle();
         open_thread.detach();
@@ -398,7 +396,7 @@ private:
             delta += t2 - t1;
             if (delta > timeput_ms)
             {
-                //Kill the open thread
+                // Kill the open thread
                 Logger::getLogger().log("Open Sensor Stuck for more than " + to_string(timeput_ms) + "ms - Task killed", "Sensor");
                 ThreadMap::const_iterator it = tm.find(t_name);
                 if (it != tm.end())
@@ -486,6 +484,7 @@ public:
         switch (sT)
         {
         case SensorType::Depth:
+        {
             videoNode = {"/dev/video0"};
             Logger::getLogger().log("Openning /dev/video0", "Sensor");
 
@@ -506,8 +505,10 @@ public:
 
             Logger::getLogger().log("Init Sensor Depth Done", "Sensor");
             return dataFileOpened;
+        }
         case SensorType::IR:
-            videoNode = { "/dev/video4" };
+        {
+            videoNode = {"/dev/video4"};
             Logger::getLogger().log("Openning /dev/video4", "Sensor");
 
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
@@ -516,7 +517,7 @@ public:
             if (openMD)
             {
                 Logger::getLogger().log("Openning /dev/video5", "Sensor");
-                videoNode = { "/dev/video5" };
+                videoNode = {"/dev/video5"};
                 metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
                 // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
             }
@@ -527,27 +528,31 @@ public:
 
             Logger::getLogger().log("Init Sensor IR Done", "Sensor");
             return dataFileOpened;
+        }
 
         case SensorType::Color:
+        {
             Logger::getLogger().log("Openning /dev/video2", "Sensor");
             videoNode = {"/dev/video2"};
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-             if (openMD)
-             {
-            videoNode = {"/dev/video3"};
-            metaFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            if (openMD)
+            {
+                Logger::getLogger().log("Openning /dev/video", "Sensor");
+                videoNode = {"/dev/video3"};
+                metaFileDescriptor = open(videoNode.c_str(), O_RDWR);
             }
             name = "Color Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
             isClosed = !dataFileOpened;
 
-            Logger::getLogger().log("Init Sensor Color Done", "Sensor");
+            Logger::getLogger().log("Init Sensor Color Done Sensor");
             return dataFileOpened;
         }
-        return false;
+            return false;
+        }
     }
 
     double GetControl(__u32 controlId)
@@ -654,7 +659,7 @@ public:
         // Set Stream profile
         struct v4l2_format sFormat = {0};
         sFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        //sFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_Z16;
+        // sFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_Z16;
         sFormat.fmt.pix.pixelformat = p.pixelFormat;
         sFormat.fmt.pix.width = p.resolution.width;
         sFormat.fmt.pix.height = p.resolution.height;
@@ -666,7 +671,7 @@ public:
         }
         lastProfile = p;
 
-        //Set the fps
+        // Set the fps
         struct v4l2_streamparm setFps
         {
             0
@@ -722,8 +727,8 @@ public:
                                                // VIDIOC_STREAMON
                                                if (ioctl(dataFileDescriptor, VIDIOC_STREAMON, &vType) != 0)
                                                {
-                                                   Logger::getLogger().log("Stream VIDIOC_STREAMON Filed", "Sensor", LOG_ERROR);
-                                                   throw std::runtime_error("Failed to Start stream\n");
+                                                   Logger::getLogger().log("Stream VIDIOC_STREAMON Failed - "+name, "Sensor", LOG_ERROR);
+                                                   throw std::runtime_error("Failed to Start stream - "+name+"\n");
                                                }
                                                else
                                                {
@@ -735,7 +740,7 @@ public:
                                                    if (ioctl(metaFileDescriptor, VIDIOC_STREAMON, &mdType) != 0)
                                                    {
                                                        Logger::getLogger().log("Stream VIDIOC_STREAMON Failed", "Sensor", LOG_ERROR);
-                                                       throw std::runtime_error("Failed to Start MD stream\n");
+                                                       throw std::runtime_error("Failed to Start MD stream - "+name+"\n");
                                                    }
                                                    else
                                                    {
@@ -784,6 +789,9 @@ public:
                                                    {
                                                        frame.Buff = (uint8_t *)malloc(V4l2Buffer.bytesused);
                                                        memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
+                                                    // int image_size = lastProfile.GetSize();
+                                                    //    frame.Buff = (uint8_t *)malloc(image_size);
+                                                    //    memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], image_size);
                                                    }
 
                                                    frame.systemTimestamp = TimeUtils::getCurrentTimestamp();
@@ -791,6 +799,7 @@ public:
                                                    //frame.streamType = V4l2Buffer.type;
                                                    frame.streamType = lastProfile.streamType;
                                                    frame.size = V4l2Buffer.bytesused;
+                                                //    frame.size = lastProfile.GetSize();
                                                    frame.hwTimestamp = V4l2Buffer.timestamp.tv_usec;
 
                                                    //    cout << "FrameID: " << frame.ID << "\r" << flush;
@@ -803,6 +812,13 @@ public:
                                                    {
                                                        if (type == SensorType::Depth or type== SensorType::IR)
                                                        {
+
+                                                        //    if(type == SensorType::IR)
+                                                        //    {
+                                                        //     string res = ((V4l2Buffer.sequence - (mdV4l2Buffer.index+ 1)) % 8 == 0)? "Ok" : "Bad"; 
+                                                        //     cout << "MD ID of " << type << ": " << mdV4l2Buffer.index <<"  - Frame ID: "<< V4l2Buffer.sequence << "\t\t->" << res << endl;
+                                                        //    }
+
                                                             STMetaDataExtMipiDepthIR *ptr = static_cast<STMetaDataExtMipiDepthIR*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
 
                                                             md.depthMetadata.preset = (uint16_t)ptr->preset;
@@ -875,18 +891,17 @@ public:
                                                }
                                                //    cout << endl;
                                                cameraBusy = false;
-                                               Logger::getLogger().log("Stream Thread terminated", "Sensor");
-                                           });
+                                               Logger::getLogger().log("Stream Thread terminated", "Sensor"); });
     }
 
     void Stop()
     {
         stopRequested = true;
 
-        //wait for the start thread to be terminated
+        // wait for the start thread to be terminated
         _t->join();
 
-        //Unmap Buffers
+        // Unmap Buffers
         Logger::getLogger().log("unmapping buffers", "Sensor");
         for (int i = 0; i < framesBuffer.size(); i++)
         {
@@ -904,7 +919,7 @@ public:
 
     void Close()
     {
-        //Close only the opened file descriptors
+        // Close only the opened file descriptors
         if (dataFileOpened)
         {
             close(dataFileDescriptor);
@@ -945,11 +960,11 @@ private:
             parts[j] = hexStr.substr(i, 2);
         }
 
-        //generate the new int string (grouped)
+        // generate the new int string (grouped)
         std::stringstream version;
         for (int i = 0; i < groupCount; i++)
         {
-            //parse the str to int
+            // parse the str to int
             int tmp;
             std::stringstream ss;
             ss << std::hex << parts[i];
@@ -974,17 +989,17 @@ public:
     {
         Logger::getLogger().log("Initializing camera sensors", "Camera");
         sensors.clear();
-        //Try to add depth sensor
+        // Try to add depth sensor
         Sensor depthSensor;
         if (depthSensor.Init(SensorType::Depth, openMD))
             sensors.push_back(depthSensor);
 
-        //Try to add IR sensor
+        // Try to add IR sensor
         Sensor irSensor;
         if (irSensor.Init(SensorType::IR, openMD))
             sensors.push_back(irSensor);
 
-        //Try to add Color sensor
+        // Try to add Color sensor
         Sensor colorSensor;
         if (colorSensor.Init(SensorType::Color, openMD))
         {
@@ -1058,11 +1073,11 @@ public:
     {
         CommandResult cR;
 
-        //preapare the depth sensor where the HWMonitor command should be run with
+        // preapare the depth sensor where the HWMonitor command should be run with
         auto depthSensor = GetDepthSensor();
         int fd = depthSensor.GetFileDescriptor();
 
-        //init the byte array of the hwmc
+        // init the byte array of the hwmc
         int buffSize = 1028;
         uint8_t hwmc[buffSize]{0};
 
@@ -1092,31 +1107,31 @@ public:
         commandStruct.params[2] = hmc.parameter3;
         commandStruct.params[3] = hmc.parameter4;
 
-        //prepare the buffer which should include the returned data
+        // prepare the buffer which should include the returned data
         uint8_t tempReturnedData[buffSize - (sizeof(struct HWMC) + 4)]{0};
 
         memcpy(hwmc, &commandStruct, sizeof(struct HWMC));
 
-        //if command includes data, copy the data which receive by the function as a parameter to the hwmc
+        // if command includes data, copy the data which receive by the function as a parameter to the hwmc
         if (hmc.dataSize > 0)
         {
             memcpy(hwmc + sizeof(struct HWMC), &commandStruct + sizeof(struct HWMC), hmc.dataSize);
         }
 
-        //send the HWMonitor command and make sure that the ioctl is successfull
+        // send the HWMonitor command and make sure that the ioctl is successfull
         if (0 != ioctl(fd, VIDIOC_S_EXT_CTRLS, &ext))
         {
             cR.Result = false;
             return cR;
         }
 
-        //Check if command succeeded by making sure the returned opcode is equal to the sent one
+        // Check if command succeeded by making sure the returned opcode is equal to the sent one
         if (commandStruct.opcode == *(hwmc + sizeof(struct HWMC)))
         {
             cR.Result = true;
             memcpy(tempReturnedData, hwmc + sizeof(struct HWMC) + 4, sizeof(tempReturnedData));
 
-            //parse the array to vector
+            // parse the array to vector
             for (int i = 0; i < sizeof(tempReturnedData); i++)
             {
                 cR.Data.push_back(tempReturnedData[i]);
@@ -1164,7 +1179,7 @@ public:
             throw std::runtime_error("Failed to get Projector temperature from Camera");
         }
     }
-    //For debugging
+    // For debugging
     void PrintBytes(uint8_t buff[], int len)
     {
 
