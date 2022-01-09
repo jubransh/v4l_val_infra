@@ -539,7 +539,7 @@ public:
 
             if (openMD)
             {
-                Logger::getLogger().log("Openning /dev/video", "Sensor");
+                Logger::getLogger().log("Openning /dev/video3", "Sensor");
                 videoNode = {"/dev/video3"};
                 metaFileDescriptor = open(videoNode.c_str(), O_RDWR);
             }
@@ -548,7 +548,7 @@ public:
             metaFileOpened = metaFileDescriptor > 0;
             isClosed = !dataFileOpened;
 
-            Logger::getLogger().log("Init Sensor Color Done Sensor");
+            Logger::getLogger().log("Init Sensor Color Done","Sensor");
             return dataFileOpened;
         }
             return false;

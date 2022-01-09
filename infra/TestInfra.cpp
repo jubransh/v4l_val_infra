@@ -12,7 +12,6 @@ using namespace std;
 #include <thread>
 #include "pg.cpp"
 #include "cg.cpp"
-// #include "FrameAnalyzer.cpp"
 
 #include <iostream>
 #include <string>
@@ -31,9 +30,6 @@ vector<float> memSamples;
 double memoryBaseLine = 0;
 vector<float> asicSamples;
 vector<float> projectorSamples;
-FrameAnalyzer fa;
-bool isContentTest = false;
-
 
 bool stringIsInVector(string str, vector<string> vect)
 {
@@ -118,63 +114,12 @@ void AddFrame(Frame frame)
 		switch (frame.streamType)
 		{
 		case StreamType::Depth_Stream:
-			if (isContentTest)
-			{
-				AnalayzerFrame af;
-				Frame f;
-				f.size = frame.size;
-				f.ID = frame.ID;
-				f.Buff = frame.Buff;
-				f.streamType = frame.streamType;
-				f.hwTimestamp = frame.hwTimestamp;
-				f.systemTimestamp = frame.systemTimestamp;
-				af.frame = f;
-				af.fps = currDepthProfile.fps;
-				af.pixelFormat = currDepthProfile.GetFormatText();
-				af.width = currDepthProfile.resolution.width;
-				af.height = currDepthProfile.resolution.height;
-				fa.collect_depth_frame(af);
-			}
 			depthFramesList.push_back(frame);
 			break;
 		case StreamType::IR_Stream:
-			if (isContentTest)
-			{
-				AnalayzerFrame af;
-				Frame f;
-				f.size = frame.size;
-				f.ID = frame.ID;
-				f.Buff = frame.Buff;
-				f.streamType = frame.streamType;
-				f.hwTimestamp = frame.hwTimestamp;
-				f.systemTimestamp = frame.systemTimestamp;
-				af.frame = f;
-				af.fps = currIRProfile.fps;
-				af.pixelFormat = currIRProfile.GetFormatText();
-				af.width = currIRProfile.resolution.width;
-				af.height = currIRProfile.resolution.height;
-				fa.collect_infrared_frame(af);
-			}
 			irFramesList.push_back(frame);
 			break;
 		case StreamType::Color_Stream:
-			if (isContentTest)
-			{
-				AnalayzerFrame af;
-				Frame f;
-				f.size = frame.size;
-				f.ID = frame.ID;
-				f.Buff = frame.Buff;
-				f.streamType = frame.streamType;
-				f.hwTimestamp = frame.hwTimestamp;
-				f.systemTimestamp = frame.systemTimestamp;
-				af.frame = f;
-				af.fps = currColorProfile.fps;
-				af.pixelFormat = currColorProfile.GetFormatText();
-				af.width = currColorProfile.resolution.width;
-				af.height = currColorProfile.resolution.height;
-				fa.collect_color_frame(af);
-			}
 			colorFramesList.push_back(frame);
 			break;
 		default:
