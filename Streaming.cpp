@@ -53,6 +53,7 @@ public:
 
 
         Sensor depthSensor = cam.GetDepthSensor();
+        Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
 
         vector<vector<Profile>> profiles = GetProfiles(streams);
@@ -91,7 +92,7 @@ public:
                 else if (profiles[j][i].streamType==StreamType::IR_Stream)
                 {
                     Logger::getLogger().log("IR Profile Used: " + profiles[j][i].GetText(), "Test");
-                    depthSensor.Configure(profiles[j][i]);
+                    irSensor.Configure(profiles[j][i]);
                     pR.push_back(profiles[j][i]);
                 }
                 else if (profiles[j][i].streamType==StreamType::Color_Stream)
@@ -105,23 +106,33 @@ public:
 
             long startTime = TimeUtils::getCurrentTimestamp();
             collectFrames=true;
-            if (DepthUsed || IRUsed)
-            {
-                depthSensor.Start(AddFrame);
-            }
             if (ColorUsed)
             {   
                 colorSensor.Start(AddFrame);
             }
+            if (DepthUsed)
+            {
+                depthSensor.Start(AddFrame);
+            }
+            if (IRUsed)
+            {
+                irSensor.Start(AddFrame);
+            }
+
 
             long startTime2 = TimeUtils::getCurrentTimestamp();
             std::this_thread::sleep_for(std::chrono::seconds(testDuration));
 
             collectFrames=false;
-            if (DepthUsed || IRUsed)
+            if (DepthUsed)
             {
                 depthSensor.Stop();
                 depthSensor.Close();
+            }
+            if (IRUsed)
+            {
+                irSensor.Stop();
+                irSensor.Close();
             }
             if (ColorUsed)
             {
@@ -187,6 +198,14 @@ TEST_F(StreamingTest, ColorStreamingTest)
     streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
+TEST_F(StreamingTest, DepthIRtreamingTest)
+{
+    configure(10);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Depth_Stream);
+    run(streams);
+}
 TEST_F(StreamingTest, DepthColorStreamingTest)
 {
     configure(10);
@@ -195,6 +214,50 @@ TEST_F(StreamingTest, DepthColorStreamingTest)
     streams.push_back(StreamType::Depth_Stream);
     run(streams);
 }
+TEST_F(StreamingTest, IRColorStreamingTest)
+{
+    configure(10);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    run(streams);
+}
+TEST_F(StreamingTest, DepthIRColorStreamingTest)
+{
+    configure(10);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    run(streams);
+}
+
+/*
+TEST_F(StreamingTest, ResetTest)
+{
+    Logger::getLogger().log("Reset Test", "Main", LOG_INFO);
+    cout << "=================================================" << endl;
+    cout << "               Reset Test " << endl;
+    cout << "=================================================" << endl;
+
+    Camera cam;
+    cam.Init();
+
+    HWMonitorCommand hmc = {0};
+
+    // Read command (frb)
+    hmc.dataSize = 0;
+    hmc.opCode = 0x20;
+    auto cR = cam.SendHWMonitorCommand(hmc);
+
+    ASSERT_TRUE(cR.Result);
+    if (cR.Result)
+        cout << "Reset Done" << endl;
+    else
+        cout << "Reset Failed" << endl;
+
+
+}*/
 
 // TEST_F(StreamingTest, Test)
 // {
