@@ -125,6 +125,7 @@ public:
         // metrics.push_back(&met_md_cor);
 
         Sensor depthSensor = cam.GetDepthSensor();
+        Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
         bool DepthUsed;
         bool ColorUsed;
@@ -163,7 +164,7 @@ public:
                 else if (StreamCollection[i].streamType == StreamType::IR_Stream)
                 {
                     Logger::getLogger().log("IR Profile Used: " + StreamCollection[i].GetText(), "Test");
-                    depthSensor.Configure(StreamCollection[i]);
+                    irSensor.Configure(StreamCollection[i]);
                 }
                 else if (StreamCollection[i].streamType == StreamType::Color_Stream)
                 {
@@ -173,21 +174,31 @@ public:
             }
             long startTime = TimeUtils::getCurrentTimestamp();
             collectFrames = true;
-            if (DepthUsed || IRUsed)
-            {
-                depthSensor.Start(AddFrame);
-            }
             if (ColorUsed)
             {
                 colorSensor.Start(AddFrame);
             }
+            if (DepthUsed)
+            {
+                depthSensor.Start(AddFrame);
+            }
+            if (IRUsed)
+            {
+                irSensor.Start(AddFrame);
+            }
+            
 
             std::this_thread::sleep_for(std::chrono::seconds(testDuration));
             collectFrames = false;
-            if (DepthUsed || IRUsed)
+            if (DepthUsed)
             {
                 depthSensor.Stop();
                 depthSensor.Close();
+            }
+            if (IRUsed)
+            {
+                irSensor.Stop();
+                irSensor.Close();
             }
             if (ColorUsed)
             {
@@ -232,12 +243,14 @@ TEST_F(StabilityTest, Normal)
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
+    sT.push_back(StreamType::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
-    vector<StreamType> sT2;
-    sT2.push_back(StreamType::IR_Stream);
+    
+    //vector<StreamType> sT2;
+    //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
-    streams.push_back(sT2);
-    configure(5, 200, false);
+    //streams.push_back(sT2);
+    configure(15, 250, false);
     run(streams);
 }
 
@@ -246,17 +259,38 @@ TEST_F(StabilityTest, Random)
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
-    vector<StreamType> sT3;
-    sT3.push_back(StreamType::Color_Stream);
     vector<StreamType> sT2;
-    sT2.push_back(StreamType::IR_Stream);
+    sT2.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT3;
+    sT3.push_back(StreamType::IR_Stream);
     vector<StreamType> sT4;
     sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::IR_Stream);
     sT4.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT5;
+    sT5.push_back(StreamType::Depth_Stream);
+    sT5.push_back(StreamType::IR_Stream);
+    //sT5.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT6;
+    sT6.push_back(StreamType::Depth_Stream);
+    //sT6.push_back(StreamType::IR_Stream);
+    sT6.push_back(StreamType::Color_Stream);
+
+    vector<StreamType> sT7;
+    //sT7.push_back(StreamType::Depth_Stream);
+    sT7.push_back(StreamType::IR_Stream);
+    sT7.push_back(StreamType::Color_Stream);
+
+
+
     streams.push_back(sT);
     streams.push_back(sT2);
     streams.push_back(sT3);
     streams.push_back(sT4);
+    streams.push_back(sT5);
+    streams.push_back(sT6);
+    streams.push_back(sT7);
+
     configure(15, 250, true);
     run(streams);
 }
@@ -266,80 +300,98 @@ TEST_F(StabilityTest, PnpRandom)
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
-    vector<StreamType> sT3;
-    sT3.push_back(StreamType::Color_Stream);
     vector<StreamType> sT2;
-    sT2.push_back(StreamType::IR_Stream);
+    sT2.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT3;
+    sT3.push_back(StreamType::IR_Stream);
     vector<StreamType> sT4;
     sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::IR_Stream);
     sT4.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT5;
+    sT5.push_back(StreamType::Depth_Stream);
+    sT5.push_back(StreamType::IR_Stream);
+    //sT5.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT6;
+    sT6.push_back(StreamType::Depth_Stream);
+    //sT6.push_back(StreamType::IR_Stream);
+    sT6.push_back(StreamType::Color_Stream);
+
+    vector<StreamType> sT7;
+    //sT7.push_back(StreamType::Depth_Stream);
+    sT7.push_back(StreamType::IR_Stream);
+    sT7.push_back(StreamType::Color_Stream);
+
     streams.push_back(sT);
     streams.push_back(sT2);
     streams.push_back(sT3);
     streams.push_back(sT4);
-    configure(10, 10, true);
+    streams.push_back(sT5);
+    streams.push_back(sT6);
+    streams.push_back(sT7);
+    configure(15, 250, true);
     runWithPNP(streams);
 }
-TEST_F(StabilityTest, Test)
-{
-    // configure(5);
-    vector<vector<StreamType>> streams;
-    vector<StreamType> sT;
-    sT.push_back(StreamType::Depth_Stream);
-    sT.push_back(StreamType::Color_Stream);
-    streams.push_back(sT);
-    vector<Profile> stream = getRandomProfile(streams);
-    SequentialFrameDropsMetric met_seq;
-    FramesArrivedMetric met_arrived;
-    FirstFrameDelayMetric met_delay;
-    FpsValidityMetric met_fps;
-    FrameSizeMetric met_frame_size;
-    FrameDropIntervalMetric met_drop_interval;
-    FrameDropsPercentageMetric met_drop_percent;
-    IDCorrectnessMetric met_id_cor;
-    // MetaDataCorrectnessMetric met_md_cor;
+// TEST_F(StabilityTest, Test)
+// {
+//     // configure(5);
+//     vector<vector<StreamType>> streams;
+//     vector<StreamType> sT;
+//     sT.push_back(StreamType::Depth_Stream);
+//     sT.push_back(StreamType::Color_Stream);
+//     streams.push_back(sT);
+//     vector<Profile> stream = getRandomProfile(streams);
+//     SequentialFrameDropsMetric met_seq;
+//     FramesArrivedMetric met_arrived;
+//     FirstFrameDelayMetric met_delay;
+//     FpsValidityMetric met_fps;
+//     FrameSizeMetric met_frame_size;
+//     FrameDropIntervalMetric met_drop_interval;
+//     FrameDropsPercentageMetric met_drop_percent;
+//     IDCorrectnessMetric met_id_cor;
+//     // MetaDataCorrectnessMetric met_md_cor;
 
-    metrics.push_back(&met_seq);
-    metrics.push_back(&met_arrived);
-    metrics.push_back(&met_drop_interval);
-    metrics.push_back(&met_drop_percent);
-    metrics.push_back(&met_delay);
-    metrics.push_back(&met_fps);
-    metrics.push_back(&met_frame_size);
-    metrics.push_back(&met_id_cor);
-    // metrics.push_back(&met_md_cor);
+//     metrics.push_back(&met_seq);
+//     metrics.push_back(&met_arrived);
+//     metrics.push_back(&met_drop_interval);
+//     metrics.push_back(&met_drop_percent);
+//     metrics.push_back(&met_delay);
+//     metrics.push_back(&met_fps);
+//     metrics.push_back(&met_frame_size);
+//     metrics.push_back(&met_id_cor);
+//     // metrics.push_back(&met_md_cor);
 
-    Sensor depthSensor = cam.GetDepthSensor();
-    Sensor colorSensor = cam.GetColorSensor();
-    for (int i = 0; i < 3; i++)
-    {
-        initFrameLists();
-        setCurrentProfiles(stream);
-        depthSensor.Configure(stream[0]);
-        colorSensor.Configure(stream[1]);
-        long startTime = TimeUtils::getCurrentTimestamp();
-        depthSensor.Start(AddFrame);
-        colorSensor.Start(AddFrame);
-        std::this_thread::sleep_for(std::chrono::seconds(3));
-        depthSensor.Stop();
-        depthSensor.Close();
-        colorSensor.Stop();
-        colorSensor.Close();
+//     Sensor depthSensor = cam.GetDepthSensor();
+//     Sensor colorSensor = cam.GetColorSensor();
+//     for (int i = 0; i < 3; i++)
+//     {
+//         initFrameLists();
+//         setCurrentProfiles(stream);
+//         depthSensor.Configure(stream[0]);
+//         colorSensor.Configure(stream[1]);
+//         long startTime = TimeUtils::getCurrentTimestamp();
+//         depthSensor.Start(AddFrame);
+//         colorSensor.Start(AddFrame);
+//         std::this_thread::sleep_for(std::chrono::seconds(3));
+//         depthSensor.Stop();
+//         depthSensor.Close();
+//         colorSensor.Stop();
+//         colorSensor.Close();
 
-        met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
-        met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, 3);
-        met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(), startTime);
-        met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
-        met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
-        met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
-        met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
-        met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
-        // met_md_cor.setParams(1);
-        bool result = CalcMetrics(i);
-        // if (!result)
-        // {
-        //     testStatus = false;
-        //     failedIterations+= to_string(i)+", ";
-        // }
-    }
-}
+//         met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
+//         met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, 3);
+//         met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(), startTime);
+//         met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
+//         met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
+//         met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
+//         met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
+//         met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
+//         // met_md_cor.setParams(1);
+//         bool result = CalcMetrics(i);
+//         // if (!result)
+//         // {
+//         //     testStatus = false;
+//         //     failedIterations+= to_string(i)+", ";
+//         // }
+//     }
+// }
