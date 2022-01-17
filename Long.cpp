@@ -23,15 +23,21 @@ class LongTest : public TestBase
 {
 public:
     bool _captureTempWhileStream;
+    bool _isContent;
     LongTest()
     {
         isPNPtest = true;
     }
-    void configure(int StreamDuration, bool captureTempWhileStream)
+    void configure(int StreamDuration, bool captureTempWhileStream, bool isContent = false)
     {
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
         _captureTempWhileStream = captureTempWhileStream;
+
+        if (isContent)
+            Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
+        _isContent = isContent;
+        isContentTest = isContent;
     }
     void run(vector<StreamType> streams)
     {
@@ -61,6 +67,13 @@ public:
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
+
+        if (_isContent)
+        {
+            depthSensor.copyFrameData = true;
+            irSensor.copyFrameData = true;
+            colorSensor.copyFrameData = true;
+        }
 
         vector<Profile> profiles = GetHighestCombination(streams);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
@@ -114,11 +127,15 @@ public:
         {
             irSensor.Start(AddFrame);
         }
-        
 
         int Iterations = testDuration / iterationDuration;
         for (int j = 0; j < Iterations; j++)
         {
+            if (_isContent)
+            {
+                fa.configure(FileUtils::join(testBasePath, name), 10, 15);
+                fa.start_collection();
+            }
             Logger::getLogger().log("Started Iteration: " + to_string(j), "Test");
             initFrameLists();
             initSamplesList();
@@ -143,6 +160,13 @@ public:
             }
 
             collectFrames = false;
+
+            if (_isContent)
+            {
+                fa.stop_collection();
+                fa.save_results();
+            }
+
             Logger::getLogger().log("Stopping PNP measurements", "Test");
             sysMon2.StopMeasurment();
             if (!_captureTempWhileStream)
@@ -207,6 +231,17 @@ TEST_F(LongTest, LongStreamTest)
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Color_Stream);
+    // IgnorePNPMetric("CPU Consumption");
+    run(streams);
+}
+
+TEST_F(LongTest, ContentLongStreamTest)
+{
+    configure(1 * 60 * 60, false, true);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    // streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
