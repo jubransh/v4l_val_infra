@@ -13,8 +13,24 @@ using namespace std;
 #include "pg.cpp"
 #include "cg.cpp"
 
+#include <unistd.h>
+#include <limits.h>
+
 #include <iostream>
 #include <string>
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h> /* for strncpy */
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+
+
 #include <sys/stat.h> // stat
 #include <errno.h>	  // errno, ENOENT, EEXIST
 #if defined(_WIN32)
@@ -31,6 +47,65 @@ double memoryBaseLine = 0;
 vector<float> asicSamples;
 vector<float> projectorSamples;
 
+string exec(const char *cmd)
+{
+    array<char, 128> buffer;
+    string result;
+    unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe)
+    {
+        throw runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+    {
+        result += buffer.data();
+    }
+    return result;
+}
+
+
+string getDriverVersion()
+{
+	string command = "modinfo d4xx";
+    string str = exec(command.c_str());
+    std::string delimiter = "\n";
+    //Skip the first line
+    str = str.substr(str.find(delimiter) + 1, str.length());
+
+    //keep only the first line
+    str = str.substr(0, str.find(delimiter));
+    //Skip the "version:"
+    auto nextIndex = str.find(" ");
+    str = str.substr(nextIndex, str.length());
+
+    //navigate to the total (nummeric value) and skip the spaces
+    while (str.find(" ") == 0)
+    {
+        str = str.substr(1, str.length());
+    }
+	return str;
+}
+
+string gethostIP()
+{
+ int fd;
+ struct ifreq ifr;
+
+ fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+ /* I want to get an IPv4 IP address */
+ ifr.ifr_addr.sa_family = AF_INET;
+
+ /* I want IP address attached to "eth0" */
+ strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+
+ ioctl(fd, SIOCGIFADDR, &ifr);
+
+ close(fd);
+
+ return inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+
+}
 bool stringIsInVector(string str, vector<string> vect)
 {
 	for (int i = 0; i < vect.size(); i++)
@@ -127,7 +202,6 @@ void AddFrame(Frame frame)
 		}
 	}
 }
-
 
 class MetricDefaultTolerances
 {
@@ -299,6 +373,7 @@ class MetricResult
 public:
 	string remarks;
 	bool result;
+	string value;
 	vector<string> getRemarksStrings()
 	{
 		vector<string> result;
@@ -318,6 +393,7 @@ public:
 	string remarks;
 	bool result;
 	float min, max, average, tolerance;
+	string value;
 	vector<string> getRemarksStrings()
 	{
 		vector<string> result;
@@ -390,6 +466,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(average);
 		return r;
 	}
 };
@@ -440,6 +517,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(average);
 		return r;
 	}
 };
@@ -491,6 +569,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(average);
 		return r;
 	}
 };
@@ -541,6 +620,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(average);
 		return r;
 	}
 };
@@ -629,6 +709,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(firstFrameDelay);
 		return r;
 	}
 };
@@ -740,6 +821,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(maxDrops);
 		return r;
 	}
 };
@@ -901,6 +983,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(actualDelta / expectedDelta);
 		return r;
 	}
 };
@@ -1008,6 +1091,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(100.0 * totalFramesDropped / expectedFrames);
 		return r;
 	}
 };
@@ -1088,6 +1172,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(percentage);
 		return r;
 	}
 };
@@ -1211,6 +1296,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(averageDelta);
 		return r;
 	}
 };
@@ -1239,19 +1325,19 @@ public:
 		int numberOfcorruptFrames = 0;
 		double expectedFrameSize = _profile.GetSize();
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
-		bool once=false;
+		bool once = false;
 		for (int i = 0; i < _frames.size(); i++)
 		{
 
 			if (_frames[i].size != expectedFrameSize)
+			{
+				numberOfcorruptFrames++;
+				if (once == false)
 				{
-					numberOfcorruptFrames++;
-					if (once==false)
-					{
-						Logger::getLogger().log("Frame Size: "+to_string(_frames[i].size)+" || Expected Frame size: "+to_string(expectedFrameSize));
-						once = true;
-					}
+					Logger::getLogger().log("Frame Size: " + to_string(_frames[i].size) + " || Expected Frame size: " + to_string(expectedFrameSize));
+					once = true;
 				}
+			}
 		}
 		MetricResult r;
 		double percentage = ((numberOfcorruptFrames / _frames.size())) * 100.0;
@@ -1267,6 +1353,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(numberOfcorruptFrames);
 		return r;
 	}
 };
@@ -1393,6 +1480,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(numberOfReset + numberOfduplicate + numberOfNegative + numberOfInvalid);
 		return r;
 	}
 };
@@ -1494,6 +1582,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(actualFrames);
 		return r;
 	}
 };
@@ -1547,6 +1636,7 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
+		r.value = to_string(numberOfcorruptFrames);
 		return r;
 	}
 };
@@ -1555,8 +1645,16 @@ class TestBase : public testing::Test
 {
 public:
 	string name;
+	string suiteName="";
+	string hostname;
+	string IPaddress;
+	string DriverVersion;
+	int iterations=0;
+	int failediter=0;
+
 	ofstream resultCsv;
 	ofstream rawDataCsv;
+	ofstream iterationCsv;
 	ofstream pnpCsv;
 	bool isPNPtest = false;
 	bool testStatus = true;
@@ -1571,10 +1669,12 @@ public:
 	Camera cam;
 	void SetUp() override
 	{
+
 		memoryBaseLine = 0;
 		// testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
 		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+		suiteName = ::testing::UnitTest::GetInstance()->current_test_case()-> name();
 
 		// Creating test folder
 		string testPath = FileUtils::join(testBasePath, name);
@@ -1596,6 +1696,18 @@ public:
 			throw std::runtime_error("Cannot open file: " + rawDataPath);
 		}
 		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+
+		// Creating iteration Summary data csv file
+		Logger::getLogger().log("Creating iteration Summary CSV file", "Setup()", LOG_INFO);
+		string iterationSummaryPath = FileUtils::join(testPath, "iteration_summary.csv");
+		iterationCsv.open(iterationSummaryPath, std::ios_base::app);
+		if (iterationCsv.fail())
+		{
+			Logger::getLogger().log("Cannot open iteration Summary file: " + iterationSummaryPath, LOG_ERROR);
+			throw std::runtime_error("Cannot open file: " + iterationSummaryPath);
+		}
+		iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+
 		if (isPNPtest)
 		{
 			Logger::getLogger().log("Creating PNP data CSV file", "Setup()", LOG_INFO);
@@ -1612,12 +1724,27 @@ public:
 		Logger::getLogger().log("Creating iteartions results CSV file", "Setup()", LOG_INFO);
 		string resultPath = FileUtils::join(testPath, "result.csv");
 		resultCsv.open(resultPath, std::ios_base::app);
-		if (rawDataCsv.fail())
+		if (resultCsv.fail())
 		{
 			Logger::getLogger().log("Cannot open result file: " + resultPath, LOG_ERROR);
 			throw std::runtime_error("Cannot open file: " + resultPath);
 		}
 		resultCsv << "Iteration,Stream Combination,Stream Duration,Tested Stream,Metric name,Metric status,Remarks,Iteration status" << endl;
+
+		// update Host name
+		char temp_hostname[HOST_NAME_MAX];
+		gethostname(temp_hostname, HOST_NAME_MAX);
+		hostname = temp_hostname;
+		// hostname = "testPC";
+
+		//update IP address (still not impelemnted
+		IPaddress = gethostIP();
+
+		//get DriverVersion
+		DriverVersion = getDriverVersion();
+		Logger::getLogger().log("Host Name: " + hostname, "Setup()");
+		Logger::getLogger().log("Host IP: " + IPaddress, "Setup()");
+		Logger::getLogger().log("Driver version: " + DriverVersion, "Setup()");
 		Logger::getLogger().log("Initializing camera", "Setup()");
 		cam.Init();
 		Logger::getLogger().log("Camera Serial:" + cam.GetSerialNumber(), "Setup()");
@@ -1633,6 +1760,8 @@ public:
 		resultCsv.close();
 		Logger::getLogger().log("Closing raw data CSV file", "TearDown()", LOG_INFO);
 		rawDataCsv.close();
+		Logger::getLogger().log("Closing iteartions results CSV file", "TearDown()", LOG_INFO);
+		iterationCsv.close();
 
 		string TestsResultsPath = FileUtils::join(testBasePath, "tests_results.csv");
 		ofstream TestsResults;
@@ -1640,12 +1769,26 @@ public:
 		if (!is_tests_res_created)
 		{
 			is_tests_res_created = true;
-			TestsResults << "Test name" << "," << "Test status" << endl;
+			TestsResults << "SID"
+						 << ","
+						 << "Test name"
+						 << ","
+						 << "Test Suite"
+						 << ","
+						 << "Test status" 
+						 <<","
+						 << "Total iterations#"
+						 <<","
+						 <<"Failed Iterations#"
+						 <<","
+						 <<"Pass rate"<< endl;
 		}
 		if (testStatus)
-			TestsResults << name << "," << "Pass" << endl;
+			TestsResults << sid <<"," << name << "," << suiteName<<","
+						 << "Pass,"<<iterations<<","<<failediter<<","<<to_string(100*double(iterations-failediter)/iterations) << endl;
 		else
-			TestsResults << name << "," << "Fail" << endl;
+			TestsResults << sid <<"," << name << "," << suiteName<<","
+						 << "Fail,"<<iterations<<","<<failediter<<","<<to_string(100*double(iterations-failediter)/iterations) << endl;
 
 		Logger::getLogger().log("Closing Log file", "TearDown()", LOG_INFO);
 		Logger::getLogger().close();
@@ -1709,6 +1852,23 @@ public:
 		catch (const std::exception &e)
 		{
 			Logger::getLogger().log("Failed to write to RawData file");
+			return false;
+		}
+	}
+
+	bool AppendIterationSummaryCVS(string rawDataLine)
+	{
+		// data structure example:
+		//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+
+		try
+		{
+			iterationCsv << rawDataLine << endl;
+			return true;
+		}
+		catch (const std::exception &e)
+		{
+			Logger::getLogger().log("Failed to write to Iteration summary file");
 			return false;
 		}
 	}
@@ -1872,6 +2032,19 @@ public:
 		iterationResults.clear();
 		vector<string> failedMetrics;
 		failedMetrics.clear();
+		string streams = "";
+		if (currDepthProfile.fps != 0)
+			streams+="Depth";
+		if (currIRProfile.fps != 0)
+			if (streams=="")
+				streams+="IR";
+			else
+				streams+="+IR";
+		if (currColorProfile.fps != 0)
+			if (streams=="")
+				streams+="Color";
+			else
+				streams+="+Color";
 		// update the result csv
 		for (int i = 0; i < pnpMetrics.size(); i++)
 		{
@@ -1903,6 +2076,16 @@ public:
 			rawline += to_string(iteration) + "," + pnpMetrics[i]->_metricName + "," + to_string(r.average) + "," + to_string(r.max) + "," + to_string(r.min) + "," + to_string(r.tolerance);
 
 			AppendPNPDataCVS(rawline);
+			rawline = "";
+			//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+			rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
+							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						   ",PNP, " + pnpMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+
+			AppendIterationSummaryCVS(rawline);
 		}
 		for (int i = 0; i < metrics.size(); i++)
 		{
@@ -1925,6 +2108,16 @@ public:
 				}
 				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
+
+				rawline = "";
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
+							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						   ",Depth, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+				AppendIterationSummaryCVS(rawline);
 			}
 
 			if (currIRProfile.fps != 0)
@@ -1946,6 +2139,16 @@ public:
 				}
 				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
+
+				rawline = "";
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
+							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						   ",IR, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+				AppendIterationSummaryCVS(rawline);
 			}
 			if (currColorProfile.fps != 0)
 			{
@@ -1967,6 +2170,16 @@ public:
 				}
 				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
+
+				rawline = "";
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
+							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						   ",Color, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+				AppendIterationSummaryCVS(rawline);
 			}
 		}
 
@@ -1984,7 +2197,7 @@ public:
 			{
 				rawline = "";
 				rawline += to_string(iteration) + ",\"" + streamComb + "\",Depth," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "x" +
-						   to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(depthFramesList[i].ID) + "," + to_string(depthFramesList[i].hwTimestamp) +  "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(depthFramesList[i].systemTimestamp);
+						   to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(depthFramesList[i].ID) + "," + to_string(depthFramesList[i].hwTimestamp) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(depthFramesList[i].systemTimestamp);
 				AppendRAwDataCVS(rawline);
 			}
 		}
@@ -1995,7 +2208,7 @@ public:
 			{
 				rawline = "";
 				rawline += to_string(iteration) + ",\"" + streamComb + "\",IR," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "x" +
-						   to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(irFramesList[i].ID)  + "," + to_string(irFramesList[i].hwTimestamp)+ "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(irFramesList[i].systemTimestamp);
+						   to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(irFramesList[i].ID) + "," + to_string(irFramesList[i].hwTimestamp) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(irFramesList[i].systemTimestamp);
 
 				AppendRAwDataCVS(rawline);
 			}
@@ -2007,13 +2220,15 @@ public:
 			{
 				rawline = "";
 				rawline += to_string(iteration) + ",\"" + streamComb + "\",Color," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "x" +
-						   to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID)  + "," + to_string(colorFramesList[i].hwTimestamp)+ "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp);
+						   to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].hwTimestamp) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp);
 
 				AppendRAwDataCVS(rawline);
 			}
 		}
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + " Summary", "Test");
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + ":[" + iterationStatus + "]", "Test");
+		iterations+=1;
+
 		if (iterationStatus == "Pass")
 			return true;
 		else
@@ -2022,6 +2237,7 @@ public:
 			{
 				Logger::getLogger().log(failedMetrics[i], "Test");
 			}
+			failediter+=1;
 			return false;
 		}
 	}
