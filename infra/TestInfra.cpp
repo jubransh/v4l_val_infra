@@ -206,7 +206,8 @@ void AddFrame(Frame frame)
 class MetricDefaultTolerances
 {
 private:
-	static const int tolerance_FirstFrameDelay = 1000;
+	static const int tolerance_FirstFrameDelay_high = 1000;
+	static const int tolerance_FirstFrameDelay_low = 3000;
 	static const int tolerance_SequentialFrameDrops = 2;
 	static const int tolerance_FrameDropInterval = 1; // Tolerance is always 1 hard coded - what changes is the interval
 	static const int tolerance_FrameDropsPercentage = 5;
@@ -240,7 +241,19 @@ public:
 	}
 	static int get_tolerance_FirstFrameDelay()
 	{
-		return tolerance_FirstFrameDelay;
+		
+		// if fps==0, that means that this profile is not used .
+		if (currColorProfile.fps!= 0 && currColorProfile.fps!=5 && currColorProfile.fps!=15) 
+			return tolerance_FirstFrameDelay_high;
+
+		else if (currDepthProfile.fps!= 0 && currDepthProfile.fps!=5 && currDepthProfile.fps!=15)
+			return tolerance_FirstFrameDelay_high;
+
+		else if (currIRProfile.fps!= 0 && currIRProfile.fps!=5 && currIRProfile.fps!=15)
+			return tolerance_FirstFrameDelay_high;
+
+		else
+			return tolerance_FirstFrameDelay_low;
 	}
 	static int get_tolerance_SequentialFrameDrops()
 	{
