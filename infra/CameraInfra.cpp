@@ -381,7 +381,7 @@ private:
         thread open_thread([&]()
                            {
                                result = open(__path, __oflag);
-                               Logger::getLogger().log("Open Sensor Succeeded");
+                               Logger::getLogger().log("Open Sensor Succeeded", "Sensor");
                                isDone = true; });
 
         tm[t_name] = open_thread.native_handle();
@@ -548,7 +548,7 @@ public:
             metaFileOpened = metaFileDescriptor > 0;
             isClosed = !dataFileOpened;
 
-            Logger::getLogger().log("Init Sensor Color Done","Sensor");
+            Logger::getLogger().log("Init Sensor Color Done", "Sensor");
             return dataFileOpened;
         }
             return false;
@@ -616,7 +616,7 @@ public:
         if (type == SensorType::Depth)
             format = V4L2_PIX_FMT_Z16;
         else if (type == SensorType::IR)
-            format = V4L2_PIX_FMT_Y8I;
+            format = V4L2_PIX_FMT_Y8;
         else if (type == SensorType::Color)
             format = V4L2_PIX_FMT_YUYV;
 
@@ -751,7 +751,7 @@ public:
                                                long buffIndex = 0;
                                                while (!stopRequested)
                                                {
-                                                   struct v4l2_buffer V4l2Buffer
+                                                    struct v4l2_buffer V4l2Buffer
                                                    {
                                                        0
                                                    };
@@ -769,18 +769,17 @@ public:
                                                    //V4l2Buffer.m.userptr = (unsigned long long) framesBuffer[V4l2Buffer.index];
 
                                                    //Read the frame buff freom the V4L //#TODO timeout mechanism
-                                                   int ret = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer);
-                                                   ret = ioctl(metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer);
-
-                                                   //cout << "index = " << V4l2Buffer.index << endl;
-                                                   //memcpy(frame.Buff, V4l2Buffer.m.userptr[V4l2Buffer.index].buff, framesBuffer[V4l2Buffer.index].lenght);
-                                                   //  cout << "Index " << V4l2Buffer.index << endl;
-                                                   //    int outfd = open("/home/nvidia/out.img", O_RDWR);
-                                                   //    uint8_t *newBuffer =  (uint8_t *)framesBuffer[0];
-                                                   //    write(outfd, newBuffer, V4l2Buffer.bytesused);
-                                                   // cout<<"wite doneeeeeeeeeeeeeeeeeeeeeeeeeeeeee" << newBuffer << endl;
-                                                   // close(outfd);
-
+                                                   int res = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer);
+                                                   if(res != 0)
+                                                        Logger::getLogger().log(name + " Frame VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor");
+                                                   
+                                                   if (metaFileOpened)
+                                                   {
+                                                        res = ioctl(metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer);
+                                                        if(res != 0)
+                                                            Logger::getLogger().log(name + " MD VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor");
+                                                   }
+                                            
                                                    //Prepare the new Frame
                                                    Frame frame;
 
@@ -789,21 +788,13 @@ public:
                                                    {
                                                        frame.Buff = (uint8_t *)malloc(V4l2Buffer.bytesused);
                                                        memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
-                                                    // int image_size = lastProfile.GetSize();
-                                                    //    frame.Buff = (uint8_t *)malloc(image_size);
-                                                    //    memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], image_size);
                                                    }
 
                                                    frame.systemTimestamp = TimeUtils::getCurrentTimestamp();
                                                    frame.ID = V4l2Buffer.sequence;
-                                                   //frame.streamType = V4l2Buffer.type;
                                                    frame.streamType = lastProfile.streamType;
                                                    frame.size = V4l2Buffer.bytesused;
-                                                //    frame.size = lastProfile.GetSize();
                                                    frame.hwTimestamp = V4l2Buffer.timestamp.tv_usec;
-
-                                                   //    cout << "FrameID: " << frame.ID << "\r" << flush;
-                                                   //    cout << "FrameID: " << frame.ID << endl;
 
                                                    Metadata md;                                                                                         
 
@@ -812,13 +803,6 @@ public:
                                                    {
                                                        if (type == SensorType::Depth or type== SensorType::IR)
                                                        {
-
-                                                        //    if(type == SensorType::IR)
-                                                        //    {
-                                                        //     string res = ((V4l2Buffer.sequence - (mdV4l2Buffer.index+ 1)) % 8 == 0)? "Ok" : "Bad"; 
-                                                        //     cout << "MD ID of " << type << ": " << mdV4l2Buffer.index <<"  - Frame ID: "<< V4l2Buffer.sequence << "\t\t->" << res << endl;
-                                                        //    }
-
                                                             STMetaDataExtMipiDepthIR *ptr = static_cast<STMetaDataExtMipiDepthIR*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
 
                                                             md.depthMetadata.preset = (uint16_t)ptr->preset;
@@ -865,7 +849,6 @@ public:
                                                             md.commonMetadata.exposureTime = ptr->manual_Exp;
                                                             md.commonMetadata.width = ptr->inputWidth;
                                                             md.commonMetadata.height = ptr->inputHeight;
-                                                            // md.commonMetadata.frameId = ptr->intelCaptureTiming.frameCounter;
                                                             md.commonMetadata.CRC = ptr->crc32;
                                                             md.commonMetadata.Type = type;
 
@@ -884,7 +867,7 @@ public:
                                                    {
                                                        free(frame.Buff);
                                                    }
-
+                                                    
                                                    //Return the buffer to the V4L
                                                    ioctl(dataFileDescriptor, VIDIOC_QBUF, &V4l2Buffer);
                                                    ioctl(metaFileDescriptor, VIDIOC_QBUF, &mdV4l2Buffer);
@@ -909,12 +892,25 @@ public:
             munmap(metaDataBuffers[i], 4096);
         }
         Logger::getLogger().log("unmapping buffers Done", "Sensor");
-
+        
         // VIDIOC_STREAMOFF
         Logger::getLogger().log("Stopping Streaming", "Sensor");
         int ret = ioctl(dataFileDescriptor, VIDIOC_STREAMOFF, &vType);
-        ret = ioctl(metaFileDescriptor, VIDIOC_STREAMOFF, &mdType);
-        Logger::getLogger().log("Streaming stopped", "Sensor");
+        if(ret == 0)
+            Logger::getLogger().log(name + " - Streaming stopped", "Sensor");
+        else
+            Logger::getLogger().log("Failed to Stop " + name + " Streaming with return value of " + to_string(ret), "Sensor");
+
+
+        if (metaFileOpened)
+        {
+            ret = ioctl(metaFileDescriptor, VIDIOC_STREAMOFF, &mdType);
+            if(ret == 0)
+                Logger::getLogger().log(name + " - MD stopped", "Sensor");
+            else
+                Logger::getLogger().log("Failed to Stop " + name + " MD with return value of " + to_string(ret), "Sensor");
+
+        }
     }
 
     void Close()
@@ -1032,27 +1028,6 @@ public:
 
         fwVersion = uintToVersion(fwVersion_uint);
         //=================================================================
-        // get Serial number
-
-            HWMonitorCommand hmc = {0};
-
-        // GVD command
-        hmc.dataSize = 0;
-        hmc.opCode = 0x10; // GVD
-
-        auto cR = SendHWMonitorCommand(hmc);
-        if (cR.Result)
-        {
-            stringstream ss;
-            ss << std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[48]) << std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[49]) << std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[50])<<std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[51])<< std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[52])<< std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[53])<< endl;
-            serial =  ss.str();
-            serial.erase(std::remove(serial.begin(), serial.end(), '\n'), serial.end());
-        }
-        else
-        {
-            throw std::runtime_error("Failed to Read Serial number");
-        }
-
     }
 
     vector<Sensor> GetSensors()
