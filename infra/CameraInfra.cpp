@@ -1027,6 +1027,28 @@ public:
             throw std::runtime_error("Failed to Read FW Version");
 
         fwVersion = uintToVersion(fwVersion_uint);
+               
+        // get Serial number
+
+        HWMonitorCommand hmc = {0};
+
+        // GVD command
+        hmc.dataSize = 0;
+        hmc.opCode = 0x10; // GVD
+
+        auto cR = SendHWMonitorCommand(hmc);
+        if (cR.Result)
+        {
+            stringstream ss;
+            ss << std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[48]) << std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[49]) << std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[50])<<std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[51])<< std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[52])<< std::hex<< setfill('0') << setw(2)<< unsigned(cR.Data[53])<< endl;
+            serial =  ss.str();
+            serial.erase(std::remove(serial.begin(), serial.end(), '\n'), serial.end());
+        }
+        else
+        {
+            throw std::runtime_error("Failed to Read Serial number");
+        }
+
         //=================================================================
     }
 
