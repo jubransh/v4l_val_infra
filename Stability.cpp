@@ -179,13 +179,13 @@ public:
             {
                 colorSensor.Start(AddFrame);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
-                slep+=1;
+                slept+=1;
             }
             if (DepthUsed)
             {
                 depthSensor.Start(AddFrame);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
-                slep+=1;
+                slept+=1;
             }
             if (IRUsed)
             {
