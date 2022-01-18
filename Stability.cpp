@@ -371,7 +371,7 @@ TEST_F(StabilityTest, ContentRandom)
     streams.push_back(sT4);
     // streams.push_back(sT5);
 
-    configure(10, 10, true, true);
+    configure(10, 100, true, true);
     run(streams);
 }
 
