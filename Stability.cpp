@@ -174,27 +174,30 @@ public:
             }
             long startTime = TimeUtils::getCurrentTimestamp();
             int slept=0;
-            collectFrames = true;
+            // collectFrames = true;
             if (ColorUsed)
             {
+                color_collectFrames= true;
                 colorSensor.Start(AddFrame);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 slept+=1;
             }
             if (DepthUsed)
             {
+                depth_collectFrames = true;
                 depthSensor.Start(AddFrame);
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 slept+=1;
             }
             if (IRUsed)
             {
+                ir_collectFrames = true;
                 irSensor.Start(AddFrame);
             }
             
 
             std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
-            collectFrames = false;
+            // collectFrames = false;
             if (ColorUsed)
             {
                 color_collectFrames= false;
@@ -343,66 +346,4 @@ TEST_F(StabilityTest, PnpRandom)
     configure(30, 500, true);
     runWithPNP(streams);
 }
-// TEST_F(StabilityTest, Test)
-// {
-//     // configure(5);
-//     vector<vector<StreamType>> streams;
-//     vector<StreamType> sT;
-//     sT.push_back(StreamType::Depth_Stream);
-//     sT.push_back(StreamType::Color_Stream);
-//     streams.push_back(sT);
-//     vector<Profile> stream = getRandomProfile(streams);
-//     SequentialFrameDropsMetric met_seq;
-//     FramesArrivedMetric met_arrived;
-//     FirstFrameDelayMetric met_delay;
-//     FpsValidityMetric met_fps;
-//     FrameSizeMetric met_frame_size;
-//     FrameDropIntervalMetric met_drop_interval;
-//     FrameDropsPercentageMetric met_drop_percent;
-//     IDCorrectnessMetric met_id_cor;
-//     // MetaDataCorrectnessMetric met_md_cor;
 
-//     metrics.push_back(&met_seq);
-//     metrics.push_back(&met_arrived);
-//     metrics.push_back(&met_drop_interval);
-//     metrics.push_back(&met_drop_percent);
-//     metrics.push_back(&met_delay);
-//     metrics.push_back(&met_fps);
-//     metrics.push_back(&met_frame_size);
-//     metrics.push_back(&met_id_cor);
-//     // metrics.push_back(&met_md_cor);
-
-//     Sensor depthSensor = cam.GetDepthSensor();
-//     Sensor colorSensor = cam.GetColorSensor();
-//     for (int i = 0; i < 3; i++)
-//     {
-//         initFrameLists();
-//         setCurrentProfiles(stream);
-//         depthSensor.Configure(stream[0]);
-//         colorSensor.Configure(stream[1]);
-//         long startTime = TimeUtils::getCurrentTimestamp();
-//         depthSensor.Start(AddFrame);
-//         colorSensor.Start(AddFrame);
-//         std::this_thread::sleep_for(std::chrono::seconds(3));
-//         depthSensor.Stop();
-//         depthSensor.Close();
-//         colorSensor.Stop();
-//         colorSensor.Close();
-
-//         met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
-//         met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, 3);
-//         met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(), startTime);
-//         met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
-//         met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
-//         met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
-//         met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
-//         met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
-//         // met_md_cor.setParams(1);
-//         bool result = CalcMetrics(i);
-//         // if (!result)
-//         // {
-//         //     testStatus = false;
-//         //     failedIterations+= to_string(i)+", ";
-//         // }
-//     }
-// }
