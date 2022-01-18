@@ -51,7 +51,12 @@ public:
         }
         _isRandom = isRandom;
         if (isContent)
+        {
             Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
+            fa.reset();
+            fa.configure(FileUtils::join(testBasePath, name), 10, 0);
+
+        }
         _isContent = isContent;
         isContentTest = isContent;
     }
@@ -117,6 +122,9 @@ public:
         FrameDropIntervalMetric met_drop_interval;
         FrameDropsPercentageMetric met_drop_percent;
         IDCorrectnessMetric met_id_cor;
+
+        CorruptedMetric met_corrupted;
+        FreezeMetric met_freeze;
         // MetaDataCorrectnessMetric met_md_cor;
 
         metrics.push_back(&met_seq);
@@ -128,6 +136,12 @@ public:
         metrics.push_back(&met_frame_size);
         metrics.push_back(&met_id_cor);
         // metrics.push_back(&met_md_cor);
+
+        if (_isContent)
+        {
+            contentMetrics.push_back(&met_corrupted);
+            contentMetrics.push_back(&met_freeze);
+        }
 
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
@@ -169,7 +183,6 @@ public:
 
             if (_isContent)
             {
-                fa.configure(FileUtils::join(testBasePath, name), 10, 15);
                 fa.start_collection();
             }
 
@@ -240,6 +253,13 @@ public:
             met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
             met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
             // met_md_cor.setParams(1);
+
+            if (_isContent)
+            {
+                met_corrupted.setParams(MetricDefaultTolerances::get_tolerance_corrupted());
+                met_freeze.setParams(MetricDefaultTolerances::get_tolerance_freeze());
+            }
+
             bool result = CalcMetrics(i);
             if (!result)
             {
@@ -320,40 +340,38 @@ TEST_F(StabilityTest, Random)
 
 TEST_F(StabilityTest, ContentRandom)
 {
+    IgnoreMetricAllStreams("First frame delay");
+    IgnoreMetricAllStreams("Sequential frame drops");
+    IgnoreMetricAllStreams("Frame drops interval");
+    IgnoreMetricAllStreams("Frame drops percentage");
+    IgnoreMetricAllStreams("Frames arrived");
+    IgnoreMetricAllStreams("FPS Validity");
+    IgnoreMetricAllStreams("Frame Size");
+    IgnoreMetricAllStreams("ID Correctness");
+
     vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
     vector<StreamType> sT2;
     sT2.push_back(StreamType::Color_Stream);
-    // vector<StreamType> sT3;
-    // sT3.push_back(StreamType::IR_Stream);
-    // vector<StreamType> sT4;
-    // sT4.push_back(StreamType::Depth_Stream);
-    // sT4.push_back(StreamType::IR_Stream);
-    // sT4.push_back(StreamType::Color_Stream);
-    // vector<StreamType> sT5;
-    // sT5.push_back(StreamType::Depth_Stream);
-    // sT5.push_back(StreamType::IR_Stream);
-    // sT5.push_back(StreamType::Color_Stream);
-    vector<StreamType> sT6;
-    sT6.push_back(StreamType::Depth_Stream);
-    // sT6.push_back(StreamType::IR_Stream);
-    sT6.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT3;
+    sT3.push_back(StreamType::IR_Stream);
+    vector<StreamType> sT4;
+    sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT5;
+    sT5.push_back(StreamType::Depth_Stream);
+    sT5.push_back(StreamType::IR_Stream);
+    sT5.push_back(StreamType::Color_Stream);
 
-    // vector<StreamType> sT7;
-    // // sT7.push_back(StreamType::Depth_Stream);
-    // sT7.push_back(StreamType::IR_Stream);
-    // sT7.push_back(StreamType::Color_Stream);
 
     streams.push_back(sT);
-    // streams.push_back(sT2);
-    // streams.push_back(sT3);
-    // streams.push_back(sT4);
+    streams.push_back(sT2);
+    streams.push_back(sT3);
+    streams.push_back(sT4);
     // streams.push_back(sT5);
-    // streams.push_back(sT6);
-    // streams.push_back(sT7);
 
-    configure(3, 20, true, true);
+    configure(10, 10, true, true);
     run(streams);
 }
 

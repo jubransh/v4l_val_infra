@@ -920,6 +920,11 @@ public:
         }
     }
 
+    void reset()
+    {
+         _iteration = -1;
+    }
+
     void save_results()
     {
         save_corrupted_results();
