@@ -205,7 +205,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(5 * 60, false);
+    configure(1 *60 * 60, false);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
@@ -216,7 +216,7 @@ TEST_F(LongTest, LongStreamTest)
 
 TEST_F(LongTest, TempCaptureLongStreamTest)
 {
-    configure(5 * 60, true);
+    configure(1 * 60 * 60, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);

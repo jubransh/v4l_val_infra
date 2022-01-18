@@ -183,7 +183,7 @@ public:
 
 TEST_F(StreamingTest, DepthStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     run(streams);
@@ -191,21 +191,21 @@ TEST_F(StreamingTest, DepthStreamingTest)
 
 TEST_F(StreamingTest, IRStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::IR_Stream);
     run(streams);
 }
 TEST_F(StreamingTest, ColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
-TEST_F(StreamingTest, DepthIRtreamingTest)
+TEST_F(StreamingTest, DepthIRStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Depth_Stream);
@@ -213,7 +213,7 @@ TEST_F(StreamingTest, DepthIRtreamingTest)
 }
 TEST_F(StreamingTest, DepthColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::Depth_Stream);
@@ -229,7 +229,7 @@ TEST_F(StreamingTest, IRColorStreamingTest)
 }
 TEST_F(StreamingTest, DepthIRColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::Depth_Stream);
