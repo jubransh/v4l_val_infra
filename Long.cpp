@@ -105,10 +105,12 @@ public:
         if (ColorUsed)
         {
             colorSensor.Start(AddFrame);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (DepthUsed)
         {
             depthSensor.Start(AddFrame);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (IRUsed)
         {
@@ -203,7 +205,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(3 * 60, false);
+    configure(5 * 60, false);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
@@ -214,7 +216,7 @@ TEST_F(LongTest, LongStreamTest)
 
 TEST_F(LongTest, TempCaptureLongStreamTest)
 {
-    configure(3 * 60, true);
+    configure(5 * 60, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);

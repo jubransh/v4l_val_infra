@@ -173,14 +173,19 @@ public:
                 }
             }
             long startTime = TimeUtils::getCurrentTimestamp();
+            int slept=0;
             collectFrames = true;
             if (ColorUsed)
             {
                 colorSensor.Start(AddFrame);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                slep+=1;
             }
             if (DepthUsed)
             {
                 depthSensor.Start(AddFrame);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                slep+=1;
             }
             if (IRUsed)
             {
@@ -188,7 +193,7 @@ public:
             }
             
 
-            std::this_thread::sleep_for(std::chrono::seconds(testDuration));
+            std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
             collectFrames = false;
             if (DepthUsed)
             {
