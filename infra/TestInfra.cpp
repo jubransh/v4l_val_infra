@@ -30,7 +30,6 @@ using namespace std;
 #include <net/if.h>
 #include <arpa/inet.h>
 
-
 #include <sys/stat.h> // stat
 #include <errno.h>	  // errno, ENOENT, EEXIST
 #if defined(_WIN32)
@@ -52,62 +51,60 @@ vector<float> projectorSamples;
 
 string exec(const char *cmd)
 {
-    array<char, 128> buffer;
-    string result;
-    unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe)
-    {
-        throw runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
-    {
-        result += buffer.data();
-    }
-    return result;
+	array<char, 128> buffer;
+	string result;
+	unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+	if (!pipe)
+	{
+		throw runtime_error("popen() failed!");
+	}
+	while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+	{
+		result += buffer.data();
+	}
+	return result;
 }
-
 
 string getDriverVersion()
 {
 	string command = "modinfo d4xx";
-    string str = exec(command.c_str());
-    std::string delimiter = "\n";
-    //Skip the first line
-    str = str.substr(str.find(delimiter) + 1, str.length());
+	string str = exec(command.c_str());
+	std::string delimiter = "\n";
+	//Skip the first line
+	str = str.substr(str.find(delimiter) + 1, str.length());
 
-    //keep only the first line
-    str = str.substr(0, str.find(delimiter));
-    //Skip the "version:"
-    auto nextIndex = str.find(" ");
-    str = str.substr(nextIndex, str.length());
+	//keep only the first line
+	str = str.substr(0, str.find(delimiter));
+	//Skip the "version:"
+	auto nextIndex = str.find(" ");
+	str = str.substr(nextIndex, str.length());
 
-    //navigate to the total (nummeric value) and skip the spaces
-    while (str.find(" ") == 0)
-    {
-        str = str.substr(1, str.length());
-    }
+	//navigate to the total (nummeric value) and skip the spaces
+	while (str.find(" ") == 0)
+	{
+		str = str.substr(1, str.length());
+	}
 	return str;
 }
 
 string gethostIP()
 {
- int fd;
- struct ifreq ifr;
+	int fd;
+	struct ifreq ifr;
 
- fd = socket(AF_INET, SOCK_DGRAM, 0);
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
 
- /* I want to get an IPv4 IP address */
- ifr.ifr_addr.sa_family = AF_INET;
+	/* I want to get an IPv4 IP address */
+	ifr.ifr_addr.sa_family = AF_INET;
 
- /* I want IP address attached to "eth0" */
- strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+	/* I want IP address attached to "eth0" */
+	strncpy(ifr.ifr_name, "eth0", IFNAMSIZ - 1);
 
- ioctl(fd, SIOCGIFADDR, &ifr);
+	ioctl(fd, SIOCGIFADDR, &ifr);
 
- close(fd);
+	close(fd);
 
- return inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
-
+	return inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
 }
 bool stringIsInVector(string str, vector<string> vect)
 {
@@ -187,25 +184,25 @@ void AddFrame(Frame frame)
 {
 	// if (collectFrames)
 	// {
-		// if (frame.ID==10)
-		// 	frame.frameMD.print_MetaData();
-		switch (frame.streamType)
-		{
-		case StreamType::Depth_Stream:
-			if (depth_collectFrames)
-				depthFramesList.push_back(frame);
-			break;
-		case StreamType::IR_Stream:
-			if (ir_collectFrames)
-				irFramesList.push_back(frame);
-			break;
-		case StreamType::Color_Stream:
-			if (color_collectFrames)
-				colorFramesList.push_back(frame);
-			break;
-		default:
-			break;
-		}
+	// if (frame.ID==10)
+	// 	frame.frameMD.print_MetaData();
+	switch (frame.streamType)
+	{
+	case StreamType::Depth_Stream:
+		if (depth_collectFrames)
+			depthFramesList.push_back(frame);
+		break;
+	case StreamType::IR_Stream:
+		if (ir_collectFrames)
+			irFramesList.push_back(frame);
+		break;
+	case StreamType::Color_Stream:
+		if (color_collectFrames)
+			colorFramesList.push_back(frame);
+		break;
+	default:
+		break;
+	}
 	// }
 }
 
@@ -247,15 +244,15 @@ public:
 	}
 	static int get_tolerance_FirstFrameDelay()
 	{
-		
+
 		// if fps==0, that means that this profile is not used .
-		if (currColorProfile.fps!= 0 && currColorProfile.fps!=5 && currColorProfile.fps!=15) 
+		if (currColorProfile.fps != 0 && currColorProfile.fps != 5 && currColorProfile.fps != 15)
 			return tolerance_FirstFrameDelay_high;
 
-		else if (currDepthProfile.fps!= 0 && currDepthProfile.fps!=5 && currDepthProfile.fps!=15)
+		else if (currDepthProfile.fps != 0 && currDepthProfile.fps != 5 && currDepthProfile.fps != 15)
 			return tolerance_FirstFrameDelay_high;
 
-		else if (currIRProfile.fps!= 0 && currIRProfile.fps!=5 && currIRProfile.fps!=15)
+		else if (currIRProfile.fps != 0 && currIRProfile.fps != 5 && currIRProfile.fps != 15)
 			return tolerance_FirstFrameDelay_high;
 
 		else
@@ -717,6 +714,18 @@ public:
 			throw std::runtime_error("Frames array is empty");
 		MetricResult r;
 		double firstFrameDelay = _frames[0].systemTimestamp - _startTime;
+		if (_profile.streamType == StreamType::IR_Stream)
+		{
+			if (currColorProfile.fps != 0)
+				firstFrameDelay -= 1000;
+			if (currDepthProfile.fps != 0)
+				firstFrameDelay -= 1000;
+		}
+		if (_profile.streamType == StreamType::Depth_Stream)
+		{
+			if (currColorProfile.fps != 0)
+				firstFrameDelay -= 1000;
+		}
 		if (firstFrameDelay >= _tolerance)
 			r.result = false;
 		else
@@ -1148,6 +1157,18 @@ public:
 			throw std::runtime_error("Frames array is empty");
 		double actualStreamDuration = _testDuration * 1000;
 		double ttff = _frames[0].systemTimestamp - _startTime;
+		if (_profile.streamType == StreamType::IR_Stream)
+		{
+			if (currColorProfile.fps != 0)
+				ttff -= 1000;
+			if (currDepthProfile.fps != 0)
+				ttff -= 1000;
+		}
+		if (_profile.streamType == StreamType::Depth_Stream)
+		{
+			if (currColorProfile.fps != 0)
+				ttff -= 1000;
+		}
 		int droppedFrames, totalFramesDropped = 0;
 		string text = "";
 		double actualDelta;
@@ -1664,12 +1685,12 @@ class TestBase : public testing::Test
 {
 public:
 	string name;
-	string suiteName="";
+	string suiteName = "";
 	string hostname;
 	string IPaddress;
 	string DriverVersion;
-	int iterations=0;
-	int failediter=0;
+	int iterations = 0;
+	int failediter = 0;
 
 	ofstream resultCsv;
 	ofstream rawDataCsv;
@@ -1693,7 +1714,7 @@ public:
 		// testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
 		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
-		suiteName = ::testing::UnitTest::GetInstance()->current_test_case()-> name();
+		suiteName = ::testing::UnitTest::GetInstance()->current_test_case()->name();
 
 		// Creating test folder
 		string testPath = FileUtils::join(testBasePath, name);
@@ -1794,20 +1815,20 @@ public:
 						 << ","
 						 << "Test Suite"
 						 << ","
-						 << "Test status" 
-						 <<","
+						 << "Test status"
+						 << ","
 						 << "Total iterations#"
-						 <<","
-						 <<"Failed Iterations#"
-						 <<","
-						 <<"Pass rate"<< endl;
+						 << ","
+						 << "Failed Iterations#"
+						 << ","
+						 << "Pass rate" << endl;
 		}
 		if (testStatus)
-			TestsResults << sid <<"," << name << "," << suiteName<<","
-						 << "Pass,"<<iterations<<","<<failediter<<","<<to_string(100*double(iterations-failediter)/iterations) << endl;
+			TestsResults << sid << "," << name << "," << suiteName << ","
+						 << "Pass," << iterations << "," << failediter << "," << to_string(100 * double(iterations - failediter) / iterations) << endl;
 		else
-			TestsResults << sid <<"," << name << "," << suiteName<<","
-						 << "Fail,"<<iterations<<","<<failediter<<","<<to_string(100*double(iterations-failediter)/iterations) << endl;
+			TestsResults << sid << "," << name << "," << suiteName << ","
+						 << "Fail," << iterations << "," << failediter << "," << to_string(100 * double(iterations - failediter) / iterations) << endl;
 
 		Logger::getLogger().log("Closing Log file", "TearDown()", LOG_INFO);
 		Logger::getLogger().close();
@@ -2053,17 +2074,17 @@ public:
 		failedMetrics.clear();
 		string streams = "";
 		if (currDepthProfile.fps != 0)
-			streams+="Depth";
+			streams += "Depth";
 		if (currIRProfile.fps != 0)
-			if (streams=="")
-				streams+="IR";
+			if (streams == "")
+				streams += "IR";
 			else
-				streams+="+IR";
+				streams += "+IR";
 		if (currColorProfile.fps != 0)
-			if (streams=="")
-				streams+="Color";
+			if (streams == "")
+				streams += "Color";
 			else
-				streams+="+Color";
+				streams += "+Color";
 		// update the result csv
 		for (int i = 0; i < pnpMetrics.size(); i++)
 		{
@@ -2097,12 +2118,10 @@ public:
 			AppendPNPDataCVS(rawline);
 			rawline = "";
 			//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
-			rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
-							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
-						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
-						   ",PNP, " + pnpMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
-
+			rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+					   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+					   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+					   ",PNP, " + pnpMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 			AppendIterationSummaryCVS(rawline);
 		}
@@ -2130,8 +2149,7 @@ public:
 
 				rawline = "";
 				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
-				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
-							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
 						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
 						   ",Depth, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -2161,8 +2179,7 @@ public:
 
 				rawline = "";
 				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
-				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
-							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
 						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
 						   ",IR, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -2192,8 +2209,7 @@ public:
 
 				rawline = "";
 				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
-				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion+ "," + sid + "," + name + "," + suiteName+  "," +to_string(iteration)+","+to_string(testDuration) +"," +streams + ",\"" + streamComb + "\"," 
-							+ currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
 						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
 						   ",Color, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -2246,7 +2262,7 @@ public:
 		}
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + " Summary", "Test");
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + ":[" + iterationStatus + "]", "Test");
-		iterations+=1;
+		iterations += 1;
 
 		if (iterationStatus == "Pass")
 			return true;
@@ -2256,7 +2272,7 @@ public:
 			{
 				Logger::getLogger().log(failedMetrics[i], "Test");
 			}
-			failediter+=1;
+			failediter += 1;
 			return false;
 		}
 	}
