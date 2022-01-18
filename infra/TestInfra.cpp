@@ -40,6 +40,9 @@ using namespace std;
 string sid = TimeUtils::getDateandTime();
 bool is_tests_res_created = false;
 bool collectFrames = false;
+bool depth_collectFrames = false;
+bool ir_collectFrames = false;
+bool color_collectFrames = false;
 vector<Frame> depthFramesList, irFramesList, colorFramesList;
 vector<float> cpuSamples;
 vector<float> memSamples;
@@ -182,25 +185,28 @@ void addToPnpList(Sample s)
 
 void AddFrame(Frame frame)
 {
-	if (collectFrames)
-	{
+	// if (collectFrames)
+	// {
 		// if (frame.ID==10)
 		// 	frame.frameMD.print_MetaData();
 		switch (frame.streamType)
 		{
 		case StreamType::Depth_Stream:
-			depthFramesList.push_back(frame);
+			if (depth_collectFrames)
+				depthFramesList.push_back(frame);
 			break;
 		case StreamType::IR_Stream:
-			irFramesList.push_back(frame);
+			if (ir_collectFrames)
+				irFramesList.push_back(frame);
 			break;
 		case StreamType::Color_Stream:
-			colorFramesList.push_back(frame);
+			if (color_collectFrames)
+				colorFramesList.push_back(frame);
 			break;
 		default:
 			break;
 		}
-	}
+	// }
 }
 
 class MetricDefaultTolerances

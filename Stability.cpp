@@ -195,21 +195,27 @@ public:
 
             std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
             collectFrames = false;
+            if (ColorUsed)
+            {
+                color_collectFrames= false;
+                colorSensor.Stop();
+                colorSensor.Close();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
             if (DepthUsed)
             {
+                depth_collectFrames = false;
                 depthSensor.Stop();
                 depthSensor.Close();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (IRUsed)
             {
+                ir_collectFrames = false;
                 irSensor.Stop();
                 irSensor.Close();
             }
-            if (ColorUsed)
-            {
-                colorSensor.Stop();
-                colorSensor.Close();
-            }
+            
 
             met_seq.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
             met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, testDuration);
