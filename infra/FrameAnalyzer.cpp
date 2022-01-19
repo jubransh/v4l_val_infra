@@ -99,7 +99,9 @@ struct CorruptedResult
     int fps;
     int frame_id;
     double std;
+    double mean;
     bool is_corrupted;
+    bool is_high_or_low_image_pixels;
 };
 
 struct FreezeResult
@@ -204,6 +206,26 @@ class FrameAnalyzer
             return 30;
     }
 
+    int get_max_image_mean(StreamType stream_type)
+    {
+        if (stream_type == StreamType::Depth_Stream)
+            return 600;
+        else if (stream_type == StreamType::IR_Stream)
+            return 250;
+        else
+            return 250;
+    }
+
+    int get_min_image_mean(StreamType stream_type)
+    {
+        if (stream_type == StreamType::Depth_Stream)
+            return 400;
+        else if (stream_type == StreamType::IR_Stream)
+            return 50;
+        else
+            return 50;
+    }
+
     double to_radians(double degree)
     {
         return (degree * M_PI / 180);
@@ -302,6 +324,7 @@ class FrameAnalyzer
             cr.pixelFormat = frame.pixelFormat;
             cr.frame_id = frame.frame.ID;
             cr.std = stddev[0];
+            cr.mean = mean[0];
 
             if (stddev[0] > get_std_tolerance(StreamType::Depth_Stream))
             {
@@ -311,6 +334,17 @@ class FrameAnalyzer
             }
             else
                 cr.is_corrupted = false;
+            if (mean[0] < get_min_image_mean(StreamType::Depth_Stream) || mean[0] > get_max_image_mean(StreamType::Depth_Stream))
+            {
+                cr.is_corrupted = true;
+                cr.is_high_or_low_image_pixels = true;
+                if (_depth_first_corrpted_index == -1)
+                    _depth_first_corrpted_index = frame.frame.ID;
+            }
+            else
+            {
+                cr.is_high_or_low_image_pixels = false;
+            }
         }
         else if (frame.pixelFormat == "YUYV")
         {
@@ -324,6 +358,7 @@ class FrameAnalyzer
             cr.pixelFormat = frame.pixelFormat;
             cr.frame_id = frame.frame.ID;
             cr.std = stddev[0];
+            cr.mean = mean[0];
             if (stddev[0] > get_std_tolerance(StreamType::Color_Stream))
             {
                 cr.is_corrupted = true;
@@ -332,6 +367,17 @@ class FrameAnalyzer
             }
             else
                 cr.is_corrupted = false;
+            if (mean[0] < get_min_image_mean(StreamType::Color_Stream) || mean[0] > get_max_image_mean(StreamType::Color_Stream))
+            {
+                cr.is_corrupted = true;
+                cr.is_high_or_low_image_pixels = true;
+                if (_color_first_corrpted_index == -1)
+                    _color_first_corrpted_index = frame.frame.ID;
+            }
+            else
+            {
+                cr.is_high_or_low_image_pixels = false;
+            }
         }
         else if (frame.pixelFormat == "Y8")
         {
@@ -345,6 +391,7 @@ class FrameAnalyzer
             cr.pixelFormat = frame.pixelFormat;
             cr.frame_id = frame.frame.ID;
             cr.std = stddev[0];
+            cr.mean = mean[0];
             if (stddev[0] > get_std_tolerance(StreamType::IR_Stream))
             {
                 cr.is_corrupted = true;
@@ -353,6 +400,17 @@ class FrameAnalyzer
             }
             else
                 cr.is_corrupted = false;
+            if (mean[0] < get_min_image_mean(StreamType::IR_Stream) || mean[0] > get_max_image_mean(StreamType::IR_Stream))
+            {
+                cr.is_corrupted = true;
+                cr.is_high_or_low_image_pixels = true;
+                if (_infrared_first_corrpted_index == -1)
+                    _infrared_first_corrpted_index = frame.frame.ID;
+            }
+            else
+            {
+                cr.is_high_or_low_image_pixels = false;
+            }
         }
         else if (frame.pixelFormat == "UYVY")
         {
@@ -366,6 +424,7 @@ class FrameAnalyzer
             cr.pixelFormat = frame.pixelFormat;
             cr.frame_id = frame.frame.ID;
             cr.std = stddev[0];
+            cr.mean = mean[0];
             if (stddev[0] > get_std_tolerance(StreamType::IR_Stream))
             {
                 cr.is_corrupted = true;
@@ -374,6 +433,17 @@ class FrameAnalyzer
             }
             else
                 cr.is_corrupted = false;
+            if (mean[0] < get_min_image_mean(StreamType::IR_Stream) || mean[0] > get_max_image_mean(StreamType::IR_Stream))
+            {
+                cr.is_corrupted = true;
+                cr.is_high_or_low_image_pixels = true;
+                if (_infrared_first_corrpted_index == -1)
+                    _infrared_first_corrpted_index = frame.frame.ID;
+            }
+            else
+            {
+                cr.is_high_or_low_image_pixels = false;
+            }
         }
         return cr;
     }
@@ -643,71 +713,101 @@ class FrameAnalyzer
             throw std::runtime_error("Cannot open file: " + corrupted_path);
         }
         if (_iteration == 0)
-            _corrupted_res_csv << "stream_type,resolution,fps,format,index,result_type,iteration_id,total_frames_analyzed,corrupted_frame,frame_std,corrupted_frames_count,first_corrupted_frame_index" << endl;
+            _corrupted_res_csv << "stream_type,resolution,fps,format,index,result_type,iteration_id,total_frames_analyzed,is_corrupted_frame,frame_pixels_std,corrupted_frames_count,is_high_or_low_frame_pixels,frame_pixels_mean,high_or_low_frames_count,first_corrupted_frame_index" << endl;
         // saving depth frames results
         if (_depth_corrupted_results.size() > 0)
         {
             int corrupted_count = 0;
+            int high_or_low_images_count = 0;
+            string status = "false";
+            string high_low_status = "false";
             for (int i = 0; i < _depth_corrupted_results.size(); i++)
             {
-                string status;
-                CorruptedResult cr = _depth_corrupted_results[i];
-                string res = to_string(cr.width) + "x" + to_string(cr.height);
-                if (cr.is_corrupted)
+                status = "false";
+                high_low_status = "false";
+                string res = to_string(_depth_corrupted_results[i].width) + "x" + to_string(_depth_corrupted_results[i].height);
+                if (_depth_corrupted_results[i].is_corrupted)
                 {
                     status = "true";
+                }
+                if (_depth_corrupted_results[i].is_high_or_low_image_pixels)
+                {
+                    status = "true";
+                    high_low_status = "true";
+                    high_or_low_images_count++;
+                }
+                if (status == "true")
+                {
                     corrupted_count++;
                 }
-                else
-                    status = "false";
-                _corrupted_res_csv << "depth," << res << "," << cr.fps << "," << cr.pixelFormat << "," << cr.frame_id << ","
-                                   << "single," << _iteration << ",," << status << "," << cr.std << ",,," << endl;
+                _corrupted_res_csv << "depth," << res << "," << _depth_corrupted_results[i].fps << "," << _depth_corrupted_results[i].pixelFormat << "," << _depth_corrupted_results[i].frame_id << ","
+                                   << "single," << _iteration << ",," << status << "," << _depth_corrupted_results[i].std << ",," << high_low_status << "," << _depth_corrupted_results[i].mean << ",,," << endl;
             }
-            depth_iteration_summary = "depth,,,,,iteration," + to_string(_iteration) + "," + to_string(_depth_corrupted_results.size()) + ",,," + to_string(corrupted_count) + "," + to_string(_depth_first_corrpted_index) + "\n";
+            depth_iteration_summary = "depth,,,,,iteration," + to_string(_iteration) + "," + to_string(_depth_corrupted_results.size()) + ",,," + to_string(corrupted_count) + ",,," + to_string(high_or_low_images_count) + "," + to_string(_depth_first_corrpted_index) + "\n";
         }
 
         // saving infrared frames results
         if (_infrared_corrupted_results.size() > 0)
         {
             int corrupted_count = 0;
+            int high_or_low_images_count = 0;
+            string status;
+            string high_low_status;
             for (int i = 0; i < _infrared_corrupted_results.size(); i++)
             {
-                string status;
-                CorruptedResult cr = _infrared_corrupted_results[i];
-                string res = to_string(cr.width) + "x" + to_string(cr.height);
-                if (cr.is_corrupted)
+                status = "false";
+                high_low_status = "false";
+                string res = to_string(_infrared_corrupted_results[i].width) + "x" + to_string(_infrared_corrupted_results[i].height);
+                if (_infrared_corrupted_results[i].is_corrupted)
                 {
                     status = "true";
+                }
+                if (_infrared_corrupted_results[i].is_high_or_low_image_pixels)
+                {
+                    status = "true";
+                    high_low_status = "true";
+                    high_or_low_images_count++;
+                }
+                if (status == "true")
+                {
                     corrupted_count++;
                 }
-                else
-                    status = "false";
-                _corrupted_res_csv << "infrared," << res << "," << cr.fps << "," << cr.pixelFormat << "," << cr.frame_id << ","
-                                   << "single," << _iteration << ",," << status << "," << cr.std << ",,," << endl;
+                _corrupted_res_csv << "infrared," << res << "," << _infrared_corrupted_results[i].fps << "," << _infrared_corrupted_results[i].pixelFormat << "," << _infrared_corrupted_results[i].frame_id << ","
+                                   << "single," << _iteration << ",," << status << "," << _infrared_corrupted_results[i].std << ",," << high_low_status << "," << _infrared_corrupted_results[i].mean << ",,," << endl;
             }
-            infrared_iteration_summary = "infrared,,,,,iteration," + to_string(_iteration) + "," + to_string(_infrared_corrupted_results.size()) + ",,," + to_string(corrupted_count) + "," + to_string(_infrared_first_corrpted_index) + "\n";
+            infrared_iteration_summary = "infrared,,,,,iteration," + to_string(_iteration) + "," + to_string(_infrared_corrupted_results.size()) + ",,," + to_string(corrupted_count) + ",,," + to_string(high_or_low_images_count) + "," + to_string(_infrared_first_corrpted_index) + "\n";
         }
 
         // saving color frames results
         if (_color_corrupted_results.size() > 0)
         {
             int corrupted_count = 0;
+            int high_or_low_images_count = 0;
+            string status;
+            string high_low_status;
             for (int i = 0; i < _color_corrupted_results.size(); i++)
             {
-                string status;
-                CorruptedResult cr = _color_corrupted_results[i];
-                string res = to_string(cr.width) + "x" + to_string(cr.height);
-                if (cr.is_corrupted)
+                status = "false";
+                high_low_status = "false";
+                string res = to_string(_color_corrupted_results[i].width) + "x" + to_string(_color_corrupted_results[i].height);
+                if (_color_corrupted_results[i].is_corrupted)
                 {
                     status = "true";
+                }
+                if (_color_corrupted_results[i].is_high_or_low_image_pixels)
+                {
+                    status = "true";
+                    high_low_status = "true";
+                    high_or_low_images_count++;
+                }
+                if (status == "true")
+                {
                     corrupted_count++;
                 }
-                else
-                    status = "false";
-                _corrupted_res_csv << "color," << res << "," << cr.fps << "," << cr.pixelFormat << "," << cr.frame_id << ","
-                                   << "single," << _iteration << ",," << status << "," << cr.std << ",,," << endl;
+                _corrupted_res_csv << "color," << res << "," << _color_corrupted_results[i].fps << "," << _color_corrupted_results[i].pixelFormat << "," << _color_corrupted_results[i].frame_id << ","
+                                   << "single," << _iteration << ",," << status << "," << _color_corrupted_results[i].std << ",," << high_low_status << "," << _color_corrupted_results[i].mean << ",,," << endl;
             }
-            color_iteration_summary = "color,,,,,iteration," + to_string(_iteration) + "," + to_string(_color_corrupted_results.size()) + ",,," + to_string(corrupted_count) + "," + to_string(_color_first_corrpted_index) + "\n";
+            color_iteration_summary = "color,,,,,iteration," + to_string(_iteration) + "," + to_string(_color_corrupted_results.size()) + ",,," + to_string(corrupted_count) + ",,," + to_string(high_or_low_images_count) + "," + to_string(_color_first_corrpted_index) + "\n";
         }
         _corrupted_res_csv << depth_iteration_summary;
         _corrupted_res_csv << infrared_iteration_summary;
@@ -922,7 +1022,7 @@ public:
 
     void reset()
     {
-         _iteration = -1;
+        _iteration = -1;
     }
 
     void save_results()

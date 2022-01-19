@@ -168,7 +168,7 @@ TEST_F(ContentSpecialTest, ContentDepthOverColorTest)
     Profile cP;
     cP.pixelFormat = V4L2_PIX_FMT_YUYV;
     cP.resolution = cR;
-    cP.fps = 30;
+    cP.fps = 60;
     cP.streamType = StreamType::Color_Stream;
 
     configure(5, 50, true);

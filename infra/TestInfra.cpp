@@ -419,9 +419,9 @@ public:
 		int first_corrupted_index = -1;
 
 		int corrupted_count = 0;
+		int high_or_low_images_count = 0;
 		for (int i = 0; i < _corrupted_results.size(); i++)
 		{
-			string status;
 			if (_corrupted_results[i].is_corrupted)
 			{
 				if (is_first_corrupted)
@@ -431,12 +431,15 @@ public:
 				}
 				corrupted_count++;
 			}
+			if (_corrupted_results[i].is_high_or_low_image_pixels){
+				high_or_low_images_count++;
+			}
 		}
 		if (corrupted_count >= _tolerance)
 			r.result = false;
 		else
 			r.result = true;
-		r.remarks = "Corrupted frames count: " + to_string(corrupted_count) + "\nTotal analyzed frames: " + to_string(_corrupted_results.size()) + "\nFirst corrupted frame index: " + to_string(first_corrupted_index) +
+		r.remarks = "Corrupted frames count: " + to_string(corrupted_count) + "\nDark/ Saturated frames count: " + to_string(high_or_low_images_count) + "\nTotal analyzed frames: " + to_string(_corrupted_results.size()) + "\nFirst corrupted frame index: " + to_string(first_corrupted_index) +
 					"\nTolerance: " + to_string(_tolerance) + " corrupted frame or more\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
