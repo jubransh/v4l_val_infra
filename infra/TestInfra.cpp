@@ -1177,7 +1177,7 @@ public:
 			if (currColorProfile.fps != 0)
 				ttff -= 1000;
 		}
-		int droppedFrames, totalFramesDropped = 0;
+		// int droppedFrames, totalFramesDropped = 0;
 		string text = "";
 		double actualDelta;
 		double expectedDelta = 1000.0 / _profile.fps;
