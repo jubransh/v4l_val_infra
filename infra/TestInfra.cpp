@@ -214,7 +214,7 @@ private:
 	static const int tolerance_SequentialFrameDrops = 2;
 	static const int tolerance_FrameDropInterval = 1; // Tolerance is always 1 hard coded - what changes is the interval
 	static const int tolerance_FrameDropsPercentage = 5;
-	static const int tolerance_FramesArrived = 1;
+	static const int tolerance_FramesArrived = 5;
 	static const int tolerance_FpsValidity = 5;
 	static const int tolerance_FrameSize = 1;
 	static const int tolerance_IDCorrectness = 1; // Tolerance is not used - if one frame has MD error, Metric Fails
