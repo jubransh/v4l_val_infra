@@ -1165,19 +1165,6 @@ public:
 		double actualStreamDuration = _testDuration * 1000;
 		double ttff = _frames[0].systemTimestamp - _startTime;
 		int zero_delta_frames, droppedFrames, totalFramesDropped = 0;
-		if (_profile.streamType == StreamType::IR_Stream)
-		{
-			if (currColorProfile.fps != 0)
-				ttff -= 1000;
-			if (currDepthProfile.fps != 0)
-				ttff -= 1000;
-		}
-		if (_profile.streamType == StreamType::Depth_Stream)
-		{
-			if (currColorProfile.fps != 0)
-				ttff -= 1000;
-		}
-		int droppedFrames, totalFramesDropped = 0;
 		string text = "";
 		double actualDelta;
 		double expectedDelta = 1000.0 / _profile.fps;
