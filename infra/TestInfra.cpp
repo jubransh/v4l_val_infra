@@ -983,7 +983,14 @@ public:
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
-		r.value = to_string(actualDelta / expectedDelta);
+		if (status)
+		{
+			r.value = to_string(1);
+		}
+		else
+		{
+			r.value = to_string(0);
+		}
 		return r;
 	}
 };
@@ -1129,7 +1136,7 @@ public:
 			throw std::runtime_error("Frames array is empty");
 		double actualStreamDuration = _testDuration * 1000;
 		double ttff = _frames[0].systemTimestamp - _startTime;
-		int droppedFrames, totalFramesDropped = 0;
+		int zero_delta_frames, droppedFrames, totalFramesDropped = 0;
 		string text = "";
 		double actualDelta;
 		double expectedDelta = 1000.0 / _profile.fps;
@@ -1147,6 +1154,10 @@ public:
 				if (actualDelta < 0)
 					continue;
 			}
+			if (actualDelta == 0)
+			{
+				zero_delta_frames += 1;
+			}
 			// TODO round(actualDelta / expectedDelta)
 			droppedFrames = round(actualDelta / expectedDelta) - 1;
 
@@ -1154,25 +1165,25 @@ public:
 				totalFramesDropped += droppedFrames;
 		}
 
-		double expectedFrames = ceil(((actualStreamDuration - ttff) / 1000) * _profile.fps - totalFramesDropped);
+		double expectedFrames = ceil(((actualStreamDuration - ttff) / 1000) * _profile.fps - totalFramesDropped + zero_delta_frames);
 		double actualFramesArrived = _frames.size();
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
 
 		MetricResult r;
-		double percentage = abs((1 - (actualFramesArrived / expectedFrames)) * 100);
+		double percentage = (1 - (actualFramesArrived / expectedFrames)) * 100;
 		if (percentage >= _tolerance)
 			r.result = false;
 		else
 			r.result = true;
 		r.remarks = text + "Actual Stream Duration :" + to_string(actualStreamDuration / 1000) + "seconds \nTime to first frame: " + to_string(ttff) +
 					"\nFPS : " + to_string(_profile.fps) + "\nActual Frames Arrived#:" + to_string(actualFramesArrived) + "\nExpected Frames: " + to_string(expectedFrames) +
-					"\nDropped Frames: " + to_string(totalFramesDropped) + "\nTolerance: +-" + to_string(_tolerance) + "%\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+					"\nDropped Frames: " + to_string(totalFramesDropped)+"\nZero Delta frames: "+to_string(zero_delta_frames) + "\nTolerance: +-" + to_string(_tolerance) + "%\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
-		r.value = to_string(percentage);
+		r.value = to_string((actualFramesArrived / expectedFrames) * 100);
 		return r;
 	}
 };
