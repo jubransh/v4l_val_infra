@@ -859,9 +859,12 @@ public:
                                                    }
                                                    frame.frameMD = md;
 
-                                                   //Send the new created frame with the callback
-                                                   (*FramesCallback)(frame);
-
+                                                   // if this is an actual frame then call the callback functtion
+                                                   if (frame.hwTimestamp!=0)
+                                                   {
+                                                       //Send the new created frame with the callback
+                                                       (*FramesCallback)(frame);
+                                                   }
                                                    //Free memory of the allocated buffer
                                                    if (copyFrameData)
                                                    {

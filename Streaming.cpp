@@ -105,40 +105,54 @@ public:
             setCurrentProfiles(pR);
 
             long startTime = TimeUtils::getCurrentTimestamp();
-            collectFrames=true;
+            int slept = 0;
+            // collectFrames=true;
             if (ColorUsed)
             {   
+                color_collectFrames= true;
                 colorSensor.Start(AddFrame);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                slept+=1;
             }
             if (DepthUsed)
             {
+                depth_collectFrames = true;
                 depthSensor.Start(AddFrame);
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                slept+=1;
             }
             if (IRUsed)
             {
+                ir_collectFrames = true;
                 irSensor.Start(AddFrame);
             }
 
 
             long startTime2 = TimeUtils::getCurrentTimestamp();
-            std::this_thread::sleep_for(std::chrono::seconds(testDuration));
+            std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
 
-            collectFrames=false;
+            // collectFrames=false;
+            if (ColorUsed)
+            {
+                color_collectFrames= false;
+                colorSensor.Stop();
+                colorSensor.Close();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
             if (DepthUsed)
             {
+                depth_collectFrames = false;
                 depthSensor.Stop();
                 depthSensor.Close();
+                std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (IRUsed)
             {
+                ir_collectFrames = false;
                 irSensor.Stop();
                 irSensor.Close();
             }
-            if (ColorUsed)
-            {
-                colorSensor.Stop();
-                colorSensor.Close();
-            }
+            
             
 
 
@@ -178,7 +192,7 @@ public:
 
 TEST_F(StreamingTest, DepthStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     run(streams);
@@ -186,21 +200,21 @@ TEST_F(StreamingTest, DepthStreamingTest)
 
 TEST_F(StreamingTest, IRStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::IR_Stream);
     run(streams);
 }
 TEST_F(StreamingTest, ColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
-TEST_F(StreamingTest, DepthIRtreamingTest)
+TEST_F(StreamingTest, DepthIRStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Depth_Stream);
@@ -208,7 +222,7 @@ TEST_F(StreamingTest, DepthIRtreamingTest)
 }
 TEST_F(StreamingTest, DepthColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::Depth_Stream);
@@ -224,7 +238,7 @@ TEST_F(StreamingTest, IRColorStreamingTest)
 }
 TEST_F(StreamingTest, DepthIRColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::Depth_Stream);

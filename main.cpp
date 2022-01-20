@@ -30,10 +30,10 @@
 
 #include "Streaming.cpp"
 #include "Long.cpp"
-#include"Controls.cpp"
+// #include"Controls.cpp"
 #include "Stability.cpp"
-#include "V4L2PlayGround.cpp"
-#include "V4L2PlayGround2.cpp"
+// #include "V4L2PlayGround.cpp"
+// #include "V4L2PlayGround2.cpp"
 // #include "Long_content.cpp"
 
 
