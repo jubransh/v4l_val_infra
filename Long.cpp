@@ -23,15 +23,25 @@ class LongTest : public TestBase
 {
 public:
     bool _captureTempWhileStream;
+    bool _isContent;
     LongTest()
     {
         isPNPtest = true;
     }
-    void configure(int StreamDuration, bool captureTempWhileStream)
+    void configure(int StreamDuration, bool captureTempWhileStream, bool isContent = false)
     {
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
         _captureTempWhileStream = captureTempWhileStream;
+
+        if (isContent)
+        {
+            Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
+            fa.reset();
+            fa.configure(FileUtils::join(testBasePath, name), 10, 0);
+        }
+        _isContent = isContent;
+        isContentTest = isContent;
     }
     void run(vector<StreamType> streams)
     {
@@ -49,6 +59,9 @@ public:
         AsicTempMetric met_asic_temp;
         ProjTempMetric met_projector_temp;
 
+        CorruptedMetric met_corrupted;
+        FreezeMetric met_freeze;
+
         metrics.push_back(&met_seq);
         metrics.push_back(&met_drop_interval);
         metrics.push_back(&met_drop_percent);
@@ -58,9 +71,22 @@ public:
         pnpMetrics.push_back(&met_asic_temp);
         pnpMetrics.push_back(&met_projector_temp);
 
+        if (_isContent)
+        {
+            contentMetrics.push_back(&met_corrupted);
+            contentMetrics.push_back(&met_freeze);
+        }
+
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
+
+        if (_isContent)
+        {
+            depthSensor.copyFrameData = true;
+            irSensor.copyFrameData = true;
+            colorSensor.copyFrameData = true;
+        }
 
         vector<Profile> profiles = GetHighestCombination(streams);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
@@ -116,11 +142,14 @@ public:
         {
             irSensor.Start(AddFrame);
         }
-        
 
         int Iterations = testDuration / iterationDuration;
         for (int j = 0; j < Iterations; j++)
         {
+            if (_isContent)
+            {
+                fa.start_collection();
+            }
             Logger::getLogger().log("Started Iteration: " + to_string(j), "Test");
             initFrameLists();
             initSamplesList();
@@ -147,7 +176,11 @@ public:
                 }
             }
 
-            // collectFrames = false;
+            if (_isContent)
+            {
+                fa.stop_collection();
+                fa.save_results();
+            }
             depth_collectFrames = false;
             ir_collectFrames = false;
             color_collectFrames = false;
@@ -173,6 +206,13 @@ public:
             met_mem.setParams(MetricDefaultTolerances::get_tolerance_Memory());
             met_asic_temp.setParams(MetricDefaultTolerances::get_tolerance_asic_temperature());
             met_projector_temp.setParams(MetricDefaultTolerances::get_tolerance_projector_temperature());
+
+            if (_isContent)
+            {
+                met_corrupted.setParams(MetricDefaultTolerances::get_tolerance_corrupted());
+                met_freeze.setParams(MetricDefaultTolerances::get_tolerance_freeze());
+            }
+
             bool result = CalcMetrics(j);
             if (!result)
             {
@@ -220,6 +260,28 @@ TEST_F(LongTest, LongStreamTest)
     streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
     // IgnorePNPMetric("CPU Consumption");
+    run(streams);
+}
+
+TEST_F(LongTest, ContentLongStreamTest)
+{
+    IgnoreMetricAllStreams("First frame delay");
+    IgnoreMetricAllStreams("Sequential frame drops");
+    IgnoreMetricAllStreams("Frame drops interval");
+    IgnoreMetricAllStreams("Frame drops percentage");
+    IgnoreMetricAllStreams("Frames arrived");
+    IgnoreMetricAllStreams("FPS Validity");
+    IgnoreMetricAllStreams("Frame Size");
+    IgnoreMetricAllStreams("ID Correctness");
+
+    IgnorePNPMetric("CPU Consumption");
+    IgnorePNPMetric("Memory Consumption");
+
+    configure(60 * 60, false, true);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    // streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
 

@@ -32,7 +32,8 @@ class StabilityTest : public TestBase
 public:
     int _iterations;
     bool _isRandom;
-    void configure(int StreamDuration, int Iterations, bool isRandom)
+    bool _isContent;
+    void configure(int StreamDuration, int Iterations, bool isRandom, bool isContent = false)
     {
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
@@ -49,6 +50,15 @@ public:
             break;
         }
         _isRandom = isRandom;
+        if (isContent)
+        {
+            Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
+            fa.reset();
+            fa.configure(FileUtils::join(testBasePath, name), 10, 0);
+
+        }
+        _isContent = isContent;
+        isContentTest = isContent;
     }
     vector<Profile> getRandomProfile(vector<vector<StreamType>> streams)
     {
@@ -112,6 +122,9 @@ public:
         FrameDropIntervalMetric met_drop_interval;
         FrameDropsPercentageMetric met_drop_percent;
         IDCorrectnessMetric met_id_cor;
+
+        CorruptedMetric met_corrupted;
+        FreezeMetric met_freeze;
         // MetaDataCorrectnessMetric met_md_cor;
 
         metrics.push_back(&met_seq);
@@ -124,9 +137,23 @@ public:
         metrics.push_back(&met_id_cor);
         // metrics.push_back(&met_md_cor);
 
+        if (_isContent)
+        {
+            contentMetrics.push_back(&met_corrupted);
+            contentMetrics.push_back(&met_freeze);
+        }
+
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
+
+        if (_isContent)
+        {
+            depthSensor.copyFrameData = true;
+            irSensor.copyFrameData = true;
+            colorSensor.copyFrameData = true;
+        }
+
         bool DepthUsed;
         bool ColorUsed;
         bool IRUsed;
@@ -154,6 +181,11 @@ public:
             initFrameLists();
             setCurrentProfiles(StreamCollection);
 
+            if (_isContent)
+            {
+                fa.start_collection();
+            }
+
             for (int i = 0; i < StreamCollection.size(); i++)
             {
                 if (StreamCollection[i].streamType == StreamType::Depth_Stream)
@@ -174,7 +206,6 @@ public:
             }
             long startTime = TimeUtils::getCurrentTimestamp();
             int slept=0;
-            // collectFrames = true;
             if (ColorUsed)
             {
                 color_collectFrames= true;
@@ -194,10 +225,14 @@ public:
                 ir_collectFrames = true;
                 irSensor.Start(AddFrame);
             }
-            
 
             std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
-            // collectFrames = false;
+            if (_isContent)
+            {
+                fa.stop_collection();
+                fa.save_results();
+            }
+
             if (ColorUsed)
             {
                 color_collectFrames= false;
@@ -229,6 +264,13 @@ public:
             met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
             met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
             // met_md_cor.setParams(1);
+
+            if (_isContent)
+            {
+                met_corrupted.setParams(MetricDefaultTolerances::get_tolerance_corrupted());
+                met_freeze.setParams(MetricDefaultTolerances::get_tolerance_freeze());
+            }
+
             bool result = CalcMetrics(i);
             if (!result)
             {
@@ -259,7 +301,7 @@ TEST_F(StabilityTest, Normal)
     sT.push_back(StreamType::Depth_Stream);
     sT.push_back(StreamType::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
-    
+
     //vector<StreamType> sT2;
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
@@ -295,8 +337,6 @@ TEST_F(StabilityTest, Random)
     sT7.push_back(StreamType::IR_Stream);
     sT7.push_back(StreamType::Color_Stream);
 
-
-
     streams.push_back(sT);
     streams.push_back(sT2);
     streams.push_back(sT3);
@@ -306,6 +346,43 @@ TEST_F(StabilityTest, Random)
     streams.push_back(sT7);
 
     configure(30, 500, true);
+    run(streams);
+}
+
+TEST_F(StabilityTest, ContentRandom)
+{
+    IgnoreMetricAllStreams("First frame delay");
+    IgnoreMetricAllStreams("Sequential frame drops");
+    IgnoreMetricAllStreams("Frame drops interval");
+    IgnoreMetricAllStreams("Frame drops percentage");
+    IgnoreMetricAllStreams("Frames arrived");
+    IgnoreMetricAllStreams("FPS Validity");
+    IgnoreMetricAllStreams("Frame Size");
+    IgnoreMetricAllStreams("ID Correctness");
+
+    vector<vector<StreamType>> streams;
+    vector<StreamType> sT;
+    sT.push_back(StreamType::Depth_Stream);
+    vector<StreamType> sT2;
+    sT2.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT3;
+    sT3.push_back(StreamType::IR_Stream);
+    vector<StreamType> sT4;
+    sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT5;
+    sT5.push_back(StreamType::Depth_Stream);
+    sT5.push_back(StreamType::IR_Stream);
+    sT5.push_back(StreamType::Color_Stream);
+
+
+    streams.push_back(sT);
+    streams.push_back(sT2);
+    streams.push_back(sT3);
+    streams.push_back(sT4);
+    // streams.push_back(sT5);
+
+    configure(10, 100, true, true);
     run(streams);
 }
 

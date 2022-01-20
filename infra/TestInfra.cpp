@@ -12,6 +12,7 @@ using namespace std;
 #include <thread>
 #include "pg.cpp"
 #include "cg.cpp"
+#include "FrameAnalyzer.cpp"
 
 #include <unistd.h>
 #include <limits.h>
@@ -48,6 +49,8 @@ vector<float> memSamples;
 double memoryBaseLine = 0;
 vector<float> asicSamples;
 vector<float> projectorSamples;
+FrameAnalyzer fa;
+bool isContentTest = false;
 
 string exec(const char *cmd)
 {
@@ -182,23 +185,58 @@ void addToPnpList(Sample s)
 
 void AddFrame(Frame frame)
 {
-	// if (collectFrames)
-	// {
-	// if (frame.ID==10)
-	// 	frame.frameMD.print_MetaData();
+
 	switch (frame.streamType)
 	{
 	case StreamType::Depth_Stream:
 		if (depth_collectFrames)
+    {
 			depthFramesList.push_back(frame);
+      if (isContentTest)
+			{
+				AnalayzerFrame af;
+				af.frame = frame;
+				af.fps = currDepthProfile.fps;
+				af.pixelFormat = currDepthProfile.GetFormatText();
+				af.width = currDepthProfile.resolution.width;
+				af.height = currDepthProfile.resolution.height;
+				fa.collect_depth_frame(af);
+			}
+    }
 		break;
 	case StreamType::IR_Stream:
 		if (ir_collectFrames)
+    {
 			irFramesList.push_back(frame);
+      if (isContentTest)
+			{
+				AnalayzerFrame af;
+				af.frame = frame;
+				af.fps = currIRProfile.fps;
+				af.pixelFormat = currIRProfile.GetFormatText();
+				af.width = currIRProfile.resolution.width;
+				af.height = currIRProfile.resolution.height;
+				fa.collect_infrared_frame(af);
+			}
+    }
 		break;
 	case StreamType::Color_Stream:
 		if (color_collectFrames)
-			colorFramesList.push_back(frame);
+
+    {
+      colorFramesList.push_back(frame);
+      if (isContentTest)
+			{
+				AnalayzerFrame af;
+				af.frame = frame;
+				af.fps = currColorProfile.fps;
+				af.pixelFormat = currColorProfile.GetFormatText();
+				af.width = currColorProfile.resolution.width;
+				af.height = currColorProfile.resolution.height;
+				fa.collect_color_frame(af);
+			}
+    }
+
 		break;
 	default:
 		break;
@@ -224,8 +262,18 @@ private:
 	static const int tolerance_Memory = 400;
 	static const int tolerance_asic_temperature = 100;
 	static const int tolerance_projector_temperature = 100;
+	static const int tolerance_corrupted = 1;
+	static const int tolerance_freeze = 1;
 
 public:
+	static int get_tolerance_corrupted()
+	{
+		return tolerance_corrupted;
+	}
+	static int get_tolerance_freeze()
+	{
+		return tolerance_freeze;
+	}
 	static int get_tolerance_asic_temperature()
 	{
 		return tolerance_asic_temperature;
@@ -420,6 +468,158 @@ public:
 			result.push_back(s);
 		}
 		return result;
+	}
+};
+
+class ContentMetric
+{
+public:
+	int _tolerance;
+	Profile _profile;
+	string _metricName;
+	vector<CorruptedResult> _corrupted_results;
+	vector<FreezeResult> _freeze_results;
+	bool _useSystemTs = false;
+	virtual MetricResult calc() = 0;
+	void configure(Profile profile, vector<CorruptedResult> corrupted_results, vector<FreezeResult> freeze_results)
+	{
+		_profile = profile;
+		_corrupted_results = corrupted_results;
+		_freeze_results = freeze_results;
+	}
+};
+
+class CorruptedMetric : public ContentMetric
+{
+public:
+	CorruptedMetric()
+	{
+		_metricName = "Corrupted Frames";
+	}
+	void SetCorruptedResults(vector<CorruptedResult> r)
+	{
+		_corrupted_results = r;
+	}
+	void setParams(int tolerance)
+	{
+		_tolerance = tolerance;
+	}
+	MetricResult calc()
+	{
+		if (_profile.fps == 0)
+			throw std::runtime_error("Missing profile in Metric");
+		if (_corrupted_results.size() == 0)
+			throw std::runtime_error("Corrupted results array is empty");
+
+		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
+		MetricResult r;
+		bool is_first_corrupted = true;
+		int first_corrupted_index = -1;
+
+		int corrupted_count = 0;
+		int high_or_low_images_count = 0;
+		for (int i = 0; i < _corrupted_results.size(); i++)
+		{
+			if (_corrupted_results[i].is_corrupted)
+			{
+				if (is_first_corrupted)
+				{
+					first_corrupted_index = _corrupted_results[i].frame_id;
+					is_first_corrupted = false;
+				}
+				corrupted_count++;
+			}
+			if (_corrupted_results[i].is_high_or_low_image_pixels){
+				high_or_low_images_count++;
+			}
+		}
+		if (corrupted_count >= _tolerance)
+			r.result = false;
+		else
+			r.result = true;
+		r.remarks = "Corrupted frames count: " + to_string(corrupted_count) + "\nDark/ Saturated frames count: " + to_string(high_or_low_images_count) + "\nTotal analyzed frames: " + to_string(_corrupted_results.size()) + "\nFirst corrupted frame index: " + to_string(first_corrupted_index) +
+					"\nTolerance: " + to_string(_tolerance) + " corrupted frame or more\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		vector<string> results = r.getRemarksStrings();
+		for (int i = 0; i < results.size(); i++)
+		{
+			Logger::getLogger().log(results[i], "Metric");
+		}
+    r.value = to_string(corrupted_count);
+		return r;
+	}
+};
+
+class FreezeMetric : public ContentMetric
+{
+public:
+	FreezeMetric()
+	{
+		_metricName = "Freeze Frames";
+	}
+	void SetCorruptedResults(vector<FreezeResult> r)
+	{
+		_freeze_results = r;
+	}
+	void setParams(int tolerance)
+	{
+		_tolerance = tolerance;
+	}
+	MetricResult calc()
+	{
+		if (_profile.fps == 0)
+			throw std::runtime_error("Missing profile in Metric");
+		if (_freeze_results.size() == 0)
+			throw std::runtime_error("Freeze results array is empty");
+
+		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
+		MetricResult r;
+		int freeze_count = 0;
+		int first_seq_index = -1;
+		int last_seq_index = -1;
+		int max_sequential = 0;
+		int max_sequential_index = -1;
+		int first_freeze_index = -1;
+		for (int i = 0; i < _freeze_results.size(); i++)
+		{
+			string status;
+			FreezeResult fr = _freeze_results[i];
+			if (fr.is_freeze)
+			{
+				if (first_freeze_index == -1)
+				{
+					first_freeze_index = fr.first_frame_id;
+				}
+				if (first_seq_index == -1)
+				{
+					first_seq_index = fr.first_frame_id;
+				}
+				last_seq_index = fr.second_frame_id;
+				if (last_seq_index - first_seq_index > max_sequential)
+				{
+					max_sequential = last_seq_index - first_seq_index;
+					max_sequential_index = first_seq_index;
+				}
+				freeze_count++;
+			}
+			else
+			{
+				first_seq_index = -1;
+				last_seq_index = -1;
+			}
+		}
+		if (freeze_count >= _tolerance)
+			r.result = false;
+		else
+			r.result = true;
+		r.remarks = "Freeze events count: " + to_string(freeze_count) + "\nTotal analyzed frames: " + to_string(_freeze_results.size()) + "\nFirst freeze frame index: " + to_string(first_freeze_index) +
+					"\nMax sequential freeze: " + to_string(max_sequential) + "\nMax sequential freeze index: " + to_string(max_sequential_index) + "\nTolerance: " + to_string(_tolerance) + " freeze event or more\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		vector<string> results = r.getRemarksStrings();
+		for (int i = 0; i < results.size(); i++)
+		{
+			Logger::getLogger().log(results[i], "Metric");
+		}
+    r.value = to_string(freeze_count);
+		return r;
 	}
 };
 
@@ -1715,6 +1915,7 @@ public:
 	// vector<Sample> pnpSamples;
 	Profile depthProfile, irProfile, colorProfile;
 	vector<Metric *> metrics;
+	vector<ContentMetric *> contentMetrics;
 	vector<PnpMetric *> pnpMetrics;
 	vector<string> depthNonMandatoryMetrics, irNonMandatoryMetrics, colorNonMandatoryMetrics, pnpNonMandatoryMetrics;
 	string testBasePath;
@@ -1954,6 +2155,12 @@ public:
 			break;
 		}
 	}
+	void IgnoreMetricAllStreams(string metricName)
+	{
+		depthNonMandatoryMetrics.push_back(metricName);
+		irNonMandatoryMetrics.push_back(metricName);
+		colorNonMandatoryMetrics.push_back(metricName);
+	}
 	void IgnorePNPMetric(string metricName)
 	{
 		pnpNonMandatoryMetrics.push_back(metricName);
@@ -2136,6 +2343,68 @@ public:
 					   ",PNP, " + pnpMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 			AppendIterationSummaryCVS(rawline);
+		}
+		for (int i = 0; i < contentMetrics.size(); i++)
+		{
+			if (currDepthProfile.fps != 0)
+			{
+				contentMetrics[i]->configure(currDepthProfile, fa.get_depth_corrupted_results(), fa.get_depth_freeze_results());
+				MetricResult r = contentMetrics[i]->calc();
+				if (r.result == false)
+				{
+					if (!stringIsInVector(contentMetrics[i]->_metricName, depthNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + contentMetrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
+					failedMetrics.push_back("Metric: " + contentMetrics[i]->_metricName + " Failed on Depth stream");
+				}
+				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				iterationResults.push_back(iRes);
+			}
+			if (currIRProfile.fps != 0)
+			{
+				contentMetrics[i]->configure(currIRProfile, fa.get_infrared_corrupted_results(), fa.get_infrared_freeze_results());
+				MetricResult r = contentMetrics[i]->calc();
+				if (r.result == false)
+				{
+					if (!stringIsInVector(contentMetrics[i]->_metricName, irNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + contentMetrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
+					failedMetrics.push_back("Metric: " + contentMetrics[i]->_metricName + " Failed on IR stream");
+				}
+				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				iterationResults.push_back(iRes);
+			}
+			if (currColorProfile.fps != 0)
+			{
+				contentMetrics[i]->configure(currColorProfile, fa.get_color_corrupted_results(), fa.get_color_freeze_results());
+				contentMetrics[i]->_useSystemTs = false;
+				// metrics[i]->_useSystemTs = true;
+				MetricResult r = contentMetrics[i]->calc();
+				if (r.result == false)
+				{
+					if (!stringIsInVector(contentMetrics[i]->_metricName, colorNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + contentMetrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
+					failedMetrics.push_back("Metric: " + contentMetrics[i]->_metricName + " Failed on Color stream");
+				}
+				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				iterationResults.push_back(iRes);
+			}
 		}
 		for (int i = 0; i < metrics.size(); i++)
 		{
