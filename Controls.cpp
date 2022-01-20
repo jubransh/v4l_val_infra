@@ -239,7 +239,13 @@ public:
             for (int i = 0; i < cntrl._values.size(); i++)
             {
                 initFrameLists();
-                collectFrames = true;
+                // collectFrames = true;
+                if (IRUsed)
+                    ir_collectFrames = true;
+                else if (DepthUsed)
+                    depth_collectFrames = true;
+                else if (ColorUsed)
+                    color_collectFrames = true;
                 Logger::getLogger().log("Started Iteration: " + to_string(j * cntrl._values.size() + i), "Test");
                 Logger::getLogger().log("Sleep before setting control: " + cntrl._controlName + " for " + to_string(testDuration / 2) + " seconds", "Test");
                 std::this_thread::sleep_for(std::chrono::seconds(testDuration / 2));
@@ -256,7 +262,13 @@ public:
                 Logger::getLogger().log("Sleep after setting control: " + cntrl._controlName + " for " + to_string(testDuration / 2) + " seconds", "Test");
                 std::this_thread::sleep_for(std::chrono::seconds(testDuration / 2));
 
-                collectFrames = false;
+                // collectFrames = false;
+                if (IRUsed)
+                    ir_collectFrames = false;
+                else if (DepthUsed)
+                    depth_collectFrames = false;
+                else if (ColorUsed)
+                    color_collectFrames = false;
 
                 if (!(cntrl._controlName == "Exposure" || cntrl._controlName == "Color_Exposure"))
                 {
@@ -389,67 +401,67 @@ TEST_F(ControlsTest, IR_LaserPowerMode)
     configure(10);
     run(StreamType::IR_Stream, "LaserPowerMode");
 }
-////////////////////////////////////////////////////////////////////////////
-// Color Controls - Still not ready
-TEST_F(ControlsTest, Color_BackLighCompensation)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "BackLighCompensation");
-}
+// ////////////////////////////////////////////////////////////////////////////
+// // Color Controls - Still not ready
+// TEST_F(ControlsTest, Color_BackLighCompensation)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "BackLighCompensation");
+// }
 
-TEST_F(ControlsTest, Color_Brightness)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Brightness");
-}
+// TEST_F(ControlsTest, Color_Brightness)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Brightness");
+// }
 
-TEST_F(ControlsTest, Color_Contrast)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Contrast");
-}
+// TEST_F(ControlsTest, Color_Contrast)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Contrast");
+// }
 
-TEST_F(ControlsTest, Color_Exposure)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Color_Exposure");
-}
+// TEST_F(ControlsTest, Color_Exposure)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Color_Exposure");
+// }
 
-TEST_F(ControlsTest, Color_Gain)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Color_Gain");
-}
+// TEST_F(ControlsTest, Color_Gain)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Color_Gain");
+// }
 
-TEST_F(ControlsTest, Color_Gamma)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Gamma");
-}
+// TEST_F(ControlsTest, Color_Gamma)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Gamma");
+// }
 
-TEST_F(ControlsTest, Color_Hue)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Hue");
-}
+// TEST_F(ControlsTest, Color_Hue)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Hue");
+// }
 
-TEST_F(ControlsTest, Color_Saturation)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Saturation");
-}
+// TEST_F(ControlsTest, Color_Saturation)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Saturation");
+// }
 
-TEST_F(ControlsTest, Color_Sharpness)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "Sharpness");
-}
+// TEST_F(ControlsTest, Color_Sharpness)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "Sharpness");
+// }
 
-TEST_F(ControlsTest, Color_WhiteBalance)
-{
-    configure(10);
-    run(StreamType::Color_Stream, "WhiteBalance");
-}
+// TEST_F(ControlsTest, Color_WhiteBalance)
+// {
+//     configure(10);
+//     run(StreamType::Color_Stream, "WhiteBalance");
+// }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -557,6 +569,7 @@ public:
                 currValue = colorSensor.GetControl(cntrl._controlID);
             MetricResult result;
             string iterationStatus;
+            iterations+=1;
             if (currValue == cntrl._values[j])
             {
                 result.result = true;
@@ -566,6 +579,7 @@ public:
             {
                 result.result = false;
                 iterationStatus = "Fail";
+                failediter+=1;
             }
             string streamName = "";
             if (stream == StreamType::Depth_Stream)
@@ -655,52 +669,52 @@ TEST_F(ControlsSetGetTest, IR_LaserPowerMode_Set_Get)
 ///////////////////////////////////////////////////////////////////////////////
 ///  Color Set Get tests - Still not ready
 
-TEST_F(ControlsSetGetTest, Color_BackLighCompensation_Set_Get)
-{
-    run(StreamType::Color_Stream, "BackLighCompensation");
-}
+// TEST_F(ControlsSetGetTest, Color_BackLighCompensation_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "BackLighCompensation");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Brightness_Set_Get)
-{
-    run(StreamType::Color_Stream, "Brightness");
-}
+// TEST_F(ControlsSetGetTest, Color_Brightness_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Brightness");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Contrast_Set_Get)
-{
-    run(StreamType::Color_Stream, "Contrast");
-}
+// TEST_F(ControlsSetGetTest, Color_Contrast_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Contrast");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Exposure_Set_Get)
-{
-    run(StreamType::Color_Stream, "Color_Exposure");
-}
+// TEST_F(ControlsSetGetTest, Color_Exposure_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Color_Exposure");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Gain_Set_Get)
-{
-    run(StreamType::Color_Stream, "Color_Gain");
-}
+// TEST_F(ControlsSetGetTest, Color_Gain_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Color_Gain");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Gamma_Set_Get)
-{
-    run(StreamType::Color_Stream, "Gamma");
-}
+// TEST_F(ControlsSetGetTest, Color_Gamma_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Gamma");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Hue_Set_Get)
-{
-    run(StreamType::Color_Stream, "Hue");
-}
+// TEST_F(ControlsSetGetTest, Color_Hue_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Hue");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Saturation_Set_Get)
-{
-    run(StreamType::Color_Stream, "Saturation");
-}
+// TEST_F(ControlsSetGetTest, Color_Saturation_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Saturation");
+// }
 
-TEST_F(ControlsSetGetTest, Color_Sharpness_Set_Get)
-{
-    run(StreamType::Color_Stream, "Sharpness");
-}
+// TEST_F(ControlsSetGetTest, Color_Sharpness_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "Sharpness");
+// }
 
-TEST_F(ControlsSetGetTest, Color_WhiteBalance_Set_Get)
-{
-    run(StreamType::Color_Stream, "WhiteBalance");
-}
+// TEST_F(ControlsSetGetTest, Color_WhiteBalance_Set_Get)
+// {
+//     run(StreamType::Color_Stream, "WhiteBalance");
+// }

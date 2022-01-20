@@ -131,10 +131,12 @@ public:
         if (ColorUsed)
         {
             colorSensor.Start(AddFrame);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (DepthUsed)
         {
             depthSensor.Start(AddFrame);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (IRUsed)
         {
@@ -154,7 +156,10 @@ public:
             SystemMonitor sysMon2;
             Logger::getLogger().log("Starting PNP measurements", "Test");
             sysMon2.StartMeasurment(addToPnpList, 250);
-            collectFrames = true;
+            // collectFrames = true;
+            depth_collectFrames = true;
+            ir_collectFrames = true;
+            color_collectFrames = true;
             Logger::getLogger().log("collecting frames for half iteration duration(" + to_string(iterationDuration / 2) + "Seconds)", "Test");
             int duration = iterationDuration / 2;
             if (!_captureTempWhileStream)
@@ -171,14 +176,15 @@ public:
                 }
             }
 
-            collectFrames = false;
-
             if (_isContent)
             {
                 fa.stop_collection();
                 fa.save_results();
             }
-
+            depth_collectFrames = false;
+            ir_collectFrames = false;
+            color_collectFrames = false;
+            
             Logger::getLogger().log("Stopping PNP measurements", "Test");
             sysMon2.StopMeasurment();
             if (!_captureTempWhileStream)
@@ -219,6 +225,12 @@ public:
             Logger::getLogger().log("Going to sleep for the rest of the iteration duration(" + to_string(iterationDuration) + "Seconds), for: " + to_string(iterationDuration / 2 - calcDuration) + "Seconds", "Test");
             std::this_thread::sleep_for(std::chrono::seconds(iterationDuration / 2 - calcDuration));
         }
+
+        if (ColorUsed)
+        {
+            colorSensor.Stop();
+            colorSensor.Close();
+        }
         if (DepthUsed)
         {
             depthSensor.Stop();
@@ -229,11 +241,7 @@ public:
             irSensor.Stop();
             irSensor.Close();
         }
-        if (ColorUsed)
-        {
-            colorSensor.Stop();
-            colorSensor.Close();
-        }
+
         Logger::getLogger().log("Test Summary:", "Run");
         Logger::getLogger().log(testStatus ? "Pass" : "Fail", "Run");
         if (!testStatus)
@@ -246,7 +254,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(3 * 60, false);
+    configure(1 *60 * 60, false);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
@@ -279,7 +287,7 @@ TEST_F(LongTest, ContentLongStreamTest)
 
 TEST_F(LongTest, TempCaptureLongStreamTest)
 {
-    configure(3 * 60, true);
+    configure(1 * 60 * 60, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
