@@ -214,7 +214,7 @@ private:
 	static const int tolerance_SequentialFrameDrops = 2;
 	static const int tolerance_FrameDropInterval = 1; // Tolerance is always 1 hard coded - what changes is the interval
 	static const int tolerance_FrameDropsPercentage = 5;
-	static const int tolerance_FramesArrived = 1;
+	static const int tolerance_FramesArrived = 5;
 	static const int tolerance_FpsValidity = 5;
 	static const int tolerance_FrameSize = 1;
 	static const int tolerance_IDCorrectness = 1; // Tolerance is not used - if one frame has MD error, Metric Fails
@@ -1164,7 +1164,7 @@ public:
 			throw std::runtime_error("Frames array is empty");
 		double actualStreamDuration = _testDuration * 1000;
 		double ttff = _frames[0].systemTimestamp - _startTime;
-		int zero_delta_frames, droppedFrames, totalFramesDropped = 0;
+		int zero_delta_frames = 0, droppedFrames =0 , totalFramesDropped = 0;
 		if (_profile.streamType == StreamType::IR_Stream)
 		{
 			if (currColorProfile.fps != 0)
