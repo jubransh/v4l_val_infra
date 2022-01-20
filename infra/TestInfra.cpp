@@ -1136,7 +1136,7 @@ public:
 			throw std::runtime_error("Frames array is empty");
 		double actualStreamDuration = _testDuration * 1000;
 		double ttff = _frames[0].systemTimestamp - _startTime;
-		int zero_delta_frames, droppedFrames, totalFramesDropped = 0;
+		int zero_delta_frames = 0, droppedFrames =0 , totalFramesDropped = 0;
 		string text = "";
 		double actualDelta;
 		double expectedDelta = 1000.0 / _profile.fps;
