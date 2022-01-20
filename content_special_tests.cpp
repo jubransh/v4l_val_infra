@@ -78,7 +78,8 @@ public:
             initFrameLists();
 
             fa.start_collection();
-            collectFrames = true;
+            depth_collectFrames = true;
+            color_collectFrames = true;
 
             if (_is_depth_over_color)
             {
@@ -97,7 +98,8 @@ public:
 
             Logger::getLogger().log("Collecting frames for " + to_string(testDuration) + "seconds", "Test", LOG_INFO);
             std::this_thread::sleep_for(std::chrono::seconds(testDuration));
-            collectFrames = false;
+            depth_collectFrames = false;
+            color_collectFrames = false;
 
             fa.stop_collection();
             fa.save_results();
