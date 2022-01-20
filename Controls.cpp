@@ -239,7 +239,13 @@ public:
             for (int i = 0; i < cntrl._values.size(); i++)
             {
                 initFrameLists();
-                collectFrames = true;
+                // collectFrames = true;
+                if (IRUsed)
+                    ir_collectFrames = true;
+                else if (DepthUsed)
+                    depth_collectFrames = true;
+                else if (ColorUsed)
+                    color_collectFrames = true;
                 Logger::getLogger().log("Started Iteration: " + to_string(j * cntrl._values.size() + i), "Test");
                 Logger::getLogger().log("Sleep before setting control: " + cntrl._controlName + " for " + to_string(testDuration / 2) + " seconds", "Test");
                 std::this_thread::sleep_for(std::chrono::seconds(testDuration / 2));
@@ -256,7 +262,13 @@ public:
                 Logger::getLogger().log("Sleep after setting control: " + cntrl._controlName + " for " + to_string(testDuration / 2) + " seconds", "Test");
                 std::this_thread::sleep_for(std::chrono::seconds(testDuration / 2));
 
-                collectFrames = false;
+                // collectFrames = false;
+                if (IRUsed)
+                    ir_collectFrames = false;
+                else if (DepthUsed)
+                    depth_collectFrames = false;
+                else if (ColorUsed)
+                    color_collectFrames = false;
 
                 if (!(cntrl._controlName == "Exposure" || cntrl._controlName == "Color_Exposure"))
                 {
