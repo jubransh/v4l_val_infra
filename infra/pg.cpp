@@ -328,7 +328,7 @@ public:
         
         depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_640x480_30");
 
-        depth_ir_color.push_back("z16_1280x720_5+y8_1280x720_15+yuyv_1280x720_5");
+        depth_ir_color.push_back("z16_1280x720_5+y8_1280x720_5+yuyv_1280x720_5");
         depth_ir_color.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15");
         // depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
 
