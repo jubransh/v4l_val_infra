@@ -129,7 +129,7 @@ public:
 
 
             long startTime2 = TimeUtils::getCurrentTimestamp();
-            std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
+            std::this_thread::sleep_for(std::chrono::seconds(testDuration));
 
             // collectFrames=false;
             if (ColorUsed)
