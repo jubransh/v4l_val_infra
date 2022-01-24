@@ -226,7 +226,7 @@ public:
                 irSensor.Start(AddFrame);
             }
 
-            std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
+            std::this_thread::sleep_for(std::chrono::seconds(testDuration));
             if (_isContent)
             {
                 fa.stop_collection();
