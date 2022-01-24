@@ -921,18 +921,18 @@ public:
 			return r;
 		}
 		double firstFrameDelay = _frames[0].systemTimestamp - _startTime;
-		if (_profile.streamType == StreamType::IR_Stream)
-		{
-			if (currColorProfile.fps != 0)
-				firstFrameDelay -= 1000;
-			if (currDepthProfile.fps != 0)
-				firstFrameDelay -= 1000;
-		}
-		if (_profile.streamType == StreamType::Depth_Stream)
-		{
-			if (currColorProfile.fps != 0)
-				firstFrameDelay -= 1000;
-		}
+		//if (_profile.streamType == StreamType::IR_Stream)
+		//{
+		//	if (currColorProfile.fps != 0)
+		//		firstFrameDelay -= 1000;
+		//	if (currDepthProfile.fps != 0)
+		//		firstFrameDelay -= 1000;
+		//}
+		//if (_profile.streamType == StreamType::Depth_Stream)
+		//{
+		//	if (currColorProfile.fps != 0)
+		//		firstFrameDelay -= 1000;
+		//}
 		if (firstFrameDelay >= _tolerance)
 			r.result = false;
 		else
@@ -1401,18 +1401,18 @@ public:
 		double actualStreamDuration = _testDuration * 1000;
 		double ttff = _frames[0].systemTimestamp - _startTime;
 		int zero_delta_frames = 0, droppedFrames =0 , totalFramesDropped = 0;
-		if (_profile.streamType == StreamType::IR_Stream)
-		{
-			if (currColorProfile.fps != 0)
-				ttff -= 1000;
-			if (currDepthProfile.fps != 0)
-				ttff -= 1000;
-		}
-		if (_profile.streamType == StreamType::Depth_Stream)
-		{
-			if (currColorProfile.fps != 0)
-				ttff -= 1000;
-		}
+		//if (_profile.streamType == StreamType::IR_Stream)
+		//{
+		//	if (currColorProfile.fps != 0)
+		//		ttff -= 1000;
+		//	if (currDepthProfile.fps != 0)
+		//		ttff -= 1000;
+		//}
+		//if (_profile.streamType == StreamType::Depth_Stream)
+		//{
+		//	if (currColorProfile.fps != 0)
+		//		ttff -= 1000;
+		//}
 		// int droppedFrames, totalFramesDropped = 0;
 		string text = "";
 		double actualDelta;
@@ -2070,7 +2070,7 @@ public:
 		Logger::getLogger().log("Host IP: " + IPaddress, "Setup()");
 		Logger::getLogger().log("Driver version: " + DriverVersion, "Setup()");
 		Logger::getLogger().log("Initializing camera", "Setup()");
-		cam.Init(false);
+		cam.Init();
 		Logger::getLogger().log("Camera Serial:" + cam.GetSerialNumber(), "Setup()");
 		Logger::getLogger().log("Camera FW version:" + cam.GetFwVersion(), "Setup()");
 
@@ -2510,7 +2510,7 @@ public:
 			if (currDepthProfile.fps != 0)
 			{
 				metrics[i]->configure(currDepthProfile, depthFramesList);
-				metrics[i]->_useSystemTs = true;
+				//metrics[i]->_useSystemTs = true;
 				MetricResult r = metrics[i]->calc();
 				if (r.result == false)
 				{
@@ -2540,7 +2540,7 @@ public:
 			if (currIRProfile.fps != 0)
 			{
 				metrics[i]->configure(currIRProfile, irFramesList);
-				metrics[i]->_useSystemTs = true;
+				//metrics[i]->_useSystemTs = true;
 				MetricResult r = metrics[i]->calc();
 				if (r.result == false)
 				{
@@ -2569,7 +2569,6 @@ public:
 			if (currColorProfile.fps != 0)
 			{
 				metrics[i]->configure(currColorProfile, colorFramesList);
-				metrics[i]->_useSystemTs = true;
 				// metrics[i]->_useSystemTs = true;
 				MetricResult r = metrics[i]->calc();
 				if (r.result == false)
