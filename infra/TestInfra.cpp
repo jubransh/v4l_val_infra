@@ -910,9 +910,16 @@ public:
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
 		if (_startTime == 0)
 			throw std::runtime_error("Missing Start time in Metric");
-		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
 		MetricResult r;
+		if (_frames.size() == 0)
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric",LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 		double firstFrameDelay = _frames[0].systemTimestamp - _startTime;
 		if (_profile.streamType == StreamType::IR_Stream)
 		{
@@ -979,8 +986,16 @@ public:
 		int droppedFrames = 0;
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 
 		string text = "";
 		int indexOfChange;
@@ -1037,7 +1052,6 @@ public:
 					firstSequentialDropIndex = _frames[i].ID;
 			}
 		}
-		MetricResult r;
 		if (maxDrops >= _tolerance)
 			r.result = false;
 		else
@@ -1093,8 +1107,16 @@ public:
 		double actualDelta;
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 
 		string text = "";
 		bool status = true;
@@ -1202,7 +1224,6 @@ public:
 				}
 			}
 		}
-		MetricResult r;
 		r.result = status;
 
 		r.remarks = text + "First fail index: " + to_string(firstFail) + "\nInterval: " + to_string(_interval) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
@@ -1258,8 +1279,16 @@ public:
 	{
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 		string text = "";
 		double actualDelta = 0;
 		int indexOfChange;
@@ -1314,7 +1343,6 @@ public:
 
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + "% on " + _profile.GetText(), "Metric");
 
-		MetricResult r;
 		if (100.0 * totalFramesDropped / expectedFrames >= _tolerance)
 			r.result = false;
 		else
@@ -1360,8 +1388,16 @@ public:
 	{
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 		double actualStreamDuration = _testDuration * 1000;
 		double ttff = _frames[0].systemTimestamp - _startTime;
 		int zero_delta_frames = 0, droppedFrames =0 , totalFramesDropped = 0;
@@ -1410,7 +1446,6 @@ public:
 		double actualFramesArrived = _frames.size();
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
 
-		MetricResult r;
 		double percentage = (1 - (actualFramesArrived / expectedFrames)) * 100;
 		if (percentage >= _tolerance)
 			r.result = false;
@@ -1464,12 +1499,19 @@ public:
 		double averageDelta;
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 
 		int skippedFrames = 0;
 		string text = "";
-		MetricResult r;
 		double expectedDelta;
 		double percentage;
 		if (!_autoExposureOff)
@@ -1572,8 +1614,16 @@ public:
 	{
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 		int numberOfcorruptFrames = 0;
 		double expectedFrameSize = _profile.GetSize();
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
@@ -1591,7 +1641,6 @@ public:
 				}
 			}
 		}
-		MetricResult r;
 		double percentage = ((numberOfcorruptFrames / _frames.size())) * 100.0;
 		if (percentage >= _tolerance)
 			r.result = false;
@@ -1645,8 +1694,16 @@ public:
 	{
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 
 		int indexOfChange;
 		double fps;
@@ -1721,7 +1778,7 @@ public:
 			if (status == false && indexOfFirstFail == -1)
 				indexOfFirstFail = _frames[i].ID;
 		}
-		MetricResult r;
+
 		r.result = status;
 
 		r.remarks = text + "Index of first fail: " + to_string(indexOfFirstFail) + "\nNumber of reset counter events: " + to_string(numberOfReset) +
@@ -1779,8 +1836,16 @@ public:
 	{
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 		int actualLatency = -1;
 		int actualFrames = -1;
 		int indexOfChange = -1;
@@ -1818,7 +1883,6 @@ public:
 				break;
 			}
 		}
-		MetricResult r;
 		actualLatency = indexOfChange - indexOfSet;
 		if (actualFrames >= 0 && actualFrames <= _tolerance)
 			r.result = true;
@@ -1858,8 +1922,16 @@ public:
 	{
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
+		MetricResult r;
 		if (_frames.size() == 0)
-			throw std::runtime_error("Frames array is empty");
+		{
+			//throw std::runtime_error("Frames array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = 0;
+			return r;
+		}
 		int numberOfcorruptFrames = 0;
 		int indexOfFirstCorrupted = -1;
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
@@ -1875,7 +1947,6 @@ public:
 				}
 			}
 		}
-		MetricResult r;
 		if (numberOfcorruptFrames > 0)
 			r.result = false;
 		else
