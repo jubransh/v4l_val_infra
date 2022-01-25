@@ -917,7 +917,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric",LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 		double firstFrameDelay = _frames[0].systemTimestamp - _startTime;
@@ -993,7 +993,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 
@@ -1114,7 +1114,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 
@@ -1286,7 +1286,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 		string text = "";
@@ -1395,7 +1395,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 		double actualStreamDuration = _testDuration * 1000;
@@ -1506,7 +1506,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 
@@ -1621,7 +1621,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 		int numberOfcorruptFrames = 0;
@@ -1701,7 +1701,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 
@@ -1843,7 +1843,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 		int actualLatency = -1;
@@ -1929,7 +1929,7 @@ public:
 			r.result = false;
 			r.remarks = "Error: Frames not arrived";
 			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
-			r.value = 0;
+			r.value = "0";
 			return r;
 		}
 		int numberOfcorruptFrames = 0;
