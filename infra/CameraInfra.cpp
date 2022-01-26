@@ -860,10 +860,14 @@ public:
                                                    frame.frameMD = md;
 
                                                    // if this is an actual frame then call the callback functtion
-                                                   if (frame.hwTimestamp!=0)
+                                                   if (frame.hwTimestamp!=0 && frame.frameMD.commonMetadata.Timestamp!=0)
                                                    {
                                                        //Send the new created frame with the callback
                                                        (*FramesCallback)(frame);
+                                                   }
+                                                   else
+                                                   {
+                                                       Logger::getLogger().log("Sensor: "+ name +", Frame #"+ to_string(frame.ID)+" with HW TimeStamp =0 was Dropped ", "Sensor",LOG_WARNING);
                                                    }
                                                    //Free memory of the allocated buffer
                                                    if (copyFrameData)
