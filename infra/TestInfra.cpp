@@ -1017,7 +1017,7 @@ public:
 		else
 		{
 			fps = _profile.fps;
-			indexOfChange = 1;
+			indexOfChange = 5;
 		}
 
 		double expectedDelta = 1000.0 / fps;
@@ -1127,7 +1127,7 @@ public:
 		{
 			expectedDelta = 1000.0 / _profile.fps;
 			Logger::getLogger().log("Calculating metric: " + _metricName + " with interval: " + to_string(_interval) + " on " + _profile.GetText(), "Metric");
-			for (int i = 1; i < _frames.size(); i++)
+			for (int i = 5; i < _frames.size(); i++)
 			{
 				if (_useSystemTs)
 				{
@@ -1310,7 +1310,7 @@ public:
 		else
 		{
 			fps = _profile.fps;
-			indexOfChange = 1;
+			indexOfChange = 5;
 		}
 		double expectedDelta = 1000 / fps;
 		int droppedFrames = 0;
@@ -1418,7 +1418,7 @@ public:
 		double actualDelta;
 		double expectedDelta = 1000.0 / _profile.fps;
 		// Calculate # of frames dropped
-		for (int i = 1; i < _frames.size(); i++)
+		for (int i = 5; i < _frames.size(); i++)
 		{
 			if (_useSystemTs)
 			{
@@ -1510,7 +1510,7 @@ public:
 			return r;
 		}
 
-		int skippedFrames = 0;
+		int skippedFrames = 5;
 		string text = "";
 		double expectedDelta;
 		double percentage;
@@ -1518,7 +1518,7 @@ public:
 		{
 			expectedDelta = 1000.0 / _profile.fps;
 			Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
-			for (int i = 1; i < _frames.size(); i++)
+			for (int i = 5; i < _frames.size(); i++)
 			{
 				if (_useSystemTs)
 				{
@@ -1628,7 +1628,7 @@ public:
 		double expectedFrameSize = _profile.GetSize();
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
 		bool once = false;
-		for (int i = 0; i < _frames.size(); i++)
+		for (int i = 5; i < _frames.size(); i++)
 		{
 
 			if (_frames[i].size != expectedFrameSize)
@@ -1641,7 +1641,7 @@ public:
 				}
 			}
 		}
-		double percentage = ((numberOfcorruptFrames / _frames.size())) * 100.0;
+		double percentage = ((numberOfcorruptFrames / (_frames.size()-5))) * 100.0;
 		if (percentage >= _tolerance)
 			r.result = false;
 		else
@@ -1724,7 +1724,7 @@ public:
 		else
 		{
 			fps = _profile.fps;
-			indexOfChange = 1;
+			indexOfChange = 5;
 		}
 
 		int numberOfReset = 0;
@@ -1935,7 +1935,7 @@ public:
 		int numberOfcorruptFrames = 0;
 		int indexOfFirstCorrupted = -1;
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
-		for (int i = 0; i < _frames.size(); i++)
+		for (int i = 5; i < _frames.size(); i++)
 		{
 
 			if (!_frames[i].frameMD.getMetaDataByString("DataCorrectness"))
