@@ -801,6 +801,7 @@ public:
 
                                                    if (metaFileOpened)
                                                    {
+                                                       md.commonMetadata.frameId=mdV4l2Buffer.sequence;
                                                        if (type == SensorType::Depth or type== SensorType::IR)
                                                        {
                                                             STMetaDataExtMipiDepthIR *ptr = static_cast<STMetaDataExtMipiDepthIR*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
