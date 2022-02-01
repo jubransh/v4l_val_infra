@@ -861,7 +861,7 @@ public:
                                                    frame.frameMD = md;
 
                                                    // if this is an actual frame then call the callback functtion
-                                                   if (frame.hwTimestamp!=0 && frame.frameMD.commonMetadata.Timestamp!=0)
+                                                   if (!metaFileOpened || (frame.hwTimestamp!=0 && frame.frameMD.commonMetadata.Timestamp!=0))
                                                    {
                                                        //Send the new created frame with the callback
                                                        (*FramesCallback)(frame);
