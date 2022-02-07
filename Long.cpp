@@ -277,7 +277,7 @@ TEST_F(LongTest, ContentLongStreamTest)
     IgnorePNPMetric("CPU Consumption");
     IgnorePNPMetric("Memory Consumption");
 
-    configure(60 * 60, false, true);
+    configure(10 * 60 * 60, false, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     // streams.push_back(StreamType::IR_Stream);
@@ -287,7 +287,7 @@ TEST_F(LongTest, ContentLongStreamTest)
 
 TEST_F(LongTest, TempCaptureLongStreamTest)
 {
-    configure(1 * 60 * 60, true);
+    configure(10 * 60 * 60, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
