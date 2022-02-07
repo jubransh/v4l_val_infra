@@ -306,7 +306,7 @@ TEST_F(StabilityTest, Normal)
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 500, false);
+    configure(30, 1500, false);
     run(streams);
 }
 
@@ -345,7 +345,7 @@ TEST_F(StabilityTest, Random)
     streams.push_back(sT6);
     streams.push_back(sT7);
 
-    configure(30, 500, true);
+    configure(30, 1500, true);
     run(streams);
 }
 
@@ -420,7 +420,7 @@ TEST_F(StabilityTest, PnpRandom)
     streams.push_back(sT5);
     streams.push_back(sT6);
     streams.push_back(sT7);
-    configure(30, 500, true);
+    configure(30, 1500, true);
     runWithPNP(streams);
 }
 
