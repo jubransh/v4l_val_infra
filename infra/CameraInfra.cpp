@@ -413,7 +413,7 @@ private:
         return result;
     }
 
-    int ioct_timeout (string buffType, int __fd, unsigned long int __request, v4l2_buffer buff, int timeput_ms)
+    int ioct_timeout (string buffType, int fd, unsigned long int request, v4l2_buffer *buff, int timeput_ms)
     {
         typedef unordered_map<string, pthread_t> ThreadMap;
         ThreadMap tm;
@@ -424,7 +424,7 @@ private:
         // thread open_thread(open, __path,__oflag);
         thread open_thread([&]()
                             {
-                               result = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &buff);                                                   
+                               result = ioctl(fd, request, buff);           
                                isDone = true; 
                             });
 
@@ -813,15 +813,15 @@ public:
                                                    //V4l2Buffer.m.userptr = (unsigned long long) framesBuffer[V4l2Buffer.index];
 
                                                    //Read the frame buff freom the V4L //#TODO timeout mechanism
-                                                   //int res = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer);
-                                                   int res = ioct_timeout(name + " Frame", dataFileDescriptor, VIDIOC_DQBUF, V4l2Buffer, 5000);
+                                                //    int res = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer);
+                                                   int res = ioct_timeout(name + " Frame", dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer, 5000);
                                                    if(res != 0)
                                                         Logger::getLogger().log(name + " Frame VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor");
                                                    
                                                    if (metaFileOpened)
                                                    {
-                                                        res = ioct_timeout(name + " MD frame", dataFileDescriptor, VIDIOC_DQBUF, mdV4l2Buffer, 5000);
-                                                        //res = ioctl(metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer);
+                                                        res = ioct_timeout(name + " MD frame", metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer, 5000);
+                                                        // res = ioctl(metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer);
                                                         if(res != 0)
                                                             Logger::getLogger().log(name + " MD VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor");
                                                    }
