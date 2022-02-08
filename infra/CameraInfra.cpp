@@ -351,7 +351,7 @@ struct Frame
 
 class Sensor
 {
-private:
+private:    
     bool isClosed = true;
     std::shared_ptr<std::thread> _t;
     bool cameraBusy = false;
@@ -413,6 +413,50 @@ private:
         return result;
     }
 
+    int ioct_timeout (string buffType, int __fd, unsigned long int __request, v4l2_buffer buff, int timeput_ms)
+    {
+        typedef unordered_map<string, pthread_t> ThreadMap;
+        ThreadMap tm;
+        string t_name = "open_thread";
+        int result = -1;
+        bool isDone = false;
+
+        // thread open_thread(open, __path,__oflag);
+        thread open_thread([&]()
+                            {
+                               result = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &buff);                                                   
+                               isDone = true; 
+                            });
+
+        tm[t_name] = open_thread.native_handle();
+        open_thread.detach();
+
+        auto delta = 0;
+        auto t1 = TimeUtils::getCurrentTimestamp();
+        while (!isDone)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            auto t2 = TimeUtils::getCurrentTimestamp();
+            delta += t2 - t1;
+            if (delta > timeput_ms)
+            {
+                // Kill the open thread
+                Logger::getLogger().log(buffType + " did not arrive within " + to_string(timeput_ms) + "ms - Task killed", "Sensor");
+                ThreadMap::const_iterator it = tm.find(t_name);
+                if (it != tm.end())
+                {
+                    pthread_cancel(it->second);
+                    tm.erase(t_name);
+                }
+
+                break;
+            }
+            t1 = t2;
+        }
+
+        return result;
+    }
+    
     void requestBuffers(uint8_t fd, uint32_t type, uint32_t memory, uint32_t count)
     {
         struct v4l2_requestbuffers v4L2ReqBufferrs
@@ -670,7 +714,7 @@ public:
             throw std::runtime_error("Failed to set Stream format");
         }
         lastProfile = p;
-
+       
         // Set the fps
         struct v4l2_streamparm setFps
         {
@@ -769,13 +813,15 @@ public:
                                                    //V4l2Buffer.m.userptr = (unsigned long long) framesBuffer[V4l2Buffer.index];
 
                                                    //Read the frame buff freom the V4L //#TODO timeout mechanism
-                                                   int res = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer);
+                                                   //int res = ioctl(dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer);
+                                                   int res = ioct_timeout(name + " Frame", dataFileDescriptor, VIDIOC_DQBUF, V4l2Buffer, 5000);
                                                    if(res != 0)
                                                         Logger::getLogger().log(name + " Frame VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor");
                                                    
                                                    if (metaFileOpened)
                                                    {
-                                                        res = ioctl(metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer);
+                                                        res = ioct_timeout(name + " MD frame", dataFileDescriptor, VIDIOC_DQBUF, mdV4l2Buffer, 5000);
+                                                        //res = ioctl(metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer);
                                                         if(res != 0)
                                                             Logger::getLogger().log(name + " MD VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor");
                                                    }
