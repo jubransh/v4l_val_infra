@@ -105,21 +105,21 @@ public:
             setCurrentProfiles(pR);
 
             long startTime = TimeUtils::getCurrentTimestamp();
-            int slept = 0;
+            //int slept = 0;
             // collectFrames=true;
             if (ColorUsed)
             {   
                 color_collectFrames= true;
                 colorSensor.Start(AddFrame);
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-                slept+=1;
+                //std::this_thread::sleep_for(std::chrono::seconds(1));
+                //slept+=1;
             }
             if (DepthUsed)
             {
                 depth_collectFrames = true;
                 depthSensor.Start(AddFrame);
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-                slept+=1;
+                //std::this_thread::sleep_for(std::chrono::seconds(1));
+                //slept+=1;
             }
             if (IRUsed)
             {
@@ -129,7 +129,7 @@ public:
 
 
             long startTime2 = TimeUtils::getCurrentTimestamp();
-            std::this_thread::sleep_for(std::chrono::seconds(testDuration-slept));
+            std::this_thread::sleep_for(std::chrono::seconds(testDuration));
 
             // collectFrames=false;
             if (ColorUsed)
@@ -137,14 +137,14 @@ public:
                 color_collectFrames= false;
                 colorSensor.Stop();
                 colorSensor.Close();
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (DepthUsed)
             {
                 depth_collectFrames = false;
                 depthSensor.Stop();
                 depthSensor.Close();
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (IRUsed)
             {

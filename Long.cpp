@@ -131,12 +131,12 @@ public:
         if (ColorUsed)
         {
             colorSensor.Start(AddFrame);
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            //std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (DepthUsed)
         {
             depthSensor.Start(AddFrame);
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            //std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (IRUsed)
         {
