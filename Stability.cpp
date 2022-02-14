@@ -381,7 +381,7 @@ TEST_F(StabilityTest, Random)
     configure(30, 1500, true,false,"");
     run(streams);
 }
-
+/*
 TEST_F(StabilityTest, ContentRandom)
 {
     IgnoreMetricAllStreams("First frame delay");
@@ -456,4 +456,4 @@ TEST_F(StabilityTest, PnpRandom)
     configure(30, 1500, true,false,"");
     runWithPNP(streams);
 }
-
+*/
