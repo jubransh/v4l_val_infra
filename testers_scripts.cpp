@@ -1,9 +1,9 @@
+#include <unistd.h>
 using namespace std;
 
 vector<Frame> framesList;
 bool collect_depth_Frames = false;
 string cameraSerialNumber = "";
-string scriptBasePath = "/home/nvidia/";
 string scriptPath = "";
 uint8_t *fileBuf;
 
@@ -52,6 +52,7 @@ void save_depthFrameArrived(Frame f)
     if (collect_depth_Frames)
     {
         framesList.push_back(f);
+        collect_depth_Frames = false;
     }
 }
 
@@ -61,34 +62,16 @@ TEST_F(TestersScripts, StreamingScript)
     cout << "         Testers Streaming script " << endl;
     cout << "=================================================" << endl;
     bool streaming_script_status = true;
-    // char cwd[256];
-    // getcwd(cwd, 256);
-
-    // string known_image_path = File_Utils::join(cwd, "/known_image.bin");
-    // FILE *file = NULL;
-    // const char *filePath = known_image_path.c_str();
-
-    // // Open the file in binary mode using the "rb" format string
-    // // This also checks if the file exists and/or can be opened for reading correctly
-    // if ((file = fopen(filePath, "rb")) == NULL)
-    //     cout << "Failed to open the known image" << endl;
-    // else
-    //     cout << "Known image opened successfully" << endl;
-
-    // // Get the size of the file in bytes
-    // long fileSize = getFileSize(file);
-    // // Allocate space in the buffer for the whole file
-    // fileBuf = new uint8_t[fileSize];
-
-    // // Read the file in to the buffer
-    // fread(fileBuf, fileSize, 1, file);
 
     Camera cam;
     cam.Init();
     cameraSerialNumber = cam.GetSerialNumber();
 
+    char tmp[256];
+    getcwd(tmp, 256);
+    string scriptBasePath(tmp);
+
     scriptPath = FileUtils::join(scriptBasePath, "Streaming_Script_Logs");
-    scriptPath = FileUtils::join(scriptPath, cameraSerialNumber + "_" + TimeUtils::getDateandTime());
     FileUtils::makePath(scriptPath);
 
     HWMonitorCommand hmc = {0};
@@ -123,29 +106,23 @@ TEST_F(TestersScripts, StreamingScript)
 
     collect_depth_Frames = true;
 
-    std::this_thread::sleep_for(std::chrono::seconds(4));
-
-    collect_depth_Frames = false;
+    for (int i = 0; i < 1000; i++)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if (!collect_depth_Frames)
+            break;
+    }
 
     depthSensor.Stop();
     depthSensor.Close();
 
-    // framesList.clear();
-
     for (int i = 0; i < framesList.size(); i++)
     {
-        string fileName = "depth_frame_" + to_string(framesList[i].ID) + ".bin";
+        string fileName = cameraSerialNumber + "_" + TimeUtils::getDateandTime() + ".bin";
         string imagePath = File_Utils::join(scriptPath, fileName);
+        cout << "Folder path: " << scriptPath << endl;
+        cout << "Image path: " << imagePath << endl;
         write_to_file(imagePath, framesList[i].Buff, framesList[i].size);
-        // int is_equal;
-        // is_equal = memcmp((char *)fileBuf, (char *)framesList[i].Buff, framesList[i].size);
-        // cout << "is_equal" << is_equal << endl;
-        // cout << "Size: " << framesList[i].size << endl;
-        // if (is_equal != 0)
-        // {
-        //     streaming_script_status = false;
-        //     cout << "Frame number: " << framesList[i].ID << " isn't equal to the known image" << endl;
-        // }
     }
 
     delete fileBuf;
