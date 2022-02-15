@@ -8,11 +8,16 @@ paramiko.util.log_to_file("paramiko.log")
 
 time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 
-# hosts="143.185.115.150" # fadi's host
-hosts = "143.185.115.26" # shadi's host
-# hosts= "" # ashraf's host
+# hosts="143.185.115.150" # fadi's host D457-Jetson-01
+# hosts = "143.185.126.16" # shadi's host D457-Jetson-02
+# hosts = "143.185.126.8" # Ashrafs Host D457-Jetson-05
+# hosts = "143.185.126.221" # Content host D457-Jetson-04
+hosts = "143.185.115.150,143.185.126.16,143.185.126.8"
 host_list=hosts.split(",")
 logs_folder="/home/nvidia/Logs/"
+
+collect_raw_data=True
+# collect_raw_data=False
 
 target_folder = r"c:\log"
 download_folder=os.path.join(r"c:\D457-temp",time_stamp)
@@ -57,6 +62,20 @@ def get_file_from_host(host,target_folder):
                                      os.path.join(target_folder, host, sid,test, "iteration_summary.csv"))
                         else:
                             logger.error("iteration_summary.csv not found in test: "+test+" SID: "+sid+ " in host: "+host)
+                        if collect_raw_data:
+                            if "raw_data.csv" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
+                                if not os.path.exists(os.path.join(target_folder, host, sid, test)):
+                                    try:
+                                        os.makedirs(os.path.join(target_folder, host, sid, test))
+                                    except:
+                                        pass
+                                logger.info(
+                                    "getting raw_data.csv from Test:" + test + " from SID:" + sid + " from host:" + host)
+                                sftp.get(logs_folder + "/" + sid + "/" + test + "/raw_data.csv",
+                                         os.path.join(target_folder, host, sid, test, "raw_data.csv"))
+                            else:
+                                logger.error(
+                                    "raw_data.csv not found in test: " + test + " SID: " + sid + " in host: " + host)
 
     if sftp: sftp.close()
     if transport: transport.close()
