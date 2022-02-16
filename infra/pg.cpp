@@ -324,7 +324,7 @@ public:
         depth_ir_color.push_back("z16_640x480_5+y8_640x480_5+yuyv_640x480_5");
         depth_ir_color.push_back("z16_640x480_15+y8_640x480_15+yuyv_640x480_15");
         depth_ir_color.push_back("z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
-        // depth_ir_color.push_back("z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
+        depth_ir_color.push_back("z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
         
         depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_640x480_30");
 
@@ -405,6 +405,10 @@ public:
         return highestProfileCombination;
     }
 
+    vector<Profile> GetProfilesByString(std::string profilesStr)
+    {
+        return ParseProfiles(profilesStr);
+    }
     Resolution GetHighestResolution(StreamType streamType)
     {
         Resolution  highestResolution;

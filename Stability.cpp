@@ -33,12 +33,14 @@ public:
     int _iterations;
     bool _isRandom;
     bool _isContent;
-    void configure(int StreamDuration, int Iterations, bool isRandom, bool isContent = false)
+    std::string _profilesToRun;
+    void configure(int StreamDuration, int Iterations, bool isRandom, bool isContent, std::string profilesToRun="")
     {
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
         Logger::getLogger().log("Configuring test iterations to: " + to_string(Iterations), "Test", LOG_INFO);
         _iterations = Iterations;
+        switch (isRandom)
         switch (isRandom)
         {
         case 1:
@@ -50,6 +52,12 @@ public:
             break;
         }
         _isRandom = isRandom;
+        // if a specific profile set is supplied - use it
+        if (profilesToRun.compare("")!=0)
+        {
+            Logger::getLogger().log("Configuring Static Profile to: "+ profilesToRun, "Test", LOG_INFO);
+            _profilesToRun = profilesToRun;
+        }
         if (isContent)
         {
             Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
@@ -166,7 +174,17 @@ public:
             if (_isRandom)
                 StreamCollection = getRandomProfile(streams);
             else
-                StreamCollection = GetHighestCombination(streams[0]);
+            {
+                if (_profilesToRun.compare("")==0)
+                    StreamCollection = GetHighestCombination(streams[0]);
+                else
+                {
+                    ProfileGenerator pG;
+                    StreamCollection = pG.GetProfilesByString(_profilesToRun);
+                }
+                    
+            }
+                
 
             for (int f = 0; f < StreamCollection.size(); f++)
             {
@@ -306,7 +324,22 @@ TEST_F(StabilityTest, Normal)
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 1500, false);
+    configure(30, 1500, false,false,"");
+    run(streams);
+}
+TEST_F(StabilityTest, Normal_60FPS)
+{
+    vector<vector<StreamType>> streams;
+    vector<StreamType> sT;
+    sT.push_back(StreamType::Depth_Stream);
+    sT.push_back(StreamType::IR_Stream);
+    sT.push_back(StreamType::Color_Stream);
+
+    //vector<StreamType> sT2;
+    //sT2.push_back(StreamType::IR_Stream);
+    streams.push_back(sT);
+    //streams.push_back(sT2);
+    configure(30, 1500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
     run(streams);
 }
 
@@ -345,7 +378,7 @@ TEST_F(StabilityTest, Random)
     streams.push_back(sT6);
     streams.push_back(sT7);
 
-    configure(30, 1500, true);
+    configure(30, 1500, true,false,"");
     run(streams);
 }
 
@@ -382,7 +415,7 @@ TEST_F(StabilityTest, ContentRandom)
     streams.push_back(sT4);
     // streams.push_back(sT5);
 
-    configure(10, 100, true, true);
+    configure(10, 100, true, true,"");
     run(streams);
 }
 
@@ -420,7 +453,7 @@ TEST_F(StabilityTest, PnpRandom)
     streams.push_back(sT5);
     streams.push_back(sT6);
     streams.push_back(sT7);
-    configure(30, 1500, true);
+    configure(30, 1500, true,false,"");
     runWithPNP(streams);
 }
 
