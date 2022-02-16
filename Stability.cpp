@@ -324,7 +324,7 @@ TEST_F(StabilityTest, Normal)
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 1500, false,false,"");
+    configure(30, 500, false,false,"");
     run(streams);
 }
 TEST_F(StabilityTest, Normal_60FPS)
@@ -339,7 +339,7 @@ TEST_F(StabilityTest, Normal_60FPS)
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 1500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
+    configure(30, 500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
     run(streams);
 }
 
@@ -378,7 +378,7 @@ TEST_F(StabilityTest, Random)
     streams.push_back(sT6);
     streams.push_back(sT7);
 
-    configure(30, 1500, true,false,"");
+    configure(30, 500, true,false,"");
     run(streams);
 }
 /*
