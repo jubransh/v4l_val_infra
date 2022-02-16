@@ -254,7 +254,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(5 *60 * 60, false);
+    configure(10 *60 * 60, false);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
