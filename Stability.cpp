@@ -377,7 +377,7 @@ TEST_F(StabilityTest, Random)
     streams.push_back(sT6);
     streams.push_back(sT7);
 
-    configure(30, 500, true,false,"");
+    configure(30, 1000, true,false,"");
     run(streams);
 }
 /*
