@@ -30,7 +30,7 @@
 
 #include "Streaming.cpp"
 #include "Long.cpp"
-// #include"Controls.cpp"
+#include"Controls.cpp"
 #include "Stability.cpp"
 
 #include "content_special_tests.cpp"
