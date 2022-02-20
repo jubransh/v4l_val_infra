@@ -1007,7 +1007,7 @@ public:
 			{
 				if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 				{
-					indexOfChange = i;
+					indexOfChange = i+1;
 
 					break;
 				}
@@ -1175,7 +1175,7 @@ public:
 			{
 				if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 				{
-					indexOfChange = i;
+					indexOfChange = i+1;
 
 					break;
 				}
@@ -1300,7 +1300,7 @@ public:
 			{
 				if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 				{
-					indexOfChange = i;
+					indexOfChange = i+1;
 
 					break;
 				}
@@ -1535,7 +1535,7 @@ public:
 					sumOfDeltas += (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 				}
 			}
-			averageDelta = sumOfDeltas / (_frames.size() - skippedFrames - 1);
+			averageDelta = sumOfDeltas / (_frames.size() - skippedFrames);
 
 			percentage = abs((1 - (averageDelta / expectedDelta)) * 100);
 			if (percentage >= _tolerance)
@@ -1550,7 +1550,7 @@ public:
 			{
 				if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 				{
-					indexOfChange = i;
+					indexOfChange = i+1;
 
 					break;
 				}
@@ -1558,7 +1558,7 @@ public:
 			double actualFPS = getFPSByExposure(_currExp);
 			expectedDelta = 1000.0 / actualFPS;
 			Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
-			for (int i = indexOfChange; i < _frames.size(); i++)
+			for (int i = indexOfChange ; i < _frames.size(); i++)
 			{
 				if (_useSystemTs)
 				{
@@ -1575,7 +1575,7 @@ public:
 					sumOfDeltas += (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
 				}
 			}
-			averageDelta = sumOfDeltas / (_frames.size() - 1 - indexOfChange);
+			averageDelta = sumOfDeltas / (_frames.size()  - indexOfChange);
 			percentage = abs((1 - (averageDelta / expectedDelta)) * 100);
 			if (percentage >= _tolerance)
 				r.result = false;
@@ -1714,7 +1714,7 @@ public:
 			{
 				if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 				{
-					indexOfChange = i;
+					indexOfChange = i+1;
 
 					break;
 				}

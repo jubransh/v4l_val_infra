@@ -272,12 +272,26 @@ public:
 
                 if (!(cntrl._controlName == "Exposure" || cntrl._controlName == "Color_Exposure"))
                 {
+                    /*
                     fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
                     frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
                     frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
                     seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops());
                     idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
                     cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i]);
+                    */
+                    double prevValue;
+                    if (i == 0)
+                        prevValue = cntrl._values[cntrl._values.size() - 1];
+                    else
+                        prevValue = cntrl._values[i - 1];
+
+                    fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevValue);
                 }
                 else
                 {
@@ -641,7 +655,7 @@ TEST_F(ControlsSetGetTest, Depth_LaserPowerMode_Set_Get)
     // configure(10);
     run(StreamType::Depth_Stream, "LaserPowerMode");
 }
-
+/*
 ////////////////////////////////////////////////////////////////////////////
 // IR Set Get tests
 TEST_F(ControlsSetGetTest, IR_Gain_Set_Get)
@@ -665,7 +679,7 @@ TEST_F(ControlsSetGetTest, IR_LaserPowerMode_Set_Get)
     // configure(10);
     run(StreamType::IR_Stream, "LaserPowerMode");
 }
-
+*/
 ///////////////////////////////////////////////////////////////////////////////
 ///  Color Set Get tests - Still not ready
 
