@@ -2598,7 +2598,7 @@ public:
 				AppendIterationSummaryCVS(rawline);
 			}
 		}
-		/ calculate metric using HW timeStamp
+		// calculate metric using System timeStamp
 		for (int i = 0; i < metrics.size(); i++)
 		{
 			if (currDepthProfile.fps != 0)
