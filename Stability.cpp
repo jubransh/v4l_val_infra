@@ -41,7 +41,6 @@ public:
         Logger::getLogger().log("Configuring test iterations to: " + to_string(Iterations), "Test", LOG_INFO);
         _iterations = Iterations;
         switch (isRandom)
-        switch (isRandom)
         {
         case 1:
             Logger::getLogger().log("Configuring stability test type to: Random", "Test", LOG_INFO);
