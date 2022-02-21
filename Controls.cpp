@@ -360,12 +360,14 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////
 // Depth Control Tests
+/*
 TEST_F(ControlsTest, Depth_Gain)
 {
     configure(10);
 
     run(StreamType::Depth_Stream, "Gain");
 }
+*/
 TEST_F(ControlsTest, Depth_Exposure)
 {
     configure(10);
@@ -388,7 +390,7 @@ TEST_F(ControlsTest, Depth_LaserPowerMode)
 }
 ////////////////////////////////////////////////////////////////////////////
 // IR Control Tests
-
+/*
 TEST_F(ControlsTest, IR_Gain)
 {
     configure(10);
@@ -477,6 +479,7 @@ TEST_F(ControlsTest, IR_LaserPowerMode)
 //     run(StreamType::Color_Stream, "WhiteBalance");
 // }
 
+*/
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class ControlsSetGetTest : public TestBase
@@ -634,11 +637,13 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////
 // Depth Set Get tests
+/*
 TEST_F(ControlsSetGetTest, Depth_Gain_Set_Get)
 {
     // configure(10);
     run(StreamType::Depth_Stream, "Gain");
 }
+*/
 TEST_F(ControlsSetGetTest, Depth_Exposure_Set_Get)
 {
     // configure(10);

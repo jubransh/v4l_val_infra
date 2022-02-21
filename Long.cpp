@@ -262,7 +262,7 @@ TEST_F(LongTest, LongStreamTest)
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
 }
-
+/*
 TEST_F(LongTest, ContentLongStreamTest)
 {
     IgnoreMetricAllStreams("First frame delay");
@@ -295,3 +295,4 @@ TEST_F(LongTest, TempCaptureLongStreamTest)
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
 }
+*/
