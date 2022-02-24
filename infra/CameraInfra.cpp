@@ -945,6 +945,20 @@ public:
 
                                                                 //    // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
                                                             }
+                                                            /* // code that prints the MetaData Buffer and the metadata actual data for comparison
+                                                            if (frame.ID == 10)
+                                                            {
+                                                                u_int* newPTR = static_cast<u_int*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
+                                                                for (int i = 0; i < 52; i++)
+                                                                {
+                                                                    cout << dec << newPTR[i] << " ";
+                                                                }
+                                                                cout << endl;
+                                                                md.print_MetaData();
+
+                                                            }
+                                                            */
+
 
                                                             frame.frameMD = md;
 
