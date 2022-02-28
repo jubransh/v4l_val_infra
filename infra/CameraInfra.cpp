@@ -64,7 +64,9 @@ enum StreamType
 {
     Depth_Stream,
     IR_Stream,
-    Color_Stream
+    Color_Stream,
+    Accel_Stream,
+    Gyro_Stream
 };
 enum SensorType
 {
@@ -103,6 +105,12 @@ public:
         case StreamType::Color_Stream:
             sT = "Color";
             break;
+        case StreamType::Accel_Stream:
+            sT = "Accel";
+            break;
+        case StreamType::Gyro_Stream:
+            sT = "Gyro";
+            break;
         }
         string result = "";
         result += sT + ":";
@@ -127,7 +135,8 @@ public:
         case V4L2_PIX_FMT_YUYV:
             return "YUYV";
             break;
-
+        // Todo
+        // need to add the Pixel format for Accel and Gyro
         default:
             return "";
             break;
