@@ -2126,10 +2126,10 @@ public:
 		Sensor depthSensor = cam.GetDepthSensor();
 		Sensor colorSensor = cam.GetColorSensor();
 
-		Logger::getLogger().log("Disabling AutoExposure priority for Color Sensor", "Setup()");
-		res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO_PRIORITY, 0);
-		Logger::getLogger().log("Disabling AutoExposure priority for Color Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
-		result = result && res;
+		//Logger::getLogger().log("Disabling AutoExposure priority for Color Sensor", "Setup()");
+		//res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO_PRIORITY, 0);
+		//Logger::getLogger().log("Disabling AutoExposure priority for Color Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
+		//result = result && res;
 
 		Logger::getLogger().log("Enabling AutoExposure for Color Sensor", "Setup()");
 		res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
