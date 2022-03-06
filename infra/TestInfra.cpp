@@ -2257,6 +2257,12 @@ public:
 		vector<Profile> combination = pG.GetHighestCombination(streamTypes);
 		return combination;
 	}
+	vector<Profile> GetHighestCombination(vector<StreamType> streamTypes,int fps)
+	{
+		ProfileGenerator pG;
+		vector<Profile> combination = pG.GetHighestCombination(streamTypes, fps);
+		return combination;
+	}
 
 	vector<Profile> GetProfiles_old(StreamType streamType)
 	{

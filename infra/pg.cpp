@@ -517,6 +517,29 @@ public:
         return highestProfileCombination;
     }
 
+    vector<Profile> GetHighestCombination(vector<StreamType> streamTypes, int fps)
+    {
+        vector<Profile> highestProfileCombination;
+        double highestBandwidth = 0;
+        vector<vector<Profile>> allCombinations = GetCombintaions(streamTypes);
+        for (int i = 0; i < allCombinations.size(); i++)
+        {
+            if (allCombinations[i][0].fps != fps)
+                continue;
+            double currbandwidth = 0;
+            for (int j = 0; j < allCombinations[i].size(); j++)
+            {
+                currbandwidth += allCombinations[i][j].GetSize() * allCombinations[i][j].fps;
+            }
+            if (currbandwidth >= highestBandwidth)
+            {
+                highestBandwidth = currbandwidth;
+                highestProfileCombination = allCombinations[i];
+            }
+        }
+        return highestProfileCombination;
+    }
+
     vector<Profile> GetProfilesByString(std::string profilesStr)
     {
         return ParseProfiles(profilesStr);

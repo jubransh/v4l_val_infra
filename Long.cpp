@@ -24,6 +24,7 @@ class LongTest : public TestBase
 public:
     bool _captureTempWhileStream;
     bool _isContent;
+
     LongTest()
     {
         isPNPtest = true;
@@ -43,7 +44,7 @@ public:
         _isContent = isContent;
         isContentTest = isContent;
     }
-    void run(vector<StreamType> streams)
+    void run(vector<StreamType> streams, int fps = 0)
     {
         CalculateMemoryBaseLine();
         int iterationDuration = 60;
@@ -87,8 +88,11 @@ public:
             irSensor.copyFrameData = true;
             colorSensor.copyFrameData = true;
         }
-
-        vector<Profile> profiles = GetHighestCombination(streams);
+        vector<Profile> profiles;
+        if (fps!=0)
+            profiles = GetHighestCombination(streams,fps);
+        else
+            profiles = GetHighestCombination(streams);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
         Logger::getLogger().log("               Long Test ", "Test", LOG_INFO);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
@@ -261,6 +265,16 @@ TEST_F(LongTest, LongStreamTest)
     streams.push_back(StreamType::Color_Stream);
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
+}
+TEST_F(LongTest, LongStreamTest_60FPS)
+{
+    configure(10 * 60 * 60, false);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Color_Stream);
+    // IgnorePNPMetric("CPU Consumption");
+    run(streams,60);
 }
 
 TEST_F(LongTest, ContentLongStreamTest)
