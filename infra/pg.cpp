@@ -581,8 +581,6 @@ public:
             }
             break;
         }
-        default: break;
-        }
 
         case 5:
         {

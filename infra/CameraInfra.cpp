@@ -125,7 +125,9 @@ public:
         case V4L2_PIX_FMT_Y8:
             return "Y8";
             break;
-
+        case V4L2_PIX_FMT_Y8I:
+            return "Y8i";
+            break;
         case V4L2_PIX_FMT_Y12I:
             return "Y12I";
             break;
