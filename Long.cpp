@@ -24,10 +24,15 @@ class LongTest : public TestBase
 public:
     bool _captureTempWhileStream;
     bool _isContent;
+    string _profileText = '';
 
     LongTest()
     {
         isPNPtest = true;
+    }
+    void set_profile(string profile)
+    {
+        _profileText = profile;
     }
     void configure(int StreamDuration, bool captureTempWhileStream, bool isContent = false)
     {
@@ -89,7 +94,13 @@ public:
             colorSensor.copyFrameData = true;
         }
         vector<Profile> profiles;
-        if (fps!=0)
+        if (_profileText.compare("") != 0)
+        {
+            Logger::getLogger().log("Configuring Static Profile to: " + _profileText, "Test", LOG_INFO);
+            ProfileGenerator pG;
+            profiles = pG.GetProfilesByString(_profileText);
+        }
+        else if (fps!=0)
             profiles = GetHighestCombination(streams,fps);
         else
             profiles = GetHighestCombination(streams);
@@ -275,6 +286,18 @@ TEST_F(LongTest, LongStreamTest_60FPS)
     streams.push_back(StreamType::Color_Stream);
     // IgnorePNPMetric("CPU Consumption");
     run(streams,60);
+}
+
+TEST_F(LongTest, LongStreamTest_Specific_Profile)
+{
+    configure(10 * 60 * 60, false);
+    set_profile("z16_640x480_5+y8_640x480_5+yuyv_640x480_5");
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Color_Stream);
+    // IgnorePNPMetric("CPU Consumption");
+    run(streams, 60);
 }
 
 TEST_F(LongTest, ContentLongStreamTest)
