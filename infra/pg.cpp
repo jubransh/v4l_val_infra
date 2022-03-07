@@ -35,6 +35,11 @@ private:
     vector<string> ir_color;
     vector<string> depth_ir;
     vector<string> depth_ir_color;
+    vector<string> accel;
+    vector<string> gyro;
+    vector<string> accel_gyro;
+    vector<string> depth_accel_gyro;
+    vector<string> depth_ir_color_accel_gyro;
 
 
     Profile ParseProfile(std::string profileStr)
@@ -91,7 +96,16 @@ private:
             prof.pixelFormat =V4L2_PIX_FMT_YUYV;
             prof.streamType = StreamType::Color_Stream;
             }
-        
+        else if (formatStr=="accel")
+            {
+            prof.pixelFormat = V4L2_PIX_FMT_YUYV; //need to update with actual Accel pixel format
+            prof.streamType = StreamType::Accel_Stream;
+            }
+        else if (formatStr == "gyro")
+        {
+            prof.pixelFormat = V4L2_PIX_FMT_YUYV; //need to update with actual Gyro pixel format
+            prof.streamType = StreamType::Gyro_Stream;
+        }
 
         return prof;
     }
@@ -149,168 +163,261 @@ public:
     {
         //============ Depth Only =================
         // depth.push_back("z16_424x240_15");
-        depth.push_back("z16_424x240_30");
-        depth.push_back("z16_424x240_60");
-        depth.push_back("z16_424x240_90");
+        // depth.push_back("z16_424x240_30");
+        // depth.push_back("z16_424x240_60");
+        // depth.push_back("z16_424x240_90");
 
         // depth.push_back("z16_480x270_15");
-        depth.push_back("z16_480x270_30");
-        depth.push_back("z16_480x270_60");
-        depth.push_back("z16_480x270_90");
+        // depth.push_back("z16_480x270_30");
+        // depth.push_back("z16_480x270_60");
+        // depth.push_back("z16_480x270_90");
 
         // depth.push_back("z16_640x360_15");
-        depth.push_back("z16_640x360_30");
-        depth.push_back("z16_640x360_60");
-        depth.push_back("z16_640x360_90");
+        // depth.push_back("z16_640x360_30");
+        // depth.push_back("z16_640x360_60");
+        // depth.push_back("z16_640x360_90");
 
-        // depth.push_back("z16_640x480_15");
+        depth.push_back("z16_640x480_5");
+        depth.push_back("z16_640x480_15");
         depth.push_back("z16_640x480_30");
         depth.push_back("z16_640x480_60");
         depth.push_back("z16_640x480_90");
 
+        
+        // depth.push_back("z16_848x480_5");
         // depth.push_back("z16_848x480_15");
-        depth.push_back("z16_848x480_30");
-        depth.push_back("z16_848x480_60");
-        depth.push_back("z16_848x480_90");
+        // depth.push_back("z16_848x480_30");
+        // depth.push_back("z16_848x480_60");
+        // depth.push_back("z16_848x480_90");
 
-        // depth.push_back("z16_1280x720_15");
+        depth.push_back("z16_1280x720_5");
+        depth.push_back("z16_1280x720_15");
         depth.push_back("z16_1280x720_30");
 
         //============ IR Only ================
         // ir.push_back("y8_424x240_15");
-        ir.push_back("y8_424x240_30");
-        ir.push_back("y8_424x240_60");
-        ir.push_back("y8_424x240_90");
+        // ir.push_back("y8_424x240_30");
+        // ir.push_back("y8_424x240_60");
+        // ir.push_back("y8_424x240_90");
 
         // ir.push_back("y8_480x270_15");
-        ir.push_back("y8_480x270_30");
-        ir.push_back("y8_480x270_60");
-        ir.push_back("y8_480x270_90");
+        // ir.push_back("y8_480x270_30");
+        // ir.push_back("y8_480x270_60");
+        // ir.push_back("y8_480x270_90");
 
         // ir.push_back("y8_640x360_15");
-        ir.push_back("y8_640x360_30");
-        ir.push_back("y8_640x360_60");
-        ir.push_back("y8_640x360_90");
+        // ir.push_back("y8_640x360_30");
+        // ir.push_back("y8_640x360_60");
+        // ir.push_back("y8_640x360_90");
 
-        // ir.push_back("y8_640x480_15");
+        ir.push_back("y8_640x480_5");
+        ir.push_back("y8_640x480_15");
         ir.push_back("y8_640x480_30");
         ir.push_back("y8_640x480_60");
         ir.push_back("y8_640x480_90");
 
+        // ir.push_back("y8_848x480_5");
         // ir.push_back("y8_848x480_15");
-        ir.push_back("y8_848x480_30");
-        ir.push_back("y8_848x480_60");
-        ir.push_back("y8_848x480_90");
+        // ir.push_back("y8_848x480_30");
+        // ir.push_back("y8_848x480_60");
+        // ir.push_back("y8_848x480_90");
 
-        // ir.push_back("y8_1280x720_15");
+        ir.push_back("y8_1280x720_5");
+        ir.push_back("y8_1280x720_15");
         ir.push_back("y8_1280x720_30");
 
         //============ Color Only =================
         // color.push_back("yuyv_424x240_15");
-        color.push_back("yuyv_424x240_30");
-        color.push_back("yuyv_424x240_60");
-        color.push_back("yuyv_424x240_90");
+        // color.push_back("yuyv_424x240_30");
+        // color.push_back("yuyv_424x240_60");
+        // color.push_back("yuyv_424x240_90");
 
         // color.push_back("yuyv_480x270_15");
-        color.push_back("yuyv_480x270_30");
-        color.push_back("yuyv_480x270_60");
-        color.push_back("yuyv_480x270_90");
+        // color.push_back("yuyv_480x270_30");
+        // color.push_back("yuyv_480x270_60");
+        // color.push_back("yuyv_480x270_90");
 
         // color.push_back("yuyv_640x360_15");
-        color.push_back("yuyv_640x360_30");
-        color.push_back("yuyv_640x360_60");
-        color.push_back("yuyv_640x360_90");
+        // color.push_back("yuyv_640x360_30");
+        // color.push_back("yuyv_640x360_60");
+        // color.push_back("yuyv_640x360_90");
 
-        // color.push_back("yuyv_640x480_15");
+        color.push_back("yuyv_640x480_5");
+        color.push_back("yuyv_640x480_15");
         color.push_back("yuyv_640x480_30");
         color.push_back("yuyv_640x480_60");
 
 
+        // color.push_back("yuyv_848x480_5");
         // color.push_back("yuyv_848x480_15");
-        color.push_back("yuyv_848x480_30");
-        color.push_back("yuyv_848x480_60");
+        // color.push_back("yuyv_848x480_30");
+        // color.push_back("yuyv_848x480_60");
 
 
-        // color.push_back("yuyv_1280x720_15");
+        color.push_back("yuyv_1280x720_5");
+        color.push_back("yuyv_1280x720_15");
         color.push_back("yuyv_1280x720_30");
 
-        // color.push_back("yuyv_1280x800_15");
+        color.push_back("yuyv_1280x800_5");
+        color.push_back("yuyv_1280x800_15");
         color.push_back("yuyv_1280x800_30");
+
+        //============ Accel Only =================
+        accel.push_back("accel_0x0_100");
+        accel.push_back("accel_0x0_200");
+
+        //============ Gyro Only =================
+        gyro.push_back("gyro_0x0_200");
+        gyro.push_back("gyro_0x0_400");
+
+        //============ Accel + Gyro =================
+        accel_gyro.push_back("accel_0x0_100+gyro_0x0_200");
+        accel_gyro.push_back("accel_0x0_100+gyro_0x0_400");
+        accel_gyro.push_back("accel_0x0_200+gyro_0x0_200");
+        accel_gyro.push_back("accel_0x0_200+gyro_0x0_400");
 
 //============ Depth +IR =================
         // depth_ir.push_back("z16_424x240_15+y8_424x240_15");
-        depth_ir.push_back("z16_424x240_30+y8_424x240_30");
-        depth_ir.push_back("z16_424x240_60+y8_424x240_60");
-        depth_ir.push_back("z16_424x240_90+y8_424x240_90");
+        // depth_ir.push_back("z16_424x240_30+y8_424x240_30");
+        // depth_ir.push_back("z16_424x240_60+y8_424x240_60");
+        // depth_ir.push_back("z16_424x240_90+y8_424x240_90");
 
         // depth_ir.push_back("z16_480x270_15+y8_480x270_15");
-        depth_ir.push_back("z16_480x270_30+y8_480x270_30");
-        depth_ir.push_back("z16_480x270_60+y8_480x270_60");
-        depth_ir.push_back("z16_480x270_90+y8_480x270_90");
+        // depth_ir.push_back("z16_480x270_30+y8_480x270_30");
+        // depth_ir.push_back("z16_480x270_60+y8_480x270_60");
+        // depth_ir.push_back("z16_480x270_90+y8_480x270_90");
 
         // depth_ir.push_back("z16_640x360_15+y8_640x360_15");
-        depth_ir.push_back("z16_640x360_30+y8_640x360_30");
-        depth_ir.push_back("z16_640x360_60+y8_640x360_60");
-        depth_ir.push_back("z16_640x360_90+y8_640x360_90");
+        // depth_ir.push_back("z16_640x360_30+y8_640x360_30");
+        // depth_ir.push_back("z16_640x360_60+y8_640x360_60");
+        // depth_ir.push_back("z16_640x360_90+y8_640x360_90");
 
-        // depth_ir.push_back("z16_640x480_15+y8_640x480_15");
+        depth_ir.push_back("z16_640x480_5+y8_640x480_5");
+        depth_ir.push_back("z16_640x480_15+y8_640x480_15");
         depth_ir.push_back("z16_640x480_30+y8_640x480_30");
         depth_ir.push_back("z16_640x480_60+y8_640x480_60");
         depth_ir.push_back("z16_640x480_90+y8_640x480_90");
 
+        // depth_ir.push_back("z16_848x480_5+y8_848x480_5");
         // depth_ir.push_back("z16_848x480_15+y8_848x480_15");
-        depth_ir.push_back("z16_848x480_30+y8_848x480_30");
-        depth_ir.push_back("z16_848x480_60+y8_848x480_60");
-        depth_ir.push_back("z16_848x480_90+y8_848x480_90");
+        // depth_ir.push_back("z16_848x480_30+y8_848x480_30");
+        // depth_ir.push_back("z16_848x480_60+y8_848x480_60");
+        // depth_ir.push_back("z16_848x480_90+y8_848x480_90");
 
-        // depth_ir.push_back("z16_1280x720_15+y8_1280x720_15");
+        depth_ir.push_back("z16_1280x720_5+y8_1280x720_5");
+        depth_ir.push_back("z16_1280x720_15+y8_1280x720_15");
         depth_ir.push_back("z16_1280x720_30+y8_1280x720_30");
 
         //============ Depth + Color =================
         // depth_color.push_back("z16_424x240_15+yuyv_424x240_15");
-        depth_color.push_back("z16_424x240_30+yuyv_424x240_30");
-        depth_color.push_back("z16_424x240_60+yuyv_424x240_60");
-        depth_color.push_back("z16_424x240_90+yuyv_424x240_90");
+        // depth_color.push_back("z16_424x240_30+yuyv_424x240_30");
+        // depth_color.push_back("z16_424x240_60+yuyv_424x240_60");
+        // depth_color.push_back("z16_424x240_90+yuyv_424x240_90");
 
 
-        // depth_color.push_back("z16_640x480_15+yuyv_640x480_15");
+        depth_color.push_back("z16_640x480_5+yuyv_640x480_5");
+        depth_color.push_back("z16_640x480_15+yuyv_640x480_15");
         depth_color.push_back("z16_640x480_30+yuyv_640x480_30");
         depth_color.push_back("z16_640x480_60+yuyv_640x480_60");
-        depth_color.push_back("z16_640x480_90+yuyv_640x480_90");
+        
 
-        // depth_color.push_back("z16_1280x720_15+yuyv_1280x720_15");
+        depth_color.push_back("z16_1280x720_5+yuyv_1280x720_5");
+        depth_color.push_back("z16_1280x720_15+yuyv_1280x720_15");
         depth_color.push_back("z16_1280x720_30+yuyv_1280x720_30");
 
         //============ IR + Color =================
         // ir_color.push_back("y8_424x240_15+yuyv_424x240_15");
-        ir_color.push_back("y8_424x240_30+yuyv_424x240_30");
-        ir_color.push_back("y8_424x240_60+yuyv_424x240_60");
-        ir_color.push_back("y8_424x240_90+yuyv_424x240_90");
+        // ir_color.push_back("y8_424x240_30+yuyv_424x240_30");
+        // ir_color.push_back("y8_424x240_60+yuyv_424x240_60");
+        // ir_color.push_back("y8_424x240_90+yuyv_424x240_90");
 
 
-        // ir_color.push_back("y8_640x480_15+yuyv_640x480_15");
+        ir_color.push_back("y8_640x480_5+yuyv_640x480_5");
+        ir_color.push_back("y8_640x480_15+yuyv_640x480_15");
         ir_color.push_back("y8_640x480_30+yuyv_640x480_30");
         ir_color.push_back("y8_640x480_60+yuyv_640x480_60");
-        ir_color.push_back("y8_640x480_90+yuyv_640x480_90");
+        
 
-        // ir_color.push_back("y8_1280x720_15+yuyv_1280x720_15");
+        ir_color.push_back("y8_1280x720_5+yuyv_1280x720_5");
+        ir_color.push_back("y8_1280x720_15+yuyv_1280x720_15");
         ir_color.push_back("y8_1280x720_30+yuyv_1280x720_30");
 
-        //============ Depth _ IR + Color =================
+        //============ Depth + IR + Color =================
         // depth_ir_color.push_back("z16_424x240_15+y8_424x240_15+yuyv_424x240_15");
-        depth_ir_color.push_back("z16_424x240_30+y8_424x240_30+yuyv_424x240_30");
-        depth_ir_color.push_back("z16_424x240_60+y8_424x240_60+yuyv_424x240_60");
-        depth_ir_color.push_back("z16_424x240_90+y8_424x240_90+yuyv_424x240_90");
+        // depth_ir_color.push_back("z16_424x240_30+y8_424x240_30+yuyv_424x240_30");
+        // depth_ir_color.push_back("z16_424x240_60+y8_424x240_60+yuyv_424x240_60");
+        // depth_ir_color.push_back("z16_424x240_90+y8_424x240_90+yuyv_424x240_90");
 
 
-        // depth_ir_color.push_back("z16_640x480_15+y8_640x480_15+yuyv_640x480_15");
+        depth_ir_color.push_back("z16_640x480_5+y8_640x480_5+yuyv_640x480_5");
+        depth_ir_color.push_back("z16_640x480_15+y8_640x480_15+yuyv_640x480_15");
         depth_ir_color.push_back("z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
         depth_ir_color.push_back("z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
-        depth_ir_color.push_back("z16_640x480_90+y8_640x480_90+yuyv_640x480_90");
+        
+        depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_640x480_30");
 
-        // depth_ir_color.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15");
-        depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
+        depth_ir_color.push_back("z16_1280x720_5+y8_1280x720_5+yuyv_1280x720_5");
+        depth_ir_color.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15");
+        // depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
 
+        //============ Depth + Accel + Gyro =================
+        depth_accel_gyro.push_back("z16_640x480_5+accel_0x0_100+gyro_0x0_200");
+        depth_accel_gyro.push_back("z16_640x480_15+accel_0x0_100+gyro_0x0_200");
+        depth_accel_gyro.push_back("z16_640x480_30+accel_0x0_100+gyro_0x0_200");
+        depth_accel_gyro.push_back("z16_640x480_60+accel_0x0_100+gyro_0x0_200");
+        depth_accel_gyro.push_back("z16_640x480_90+accel_0x0_100+gyro_0x0_200");
+
+
+        // depth.push_back("z16_848x480_5+accel_0x0_100+gyro_0x0_200");
+        // depth.push_back("z16_848x480_15+accel_0x0_100+gyro_0x0_200");
+        // depth.push_back("z16_848x480_30+accel_0x0_100+gyro_0x0_200");
+        // depth.push_back("z16_848x480_60+accel_0x0_100+gyro_0x0_200");
+        // depth.push_back("z16_848x480_90+accel_0x0_100+gyro_0x0_200");
+
+        depth_accel_gyro.push_back("z16_1280x720_5+accel_0x0_100+gyro_0x0_200");
+        depth_accel_gyro.push_back("z16_1280x720_15+accel_0x0_100+gyro_0x0_200");
+        depth_accel_gyro.push_back("z16_1280x720_30+accel_0x0_100+gyro_0x0_200");
+
+        depth_accel_gyro.push_back("z16_640x480_5+accel_0x0_200+gyro_0x0_400");
+        depth_accel_gyro.push_back("z16_640x480_15+accel_0x0_200+gyro_0x0_400");
+        depth_accel_gyro.push_back("z16_640x480_30+accel_0x0_200+gyro_0x0_400");
+        depth_accel_gyro.push_back("z16_640x480_60+accel_0x0_200+gyro_0x0_400");
+        depth_accel_gyro.push_back("z16_640x480_90+accel_0x0_200+gyro_0x0_400");
+
+
+        // depth.push_back("z16_848x480_5+accel_0x0_200+gyro_0x0_400");
+        // depth.push_back("z16_848x480_15+accel_0x0_200+gyro_0x0_400");
+        // depth.push_back("z16_848x480_30+accel_0x0_200+gyro_0x0_400");
+        // depth.push_back("z16_848x480_60+accel_0x0_200+gyro_0x0_400");
+        // depth.push_back("z16_848x480_90+accel_0x0_200+gyro_0x0_400");
+
+        depth_accel_gyro.push_back("z16_1280x720_5+accel_0x0_200+gyro_0x0_400");
+        depth_accel_gyro.push_back("z16_1280x720_15+accel_0x0_200+gyro_0x0_400");
+        depth_accel_gyro.push_back("z16_1280x720_30+accel_0x0_200+gyro_0x0_400");
+
+        //============ Depth + IR + Color + Accel + Gyro =================
+        depth_ir_color_accel_gyro.push_back("z16_640x480_5+y8_640x480_5+yuyv_640x480_5+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_15+y8_640x480_15+yuyv_640x480_15+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_30+y8_640x480_30+yuyv_640x480_30+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_60+y8_640x480_60+yuyv_640x480_60+accel_0x0_100+gyro_0x0_200");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_640x480_30+accel_0x0_100+gyro_0x0_200");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_5+y8_1280x720_5+yuyv_1280x720_5+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15+accel_0x0_100+gyro_0x0_200");
+        // depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+accel_0x0_100+gyro_0x0_200");
+
+
+        depth_ir_color_accel_gyro.push_back("z16_640x480_5+y8_640x480_5+yuyv_640x480_5+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_15+y8_640x480_15+yuyv_640x480_15+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_30+y8_640x480_30+yuyv_640x480_30+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_60+y8_640x480_60+yuyv_640x480_60+accel_0x0_200+gyro_0x0_400");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_640x480_30+accel_0x0_200+gyro_0x0_400");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_5+y8_1280x720_5+yuyv_1280x720_5+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15+accel_0x0_200+gyro_0x0_400");
+        // depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+accel_0x0_200+gyro_0x0_400");
     }
 
 
@@ -333,6 +440,15 @@ public:
             {
                 return ParseProfilesFromVector(color);
             }
+            if (findInVector(StreamType::Accel_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(accel);
+            }
+            
+            if (findInVector(StreamType::Gyro_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(gyro);
+            }
             break;
         }
         case 2:
@@ -349,6 +465,10 @@ public:
             {
                 return ParseProfilesFromVector(depth_ir);
             }
+            else if (findInVector(StreamType::Accel_Stream, streamTypes) && findInVector(StreamType::Gyro_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(accel_gyro);
+            }
             break;
         }
         case 3:
@@ -356,6 +476,19 @@ public:
             if (findInVector(StreamType::Depth_Stream, streamTypes) && findInVector(StreamType::IR_Stream, streamTypes) && findInVector(StreamType::Color_Stream, streamTypes))
             {
                 return ParseProfilesFromVector(depth_ir_color);
+            }
+            else if (findInVector(StreamType::Depth_Stream, streamTypes) && findInVector(StreamType::Accel_Stream, streamTypes) && findInVector(StreamType::Gyro_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(depth_accel_gyro);
+            }
+            break;
+        }
+
+        case 5:
+        {
+            if (findInVector(StreamType::Depth_Stream, streamTypes) && findInVector(StreamType::IR_Stream, streamTypes) && findInVector(StreamType::Color_Stream, streamTypes) && findInVector(StreamType::Accel_Stream, streamTypes) && findInVector(StreamType::Gyro_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(depth_ir_color_accel_gyro);
             }
             break;
         }
@@ -384,6 +517,33 @@ public:
         return highestProfileCombination;
     }
 
+    vector<Profile> GetHighestCombination(vector<StreamType> streamTypes, int fps)
+    {
+        vector<Profile> highestProfileCombination;
+        double highestBandwidth = 0;
+        vector<vector<Profile>> allCombinations = GetCombintaions(streamTypes);
+        for (int i = 0; i < allCombinations.size(); i++)
+        {
+            if (allCombinations[i][0].fps != fps)
+                continue;
+            double currbandwidth = 0;
+            for (int j = 0; j < allCombinations[i].size(); j++)
+            {
+                currbandwidth += allCombinations[i][j].GetSize() * allCombinations[i][j].fps;
+            }
+            if (currbandwidth >= highestBandwidth)
+            {
+                highestBandwidth = currbandwidth;
+                highestProfileCombination = allCombinations[i];
+            }
+        }
+        return highestProfileCombination;
+    }
+
+    vector<Profile> GetProfilesByString(std::string profilesStr)
+    {
+        return ParseProfiles(profilesStr);
+    }
     Resolution GetHighestResolution(StreamType streamType)
     {
         Resolution  highestResolution;

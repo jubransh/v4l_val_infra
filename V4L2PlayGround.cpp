@@ -36,65 +36,110 @@ protected:
 };
 
 static double lastDepthTs = 0;
+static double lastIRTs = 0;
 static double lastColorTs = 0;
 
+struct TestFrame
+{
+    string type;
+    int id;
+    long ts;
+};
+
+vector<TestFrame> depthFrames;
+vector<TestFrame> irFrames;
+vector<TestFrame> colorFrames;
+
+
 // implemetnt the callback
-void depthFrameArrived(Frame f)
+void depthFrameArrived(Frame depthFrame)
 {
+    cout << "*" << endl;
+    TestFrame f;
+    f.id = depthFrame.ID;
+    f.ts = depthFrame.hwTimestamp;
+    f.type = "depth";
 
-    // frames.push_back(s);
-    double currTs = f.systemTimestamp;
+    depthFrames.push_back(f);
+
+    // double currTs = f.systemTimestamp;
     // cout << "Depth Frame #" << f.ID << " Arrived: @ " << currTs << endl;
+    // cout << endl << "Depth," << f.ID << "," << currTs;
 
-    if (lastDepthTs == 0)
-    {
-        // cout << "curr = " << currTs << endl;
-        lastDepthTs = currTs;
-        return;
-    }
+    // if (lastDepthTs == 0)
+    // {
+    //     // cout << "curr = " << currTs << endl;
+    //     lastDepthTs = currTs;
+    //     return;
+    // }
 
-    long delta = currTs - lastDepthTs;
-    lastDepthTs = currTs;
-    // if (delta > 33333 * 1.05 / 2 || delta < 33333 * 0.95 / 2)
-        cout << " Depth Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << " and Frame size is:" << f.size << endl;
+    // long delta = currTs - lastDepthTs;
+    // lastDepthTs = currTs;
+    // if (delta > (33 * 1.5))
+    //     cout << "@@ Drop @@  Depth Delta for frame " << f.ID << " is  " << delta << " and TS is:" << currTs << " and Frame size is:" << f.size << endl;
+    // // else
+    //     //cout << "Depth Delta for frame " << f.ID << " is  " << delta << endl;
+ 
 }
 
-void irFrameArrived(Frame f)
+void irFrameArrived(Frame irFrame)
 {
+    cout << "*" << endl;
+    TestFrame f;
+    f.id = irFrame.ID;
+    f.ts = irFrame.hwTimestamp;
+    f.type = "ir";
 
-    // frames.push_back(s);
-    double currTs = f.systemTimestamp;
-    // cout << "Depth Frame #" << f.ID << " Arrived: @ " << currTs << endl;
+    irFrames.push_back(f);
 
-    if (lastDepthTs == 0)
-    {
-        // cout << "curr = " << currTs << endl;
-        lastDepthTs = currTs;
-        return;
-    }
+    // double currTs = f.systemTimestamp;
+    // cout << "IR Frame #" << f.ID << " Arrived: @ " << currTs << endl;
+    // cout << endl << "IR," << f.ID << "," << currTs;
 
-    long delta = currTs - lastDepthTs;
-    lastDepthTs = currTs;
-    // if (delta > 33333 * 1.05 / 2 || delta < 33333 * 0.95 / 2)
-        cout << " IR Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << " and Frame size is:" << f.size << endl;
+    // if (lastIRTs == 0)
+    // {
+    //     // cout << "curr = " << currTs << endl;
+    //     lastIRTs = currTs;
+    //     return;
+    // }
+
+    // long delta = currTs - lastIRTs;
+    // lastIRTs = currTs;
+    // if (delta > (33 * 1.5))
+    //     cout << "@@ Drop @@  IR Delta for frame " << f.ID << " is  " << delta << " and TS is:" << currTs << " and Frame size is:" << f.size << endl;
+    // // else
+    //     //cout << "IR Delta for frame " << f.ID << " is  " << delta << endl;
+        
 }
 
-void colorFrameArrived(Frame f)
+void colorFrameArrived(Frame colorFrame)
 {
-    // frames.push_back(s);
-    double currTs = f.systemTimestamp;
-    // cout << "Color Frame #" << f.ID << " Arrived: @ " << f.hwTimestamp << endl;
-    if (lastColorTs == 0)
-    {
-        // cout << "curr = " << currTs << endl;
-        lastColorTs = currTs;
-        return;
-    }
+    cout << "*" << endl;
+    TestFrame f;
+    f.id = colorFrame.ID;
+    f.ts = colorFrame.hwTimestamp;
+    f.type = "color";
 
-    long delta = currTs - lastColorTs;
-    lastColorTs = currTs;
-    // if (delta > 33333 * 1.05 || delta < 33333 * 0.95)
-        cout << " Color Delta for frame = " << f.ID << " is  " << delta << " and TS is:" << currTs << endl;
+    colorFrames.push_back(f);
+    
+    // double currTs = f.systemTimestamp;
+    //cout << "Color Frame #" << f.ID << " Arrived: @ " << f.hwTimestamp << endl;
+    // cout << endl << "IR," << f.ID << "," << currTs;
+
+    // if (lastColorTs == 0)
+    // {
+    //     // cout << "curr = " << currTs << endl;
+    //     lastColorTs = currTs;
+    //     return;
+    // }
+
+    // long delta = currTs - lastColorTs;
+    // lastColorTs = currTs;
+    // if (delta > (33 * 1.5))
+    //     cout << "@@ Drop @@ Color Delta for frame " << f.ID << " is  " << delta << " and TS is:" << currTs << endl;
+    // // else
+    //     //cout << endl << "Color Delta for frame " << f.ID << " is  " << delta ;
+
 }
 
 // for debugging
@@ -454,7 +499,7 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
     cout << "=================================================" << endl;
 
     Camera cam;
-    cam.Init();
+    cam.Init(false);
     // cam.Init(false);
     auto depthSensor = cam.GetDepthSensor();
     auto colorSensor = cam.GetColorSensor();
@@ -462,8 +507,8 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
 
     // Depth Configuration
     Resolution r = {0};
-    r.width = 640;
-    r.height = 480;
+    r.width = 1280;
+    r.height = 270;
     Profile dP;
     dP.pixelFormat = V4L2_PIX_FMT_Z16;
     dP.resolution = r;
@@ -471,8 +516,8 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
 
     // ir Configuration
     Resolution IRr = {0};
-    IRr.width = 640;
-    IRr.height = 480;
+    IRr.width = 1280;
+    IRr.height = 270;
     Profile iP;
     iP.pixelFormat = V4L2_PIX_FMT_Y8;
     iP.resolution = r;
@@ -480,32 +525,46 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
 
     // Color Configuration
     Resolution cR = {0};
-    cR.width = 640;
-    cR.height = 480;
+    cR.width = 1280;
+    cR.height = 720;
     Profile cP;
     cP.pixelFormat = V4L2_PIX_FMT_YUYV;
     cP.resolution = cR;
     cP.fps = 30;
 
-    depthSensor.Configure(dP);
     colorSensor.Configure(cP);
+    depthSensor.Configure(dP);
     irSensor.Configure(iP);
 
-    // colorSensor.Start(colorFrameArrived);
 
+    colorSensor.Start(colorFrameArrived);
     depthSensor.Start(depthFrameArrived);
     irSensor.Start(irFrameArrived);
-    colorSensor.Start(colorFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
+    colorSensor.Stop();
     depthSensor.Stop();
     irSensor.Stop();
-    colorSensor.Stop();
 
     colorSensor.Close();
-    irSensor.Close();
     depthSensor.Close();
+    irSensor.Close();
+
+    //print frames data
+    for (int i = 0; i < depthFrames.size(); i++)
+    {
+        cout << depthFrames[i].type << "," << depthFrames[i].id << "," << depthFrames[i].ts << endl;
+    }
+    for (int i = 0; i < irFrames.size(); i++)
+    {
+        cout << irFrames[i].type << "," << irFrames[i].id << "," << irFrames[i].ts << endl;
+    }
+    for (int i = 0; i < colorFrames.size(); i++)
+    {
+        cout << colorFrames[i].type << "," << colorFrames[i].id << "," << colorFrames[i].ts << endl;
+    }        
+
 }
 
 TEST_F(V4L2BasicTest, StreamTestPattern)

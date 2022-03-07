@@ -32,9 +32,11 @@
 #include "Long.cpp"
 #include"Controls.cpp"
 #include "Stability.cpp"
-#include "V4L2PlayGround.cpp"
-#include "V4L2PlayGround2.cpp"
-// #include "Long_content.cpp"
+
+#include "content_special_tests.cpp"
+
+// #include "V4L2PlayGround.cpp"
+// #include "V4L2PlayGround2.cpp"
 
 
 int main(int argc, char **argv)

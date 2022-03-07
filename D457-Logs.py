@@ -11,13 +11,19 @@ time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 # hosts="143.185.115.150" # fadi's host D457-Jetson-01
 # hosts = "143.185.126.16" # shadi's host D457-Jetson-02
 # hosts = "143.185.126.8" # Ashrafs Host D457-Jetson-05
-# hosts = "143.185.126.221" # Content host D457-Jetson-04
-hosts = "143.185.115.150,143.185.126.16,143.185.126.8"
+
+# hosts = "143.185.116.157" # Content host D457-Jetson-04
+hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
+
 host_list=hosts.split(",")
 logs_folder="/home/nvidia/Logs/"
 
 collect_raw_data=True
 # collect_raw_data=False
+
+collect_log_file = True
+# collect_log_file = False
+
 
 target_folder = r"c:\log"
 download_folder=os.path.join(r"c:\D457-temp",time_stamp)
@@ -76,6 +82,22 @@ def get_file_from_host(host,target_folder):
                             else:
                                 logger.error(
                                     "raw_data.csv not found in test: " + test + " SID: " + sid + " in host: " + host)
+
+                        if collect_log_file:
+                            if "test.log" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
+                                if not os.path.exists(os.path.join(target_folder, host, sid, test)):
+                                    try:
+                                        os.makedirs(os.path.join(target_folder, host, sid, test))
+                                    except:
+                                        pass
+                                logger.info(
+                                    "getting test.log from Test:" + test + " from SID:" + sid + " from host:" + host)
+                                sftp.get(logs_folder + "/" + sid + "/" + test + "/test.log",
+                                         os.path.join(target_folder, host, sid, test, "test.log"))
+                            else:
+                                logger.error(
+                                    "test.log not found in test: " + test + " SID: " + sid + " in host: " + host)
+
 
     if sftp: sftp.close()
     if transport: transport.close()

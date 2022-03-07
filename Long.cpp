@@ -23,17 +23,33 @@ class LongTest : public TestBase
 {
 public:
     bool _captureTempWhileStream;
+    bool _isContent;
+    string _profileText = "";
+
     LongTest()
     {
         isPNPtest = true;
     }
-    void configure(int StreamDuration, bool captureTempWhileStream)
+    void set_profile(string profile)
+    {
+        _profileText = profile;
+    }
+    void configure(int StreamDuration, bool captureTempWhileStream, bool isContent = false)
     {
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
         _captureTempWhileStream = captureTempWhileStream;
+
+        if (isContent)
+        {
+            Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
+            fa.reset();
+            fa.configure(FileUtils::join(testBasePath, name), 10, 0);
+        }
+        _isContent = isContent;
+        isContentTest = isContent;
     }
-    void run(vector<StreamType> streams)
+    void run(vector<StreamType> streams, int fps = 0)
     {
         CalculateMemoryBaseLine();
         int iterationDuration = 60;
@@ -49,6 +65,9 @@ public:
         AsicTempMetric met_asic_temp;
         ProjTempMetric met_projector_temp;
 
+        CorruptedMetric met_corrupted;
+        FreezeMetric met_freeze;
+
         metrics.push_back(&met_seq);
         metrics.push_back(&met_drop_interval);
         metrics.push_back(&met_drop_percent);
@@ -58,11 +77,33 @@ public:
         pnpMetrics.push_back(&met_asic_temp);
         pnpMetrics.push_back(&met_projector_temp);
 
+        if (_isContent)
+        {
+            contentMetrics.push_back(&met_corrupted);
+            contentMetrics.push_back(&met_freeze);
+        }
+
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
 
-        vector<Profile> profiles = GetHighestCombination(streams);
+        if (_isContent)
+        {
+            depthSensor.copyFrameData = true;
+            irSensor.copyFrameData = true;
+            colorSensor.copyFrameData = true;
+        }
+        vector<Profile> profiles;
+        if (_profileText.compare("") != 0)
+        {
+            Logger::getLogger().log("Configuring Static Profile to: " + _profileText, "Test", LOG_INFO);
+            ProfileGenerator pG;
+            profiles = pG.GetProfilesByString(_profileText);
+        }
+        else if (fps!=0)
+            profiles = GetHighestCombination(streams,fps);
+        else
+            profiles = GetHighestCombination(streams);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
         Logger::getLogger().log("               Long Test ", "Test", LOG_INFO);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
@@ -105,27 +146,35 @@ public:
         if (ColorUsed)
         {
             colorSensor.Start(AddFrame);
+            //std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (DepthUsed)
         {
             depthSensor.Start(AddFrame);
+            //std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (IRUsed)
         {
             irSensor.Start(AddFrame);
         }
-        
 
         int Iterations = testDuration / iterationDuration;
         for (int j = 0; j < Iterations; j++)
         {
+            if (_isContent)
+            {
+                fa.start_collection();
+            }
             Logger::getLogger().log("Started Iteration: " + to_string(j), "Test");
             initFrameLists();
             initSamplesList();
             SystemMonitor sysMon2;
             Logger::getLogger().log("Starting PNP measurements", "Test");
             sysMon2.StartMeasurment(addToPnpList, 250);
-            collectFrames = true;
+            // collectFrames = true;
+            depth_collectFrames = true;
+            ir_collectFrames = true;
+            color_collectFrames = true;
             Logger::getLogger().log("collecting frames for half iteration duration(" + to_string(iterationDuration / 2) + "Seconds)", "Test");
             int duration = iterationDuration / 2;
             if (!_captureTempWhileStream)
@@ -142,7 +191,15 @@ public:
                 }
             }
 
-            collectFrames = false;
+            if (_isContent)
+            {
+                fa.stop_collection();
+                fa.save_results();
+            }
+            depth_collectFrames = false;
+            ir_collectFrames = false;
+            color_collectFrames = false;
+            
             Logger::getLogger().log("Stopping PNP measurements", "Test");
             sysMon2.StopMeasurment();
             if (!_captureTempWhileStream)
@@ -164,6 +221,13 @@ public:
             met_mem.setParams(MetricDefaultTolerances::get_tolerance_Memory());
             met_asic_temp.setParams(MetricDefaultTolerances::get_tolerance_asic_temperature());
             met_projector_temp.setParams(MetricDefaultTolerances::get_tolerance_projector_temperature());
+
+            if (_isContent)
+            {
+                met_corrupted.setParams(MetricDefaultTolerances::get_tolerance_corrupted());
+                met_freeze.setParams(MetricDefaultTolerances::get_tolerance_freeze());
+            }
+
             bool result = CalcMetrics(j);
             if (!result)
             {
@@ -176,6 +240,12 @@ public:
             Logger::getLogger().log("Going to sleep for the rest of the iteration duration(" + to_string(iterationDuration) + "Seconds), for: " + to_string(iterationDuration / 2 - calcDuration) + "Seconds", "Test");
             std::this_thread::sleep_for(std::chrono::seconds(iterationDuration / 2 - calcDuration));
         }
+
+        if (ColorUsed)
+        {
+            colorSensor.Stop();
+            colorSensor.Close();
+        }
         if (DepthUsed)
         {
             depthSensor.Stop();
@@ -186,11 +256,7 @@ public:
             irSensor.Stop();
             irSensor.Close();
         }
-        if (ColorUsed)
-        {
-            colorSensor.Stop();
-            colorSensor.Close();
-        }
+
         Logger::getLogger().log("Test Summary:", "Run");
         Logger::getLogger().log(testStatus ? "Pass" : "Fail", "Run");
         if (!testStatus)
@@ -203,7 +269,7 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(3 * 60, false);
+    configure(10 *60 * 60, false);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
@@ -211,10 +277,54 @@ TEST_F(LongTest, LongStreamTest)
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
 }
+TEST_F(LongTest, LongStreamTest_60FPS)
+{
+    configure(10 * 60 * 60, false);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Color_Stream);
+    // IgnorePNPMetric("CPU Consumption");
+    run(streams,60);
+}
+
+TEST_F(LongTest, LongStreamTest_Specific_Profile)
+{
+    configure(10 * 60 * 60, false);
+    set_profile("z16_640x480_5+y8_640x480_5+yuyv_640x480_5");
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Color_Stream);
+    // IgnorePNPMetric("CPU Consumption");
+    run(streams, 60);
+}
+
+TEST_F(LongTest, ContentLongStreamTest)
+{
+    IgnoreMetricAllStreams("First frame delay");
+    IgnoreMetricAllStreams("Sequential frame drops");
+    IgnoreMetricAllStreams("Frame drops interval");
+    IgnoreMetricAllStreams("Frame drops percentage");
+    IgnoreMetricAllStreams("Frames arrived");
+    IgnoreMetricAllStreams("FPS Validity");
+    IgnoreMetricAllStreams("Frame Size");
+    IgnoreMetricAllStreams("ID Correctness");
+
+    IgnorePNPMetric("CPU Consumption");
+    IgnorePNPMetric("Memory Consumption");
+
+    configure(10 * 60 * 60, false, true);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Depth_Stream);
+    // streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Color_Stream);
+    run(streams);
+}
 
 TEST_F(LongTest, TempCaptureLongStreamTest)
 {
-    configure(3 * 60, true);
+    configure(10 * 60 * 60, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
