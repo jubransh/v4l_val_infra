@@ -24,7 +24,7 @@ class LongTest : public TestBase
 public:
     bool _captureTempWhileStream;
     bool _isContent;
-    string _profileText = '';
+    string _profileText = "";
 
     LongTest()
     {
