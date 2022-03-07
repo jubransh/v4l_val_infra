@@ -39,6 +39,7 @@ private:
     vector<string> gyro;
     vector<string> accel_gyro;
     vector<string> depth_accel_gyro;
+    vector<string> ir_color_accel_gyro;
     vector<string> depth_ir_color_accel_gyro;
 
 
@@ -81,7 +82,12 @@ private:
             prof.pixelFormat = V4L2_PIX_FMT_Y8;
             prof.streamType = StreamType::IR_Stream;
             }
-        else if (formatStr=="y12")
+        else if (formatStr == "y8i")
+        {
+            prof.pixelFormat = V4L2_PIX_FMT_Y8I;
+            prof.streamType = StreamType::IR_Stream;
+        }
+        else if (formatStr=="y12i")
             { 
             prof.pixelFormat = V4L2_PIX_FMT_Y12I;
             prof.streamType = StreamType::IR_Stream;
@@ -342,6 +348,8 @@ public:
         ir_color.push_back("y8_1280x720_15+yuyv_1280x720_15");
         ir_color.push_back("y8_1280x720_30+yuyv_1280x720_30");
 
+        ir_color.push_back("y12i_1280x800_25+yuyv_1280x720_30");
+
         //============ Depth + IR + Color =================
         // depth_ir_color.push_back("z16_424x240_15+y8_424x240_15+yuyv_424x240_15");
         // depth_ir_color.push_back("z16_424x240_30+y8_424x240_30+yuyv_424x240_30");
@@ -359,6 +367,23 @@ public:
         depth_ir_color.push_back("z16_1280x720_5+y8_1280x720_5+yuyv_1280x720_5");
         depth_ir_color.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15");
         // depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
+
+        // depth_ir_color.push_back("z16_424x240_15+y8i_424x240_15+yuyv_424x240_15");
+        // depth_ir_color.push_back("z16_424x240_30+y8i_424x240_30+yuyv_424x240_30");
+        // depth_ir_color.push_back("z16_424x240_60+y8i_424x240_60+yuyv_424x240_60");
+        // depth_ir_color.push_back("z16_424x240_90+y8i_424x240_90+yuyv_424x240_90");
+
+
+        depth_ir_color.push_back("z16_640x480_5+y8i_640x480_5+yuyv_640x480_5");
+        depth_ir_color.push_back("z16_640x480_15+y8i_640x480_15+yuyv_640x480_15");
+        depth_ir_color.push_back("z16_640x480_30+y8i_640x480_30+yuyv_640x480_30");
+        depth_ir_color.push_back("z16_640x480_60+y8i_640x480_60+yuyv_640x480_60");
+
+        depth_ir_color.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_640x480_30");
+
+        depth_ir_color.push_back("z16_1280x720_5+y8i_1280x720_5+yuyv_1280x720_5");
+        depth_ir_color.push_back("z16_1280x720_15+y8i_1280x720_15+yuyv_1280x720_15");
+        // depth_ir_color.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_1280x720_30");
 
         //============ Depth + Accel + Gyro =================
         depth_accel_gyro.push_back("z16_640x480_5+accel_0x0_100+gyro_0x0_200");
@@ -395,6 +420,45 @@ public:
         depth_accel_gyro.push_back("z16_1280x720_15+accel_0x0_200+gyro_0x0_400");
         depth_accel_gyro.push_back("z16_1280x720_30+accel_0x0_200+gyro_0x0_400");
 
+
+        //============ IR + Color  + Accel + Gyro =================
+
+        // ir_color_accel_gyro.push_back("y8_424x240_15+yuyv_424x240_15+accel_0x0_100+gyro_0x0_200");
+        // ir_color_accel_gyro.push_back("y8_424x240_30+yuyv_424x240_30+accel_0x0_100+gyro_0x0_200");
+        // ir_color_accel_gyro.push_back("y8_424x240_60+yuyv_424x240_60+accel_0x0_100+gyro_0x0_200");
+        // ir_color_accel_gyro.push_back("y8_424x240_90+yuyv_424x240_90+accel_0x0_100+gyro_0x0_200");
+
+
+        ir_color_accel_gyro.push_back("y8_640x480_5+yuyv_640x480_5+accel_0x0_100+gyro_0x0_200");
+        ir_color_accel_gyro.push_back("y8_640x480_15+yuyv_640x480_15+accel_0x0_100+gyro_0x0_200");
+        ir_color_accel_gyro.push_back("y8_640x480_30+yuyv_640x480_30+accel_0x0_100+gyro_0x0_200");
+        ir_color_accel_gyro.push_back("y8_640x480_60+yuyv_640x480_60+accel_0x0_100+gyro_0x0_200");
+
+
+        ir_color_accel_gyro.push_back("y8_1280x720_5+yuyv_1280x720_5+accel_0x0_100+gyro_0x0_200");
+        ir_color_accel_gyro.push_back("y8_1280x720_15+yuyv_1280x720_15+accel_0x0_100+gyro_0x0_200");
+        ir_color_accel_gyro.push_back("y8_1280x720_30+yuyv_1280x720_30+accel_0x0_100+gyro_0x0_200");
+
+        ir_color_accel_gyro.push_back("y12i_1280x800_25+yuyv_1280x720_30+accel_0x0_100+gyro_0x0_200");
+
+        // ir_color_accel_gyro.push_back("y8_424x240_15+yuyv_424x240_15");
+        // ir_color_accel_gyro.push_back("y8_424x240_30+yuyv_424x240_30");
+        // ir_color_accel_gyro.push_back("y8_424x240_60+yuyv_424x240_60");
+        // ir_color_accel_gyro.push_back("y8_424x240_90+yuyv_424x240_90");
+
+
+        ir_color_accel_gyro.push_back("y8_640x480_5+yuyv_640x480_5+accel_0x0_200+gyro_0x0_400");
+        ir_color_accel_gyro.push_back("y8_640x480_15+yuyv_640x480_15+accel_0x0_200+gyro_0x0_400");
+        ir_color_accel_gyro.push_back("y8_640x480_30+yuyv_640x480_30+accel_0x0_200+gyro_0x0_400");
+        ir_color_accel_gyro.push_back("y8_640x480_60+yuyv_640x480_60+accel_0x0_200+gyro_0x0_400");
+
+
+        ir_color_accel_gyro.push_back("y8_1280x720_5+yuyv_1280x720_5+accel_0x0_200+gyro_0x0_400");
+        ir_color_accel_gyro.push_back("y8_1280x720_15+yuyv_1280x720_15+accel_0x0_200+gyro_0x0_400");
+        ir_color_accel_gyro.push_back("y8_1280x720_30+yuyv_1280x720_30+accel_0x0_200+gyro_0x0_400");
+
+        ir_color_accel_gyro.push_back("y12i_1280x800_25+yuyv_1280x720_30+accel_0x0_200+gyro_0x0_400");
+
         //============ Depth + IR + Color + Accel + Gyro =================
         depth_ir_color_accel_gyro.push_back("z16_640x480_5+y8_640x480_5+yuyv_640x480_5+accel_0x0_100+gyro_0x0_200");
         depth_ir_color_accel_gyro.push_back("z16_640x480_15+y8_640x480_15+yuyv_640x480_15+accel_0x0_100+gyro_0x0_200");
@@ -418,6 +482,32 @@ public:
         depth_ir_color_accel_gyro.push_back("z16_1280x720_5+y8_1280x720_5+yuyv_1280x720_5+accel_0x0_200+gyro_0x0_400");
         depth_ir_color_accel_gyro.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15+accel_0x0_200+gyro_0x0_400");
         // depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+accel_0x0_200+gyro_0x0_400");
+
+
+
+
+        depth_ir_color_accel_gyro.push_back("z16_640x480_5+y8i_640x480_5+yuyv_640x480_5+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_15+y8i_640x480_15+yuyv_640x480_15+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_30+y8i_640x480_30+yuyv_640x480_30+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_60+y8i_640x480_60+yuyv_640x480_60+accel_0x0_100+gyro_0x0_200");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_640x480_30+accel_0x0_100+gyro_0x0_200");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_5+y8i_1280x720_5+yuyv_1280x720_5+accel_0x0_100+gyro_0x0_200");
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_15+y8i_1280x720_15+yuyv_1280x720_15+accel_0x0_100+gyro_0x0_200");
+        // depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_1280x720_30+accel_0x0_100+gyro_0x0_200");
+
+
+        depth_ir_color_accel_gyro.push_back("z16_640x480_5+y8i_640x480_5+yuyv_640x480_5+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_15+y8i_640x480_15+yuyv_640x480_15+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_30+y8i_640x480_30+yuyv_640x480_30+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_640x480_60+y8i_640x480_60+yuyv_640x480_60+accel_0x0_200+gyro_0x0_400");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_640x480_30+accel_0x0_200+gyro_0x0_400");
+
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_5+y8i_1280x720_5+yuyv_1280x720_5+accel_0x0_200+gyro_0x0_400");
+        depth_ir_color_accel_gyro.push_back("z16_1280x720_15+y8i_1280x720_15+yuyv_1280x720_15+accel_0x0_200+gyro_0x0_400");
+        // depth_ir_color_accel_gyro.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_1280x720_30+accel_0x0_200+gyro_0x0_400");
     }
 
 
@@ -482,6 +572,16 @@ public:
                 return ParseProfilesFromVector(depth_accel_gyro);
             }
             break;
+        }
+        case 4:
+        {
+            if (findInVector(StreamType::IR_Stream, streamTypes) && findInVector(StreamType::Color_Stream, streamTypes) && findInVector(StreamType::Accel_Stream, streamTypes) && findInVector(StreamType::Gyro_Stream, streamTypes))
+            {
+                return ParseProfilesFromVector(ir_color_accel_gyro);
+            }
+            break;
+        }
+        default: break;
         }
 
         case 5:
