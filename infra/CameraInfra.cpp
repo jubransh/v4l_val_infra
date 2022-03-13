@@ -583,13 +583,13 @@ public:
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-            if (openMD)
-            {
-                Logger::getLogger().log("Openning /dev/video5", "Sensor");
-                videoNode = {"/dev/video5"};
-                metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
-                // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
-            }
+            //if (openMD)
+            //{
+            //    Logger::getLogger().log("Openning /dev/video5", "Sensor");
+            //    videoNode = {"/dev/video5"};
+            //    metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            //    // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            //}
             name = "IR Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
