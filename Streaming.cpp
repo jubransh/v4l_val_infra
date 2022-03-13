@@ -27,7 +27,7 @@ public:
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
     }
-    void run(vector<StreamType> streams)
+    void run(vector<StreamType> streams, bool isMixed=false)
     {
         string failedIterations = "Test Failed in Iterations: ";
 
@@ -55,8 +55,15 @@ public:
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
-
-        vector<vector<Profile>> profiles = GetProfiles(streams);
+        vector<vector<Profile>> profiles;
+        if (!isMixed)
+            profiles = GetProfiles(streams);
+        else
+        {
+            ProfileGenerator pG;
+            profiles = pG.GetMixedCombintaions(streams);
+        }
+            
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
         Logger::getLogger().log("               Streaming Test ", "Test", LOG_INFO);
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
@@ -246,5 +253,14 @@ TEST_F(StreamingTest, DepthIRColorStreamingTest)
     run(streams);
 }
 
+TEST_F(StreamingTest, DepthIRColorMixStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    run(streams,true);
+}
 
 

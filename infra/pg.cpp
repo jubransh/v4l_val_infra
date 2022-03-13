@@ -661,6 +661,71 @@ public:
         }
     }
 
+    vector<vector<Profile>> GetMixedCombintaions(vector<StreamType> streamTypes)
+    {
+        vector<vector<Profile>> startingMix;
+        vector<vector<Profile>> additionalMix;
+        vector<vector<Profile>> finalMix;
+        if (findInVector(StreamType::IR_Stream, streamTypes) && findInVector(StreamType::Depth_Stream, streamTypes))
+            {
+                startingMix= ParseProfilesFromVector(depth_ir);
+            }
+        else if (findInVector(StreamType::Depth_Stream, streamTypes))
+            {
+                startingMix= ParseProfilesFromVector(depth);
+            }
+        else if (findInVector(StreamType::IR_Stream, streamTypes))
+            {
+                startingMix= ParseProfilesFromVector(ir);
+            }
+
+        if (findInVector(StreamType::Color_Stream, streamTypes)) 
+            {
+                additionalMix = ParseProfilesFromVector(color);
+            }
+        for (int i=0; i< startingMix.size();i++)
+        {
+            for (int j=0; j<additionalMix.size();j++)
+            {
+                vector<Profile> prof;
+                prof = startingMix[i];
+                prof.push_back(additionalMix[j][0]);
+                finalMix.push_back(prof);
+            }
+        }
+        startingMix = finalMix;
+        if (findInVector(StreamType::Accel_Stream, streamTypes) && findInVector(StreamType::Gyro_Stream, streamTypes))
+            {
+                additionalMix = ParseProfilesFromVector(accel_gyro);
+            }
+        else if (findInVector(StreamType::Accel_Stream, streamTypes))
+            {
+                additionalMix = ParseProfilesFromVector(accel);
+            }
+            
+        else if (findInVector(StreamType::Gyro_Stream, streamTypes))
+            {
+                additionalMix = ParseProfilesFromVector(gyro);
+            }
+        else
+            {
+            return finalMix;
+            }
+        finalMix.clear();
+        for (int i=0; i< startingMix.size();i++)
+        {
+            for (int j=0; j<additionalMix.size();j++)
+            {
+                vector<Profile> prof;
+                prof = startingMix[i];
+                prof.push_back(additionalMix[j][0]);
+                finalMix.push_back(prof);
+            }
+        }
+        return finalMix;
+
+
+    }
     vector<Profile> GetHighestCombination(vector<StreamType> streamTypes)
     {
         vector<Profile> highestProfileCombination;
