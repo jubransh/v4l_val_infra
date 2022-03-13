@@ -76,13 +76,13 @@ public:
 
     vector<Profile> getRandomProfile(vector<vector<StreamType>> streams)
     {
-        vector<vector<Profile>> allProfilesComb;
+        vector<vector<Profile>> allProfilesComb,profilesComb ;
         for (int i = 0; i < streams.size(); i++)
         {
             if (_isMix)
-                auto profilesComb = GetMixedCombintaions(streams[i]);
+                profilesComb = GetMixedCombintaions(streams[i]);
             else
-                auto profilesComb = GetProfiles(streams[i]);
+                profilesComb = GetProfiles(streams[i]);
             for (int j = 0; j < profilesComb.size(); j++)
             {
                 allProfilesComb.push_back(profilesComb[j]);
@@ -393,7 +393,7 @@ TEST_F(StabilityTest, Random)
 
 TEST_F(StabilityTest, RandomMixDepthIRColor)
 {
-    
+    vector<vector<StreamType>> streams;
     vector<StreamType> sT;
     sT.push_back(StreamType::Depth_Stream);
     sT.push_back(StreamType::IR_Stream);
