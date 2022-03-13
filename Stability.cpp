@@ -33,6 +33,7 @@ public:
     int _iterations;
     bool _isRandom;
     bool _isContent;
+    bool _isMix = false;
     std::string _profilesToRun;
     void configure(int StreamDuration, int Iterations, bool isRandom, bool isContent, std::string profilesToRun="")
     {
@@ -67,12 +68,21 @@ public:
         _isContent = isContent;
         isContentTest = isContent;
     }
+
+    void setIsMix(bool isMix)
+    {
+        _isMix = isMix;
+    }
+
     vector<Profile> getRandomProfile(vector<vector<StreamType>> streams)
     {
         vector<vector<Profile>> allProfilesComb;
         for (int i = 0; i < streams.size(); i++)
         {
-            auto profilesComb = GetProfiles(streams[i]);
+            if (_isMix)
+                auto profilesComb = GetMixedCombintaions(streams[i]);
+            else
+                auto profilesComb = GetProfiles(streams[i]);
             for (int j = 0; j < profilesComb.size(); j++)
             {
                 allProfilesComb.push_back(profilesComb[j]);
@@ -323,7 +333,7 @@ TEST_F(StabilityTest, Normal)
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 1500, false,false,"");
+    configure(30, 500, false,false,"");
     run(streams);
 }
 TEST_F(StabilityTest, Normal_60FPS)
@@ -338,7 +348,7 @@ TEST_F(StabilityTest, Normal_60FPS)
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 1500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
+    configure(30, 500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
     run(streams);
 }
 
@@ -377,7 +387,24 @@ TEST_F(StabilityTest, Random)
     streams.push_back(sT6);
     streams.push_back(sT7);
 
-    configure(30, 1500, true,false,"");
+    configure(30, 500, true,false,"");
+    run(streams);
+}
+
+TEST_F(StabilityTest, RandomMixDepthIRColor)
+{
+    
+    vector<StreamType> sT;
+    sT.push_back(StreamType::Depth_Stream);
+    sT.push_back(StreamType::IR_Stream);
+    sT.push_back(StreamType::Color_Stream);
+    
+
+    streams.push_back(sT);
+    setIsMix(true);
+
+
+    configure(30, 500, true, false, "");
     run(streams);
 }
 
@@ -452,7 +479,7 @@ TEST_F(StabilityTest, PnpRandom)
     streams.push_back(sT5);
     streams.push_back(sT6);
     streams.push_back(sT7);
-    configure(30, 1500, true,false,"");
+    configure(30, 500, true,false,"");
     runWithPNP(streams);
 }
 

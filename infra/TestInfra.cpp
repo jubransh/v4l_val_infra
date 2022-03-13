@@ -2250,6 +2250,12 @@ public:
 		vector<vector<Profile>> combinations = pG.GetCombintaions(streamTypes);
 		return combinations;
 	}
+	vector<vector<Profile>> GetMixedCombintaions(vector<StreamType> streamTypes)
+	{
+		ProfileGenerator pG;
+		vector<vector<Profile>> combinations = pG.GetMixedCombintaions(streamTypes);
+		return combinations;
+	}
 
 	vector<Profile> GetHighestCombination(vector<StreamType> streamTypes)
 	{

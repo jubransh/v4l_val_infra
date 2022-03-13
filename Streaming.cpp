@@ -60,8 +60,7 @@ public:
             profiles = GetProfiles(streams);
         else
         {
-            ProfileGenerator pG;
-            profiles = pG.GetMixedCombintaions(streams);
+            profiles = GetMixedCombintaions(streams);
         }
             
         Logger::getLogger().log("=================================================", "Test", LOG_INFO);
