@@ -125,7 +125,9 @@ public:
         case V4L2_PIX_FMT_Y8:
             return "Y8";
             break;
-
+        case V4L2_PIX_FMT_Y8I:
+            return "Y8i";
+            break;
         case V4L2_PIX_FMT_Y12I:
             return "Y12I";
             break;
@@ -148,6 +150,9 @@ public:
         switch (pixelFormat)
         {
         case V4L2_PIX_FMT_Y8:
+            bpp = 1;
+            break;
+        case V4L2_PIX_FMT_Y8I:
             bpp = 1;
             break;
 
@@ -578,13 +583,13 @@ public:
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-            if (openMD)
-            {
-                Logger::getLogger().log("Openning /dev/video5", "Sensor");
-                videoNode = {"/dev/video5"};
-                metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
-                // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
-            }
+            //if (openMD)
+            //{
+            //    Logger::getLogger().log("Openning /dev/video5", "Sensor");
+            //    videoNode = {"/dev/video5"};
+            //    metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            //    // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            //}
             name = "IR Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
