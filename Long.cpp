@@ -59,6 +59,7 @@ public:
         FpsValidityMetric met_fps;
         FrameDropIntervalMetric met_drop_interval;
         FrameDropsPercentageMetric met_drop_percent;
+        MetaDataCorrectnessMetric met_md_cor;
 
         CPUMetric met_cpu;
         MemMetric met_mem;
@@ -72,6 +73,7 @@ public:
         metrics.push_back(&met_drop_interval);
         metrics.push_back(&met_drop_percent);
         metrics.push_back(&met_fps);
+        metrics.push_back(&met_md_cor);
         pnpMetrics.push_back(&met_cpu);
         pnpMetrics.push_back(&met_mem);
         pnpMetrics.push_back(&met_asic_temp);
@@ -216,6 +218,7 @@ public:
             met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
             met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
             met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
+            met_md_cor.setParams(1);
 
             met_cpu.setParams(MetricDefaultTolerances::get_tolerance_CPU());
             met_mem.setParams(MetricDefaultTolerances::get_tolerance_Memory());

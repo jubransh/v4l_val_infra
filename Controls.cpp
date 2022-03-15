@@ -93,6 +93,7 @@ public:
         SequentialFrameDropsMetric seqFrmMetric;
         IDCorrectnessMetric idMetric;
         FrameSizeMetric frmSizeMetric;
+        MetaDataCorrectnessMetric met_md_cor;
 
         metrics.push_back(&cntrlMetric);
         metrics.push_back(&fpsMetric);
@@ -101,6 +102,7 @@ public:
         metrics.push_back(&seqFrmMetric);
         metrics.push_back(&idMetric);
         metrics.push_back(&frmSizeMetric);
+        metrics.push_back(&met_md_cor);
 
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
@@ -292,6 +294,7 @@ public:
                     seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
                     idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
                     cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevValue);
+                    met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
                 }
                 else
                 {
@@ -307,6 +310,7 @@ public:
                     seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                     cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevExposure);
+                    met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                 }
 
                 frmSizeMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
