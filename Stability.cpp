@@ -139,10 +139,11 @@ public:
         FrameDropIntervalMetric met_drop_interval;
         FrameDropsPercentageMetric met_drop_percent;
         IDCorrectnessMetric met_id_cor;
+        MetaDataCorrectnessMetric met_md_cor;
 
         CorruptedMetric met_corrupted;
         FreezeMetric met_freeze;
-        // MetaDataCorrectnessMetric met_md_cor;
+        
 
         metrics.push_back(&met_seq);
         metrics.push_back(&met_arrived);
@@ -152,7 +153,7 @@ public:
         metrics.push_back(&met_fps);
         metrics.push_back(&met_frame_size);
         metrics.push_back(&met_id_cor);
-        // metrics.push_back(&met_md_cor);
+        metrics.push_back(&met_md_cor);
 
         if (_isContent)
         {
@@ -290,7 +291,7 @@ public:
             met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
             met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
             met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
-            // met_md_cor.setParams(1);
+            met_md_cor.setParams(1);
 
             if (_isContent)
             {
