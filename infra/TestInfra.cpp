@@ -2132,12 +2132,12 @@ public:
 		//result = result && res;
 
 		Logger::getLogger().log("Enabling AutoExposure for Color Sensor", "Setup()");
-		res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
+		res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 3);
 		Logger::getLogger().log("Enabling AutoExposure for Color Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
 		result = result && res;
 
 		Logger::getLogger().log("Enabling AutoExposure for Depth Sensor", "Setup()");
-		res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
+		res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 3);
 		Logger::getLogger().log("Enabling AutoExposure for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
 		result = result && res;
 		Logger::getLogger().log("Enabling Laser power mode for Depth Sensor", "Setup()");

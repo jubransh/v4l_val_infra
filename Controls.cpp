@@ -123,7 +123,7 @@ public:
             if (controlName == "Gain" || controlName == "Exposure")
             {
                 Logger::getLogger().log("Disabling Depth AutoExposure ", "Test");
-                res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 0);
+                res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
                 Logger::getLogger().log("Disable Depth AutoExposure " + (string)(res ? "Passed" : "Failed"), "Test");
             }
             if (controlName == "LaserPower")
@@ -140,7 +140,7 @@ public:
             if (controlName == "Gain" || controlName == "Exposure")
             {
                 Logger::getLogger().log("Disabling IR AutoExposure ", "Test");
-                res = irSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 0);
+                res = irSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
                 Logger::getLogger().log("Disable IR AutoExposure " + (string)(res ? "Passed" : "Failed"), "Test");
             }
             if (controlName == "LaserPower")
@@ -157,7 +157,7 @@ public:
             if (controlName == "Gain" || controlName == "Exposure")
             {
                 Logger::getLogger().log("Disabling AutoExposure ", "Test");
-                res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 0);
+                res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
                 Logger::getLogger().log("Disable AutoExposure " + (string)(res ? "Passed" : "Failed"), "Test");
             }
             Logger::getLogger().log("Initializing Control: " + cntrl._controlName + " To Last value in list: " + to_string(cntrl._values[cntrl._values.size() - 1]), "Test");
@@ -515,7 +515,7 @@ public:
             if (controlName == "Gain" || controlName == "Exposure")
             {
                 Logger::getLogger().log("Disabling Depth AutoExposure ", "Test");
-                res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 0);
+                res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
                 Logger::getLogger().log("Disable Depth AutoExposure " + (string)(res ? "Passed" : "Failed"), "Test");
             }
             if (controlName == "LaserPower")
@@ -532,7 +532,7 @@ public:
             if (controlName == "Gain" || controlName == "Exposure")
             {
                 Logger::getLogger().log("Disabling IR AutoExposure ", "Test");
-                res = irSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 0);
+                res = irSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
                 Logger::getLogger().log("Disable IR AutoExposure " + (string)(res ? "Passed" : "Failed"), "Test");
             }
             if (controlName == "LaserPower")
@@ -549,7 +549,7 @@ public:
             if (controlName == "Gain" || controlName == "Exposure")
             {
                 Logger::getLogger().log("Disabling AutoExposure ", "Test");
-                res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 0);
+                res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
                 Logger::getLogger().log("Disable AutoExposure " + (string)(res ? "Passed" : "Failed"), "Test");
             }
 
