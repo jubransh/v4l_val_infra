@@ -1037,6 +1037,26 @@ public:
 					continue;
 			}
 			droppedFrames = round(actualDelta / expectedDelta) - 1;
+			double previousDelta;
+			for (int j = droppedFrames; j > 0; j--)
+			{
+				if (i - j - 1 >= 0)
+				{
+					if (_useSystemTs)
+					{
+						previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+					}
+					else
+					{
+						previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+					}
+					if (previousDelta == 0)
+					{
+						droppedFrames--;
+						actualDelta = -expectedDelta;
+					}
+				}
+			}
 			if (droppedFrames > 0)
 				totalFramesDropped += droppedFrames;
 			if (actualDelta >= 2.5 * expectedDelta)
@@ -1122,7 +1142,8 @@ public:
 		bool status = true;
 		int firstFail = -1;
 		double expectedDelta;
-
+		int droppedFrames;
+		double previousDelta;
 		if (!_autoExposureOff)
 		{
 			expectedDelta = 1000.0 / _profile.fps;
@@ -1141,6 +1162,27 @@ public:
 					if (actualDelta < 0)
 						continue;
 					currTS = _frames[i].frameMD.getMetaDataByString("Timestamp");
+				}
+				droppedFrames = round(actualDelta / expectedDelta) - 1;
+				previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
 				}
 				if (actualDelta > 2.5 * expectedDelta)
 				{
@@ -1197,6 +1239,27 @@ public:
 					if (actualDelta < 0)
 						continue;
 					currTS = _frames[i].frameMD.getMetaDataByString("Timestamp");
+				}
+				droppedFrames = round(actualDelta / expectedDelta) - 1;
+				previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
 				}
 				if (actualDelta > 2.5 * expectedDelta)
 				{
@@ -1772,8 +1835,33 @@ public:
 			}
 			else if (droppedFrames != idDelta - 1)
 			{
-				status = false;
-				numberOfInvalid++;
+				if (actualDelta == 0)
+					continue;
+				int previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
+				}
+				if (droppedFrames != idDelta - 1)
+				{
+					status = false;
+					numberOfInvalid++;
+				}
 			}
 			if (status == false && indexOfFirstFail == -1)
 				indexOfFirstFail = _frames[i].ID;
