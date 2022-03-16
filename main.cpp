@@ -1,5 +1,5 @@
 // to compile the project, run the command:
-//  g++ . / main.cpp - o main - lgtest - lpthread - lopencv_core - lopencv_imgproc - ltbb
+//  g++ ./main.cpp -o main -lgtest -lpthread -lopencv_core -lopencv_imgproc -ltbb
 
 // #include <gtest/gtest.h>
 
