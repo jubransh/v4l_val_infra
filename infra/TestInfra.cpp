@@ -1399,6 +1399,29 @@ public:
 			}
 
 			droppedFrames = (actualDelta / expectedDelta) - 1;
+			if (droppedFrames > 0)
+			{
+				double previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
+				}
+			}
 
 			if (droppedFrames > 0)
 				totalFramesDropped += droppedFrames;
