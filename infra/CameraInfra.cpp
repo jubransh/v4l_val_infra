@@ -637,7 +637,10 @@ public:
         {
             0
         };
-        ext.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
+        if (controlId==V4L2_CID_ANALOGUE_GAIN)
+            ext.ctrl_class= V4L2_CTRL_CLASS_IMAGE_SOURCE;
+        else
+            ext.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
         ext.controls = &control;
         ext.count = 1;
 
@@ -672,7 +675,10 @@ public:
         {
             0
         };
-        ext.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
+        if (controlId==V4L2_CID_ANALOGUE_GAIN)
+            ext.ctrl_class= V4L2_CTRL_CLASS_IMAGE_SOURCE;
+        else
+            ext.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
         ext.controls = &control;
         ext.count = 1;
         int ret = ioctl(dataFileDescriptor, VIDIOC_S_EXT_CTRLS, &ext);

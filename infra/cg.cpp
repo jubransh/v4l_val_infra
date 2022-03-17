@@ -45,7 +45,7 @@ public:
         else if (controlName == "Gain")
         {
             conf._controlName = "Gain";
-            conf._controlID = V4L2_CID_GAIN;
+            conf._controlID = V4L2_CID_ANALOGUE_GAIN;
             conf._mDName = "Gain";
             conf._values.push_back(16);
             conf._values.push_back(74);
@@ -130,7 +130,7 @@ public:
         else if (controlName == "Color_Gain")
         {
             conf._controlName = "Color_Gain";
-            conf._controlID = V4L2_CID_GAIN;
+            conf._controlID = V4L2_CID_ANALOGUE_GAIN;
             conf._mDName = "Gain";
             conf._values.push_back(0);
             conf._values.push_back(32);
