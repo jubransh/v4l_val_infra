@@ -334,7 +334,8 @@ TEST_F(StabilityTest, Normal)
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 500, false,false,"");
+    //configure(30, 500, false,false,"");
+    configure(30, 500, false, false, "z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
     run(streams);
 }
 TEST_F(StabilityTest, Normal_60FPS)
@@ -408,7 +409,7 @@ TEST_F(StabilityTest, RandomMixDepthIRColor)
     configure(30, 500, true, false, "");
     run(streams);
 }
-
+/*
 TEST_F(StabilityTest, ContentRandom)
 {
     IgnoreMetricAllStreams("First frame delay");
@@ -484,3 +485,4 @@ TEST_F(StabilityTest, PnpRandom)
     runWithPNP(streams);
 }
 
+*/

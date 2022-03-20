@@ -272,7 +272,8 @@ public:
 
 TEST_F(LongTest, LongStreamTest)
 {
-    configure(10 *60 * 60, false);
+    configure(5 *60 * 60, false);
+    set_profile("z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
@@ -282,7 +283,8 @@ TEST_F(LongTest, LongStreamTest)
 }
 TEST_F(LongTest, LongStreamTest_60FPS)
 {
-    configure(10 * 60 * 60, false);
+    configure(5 * 60 * 60, false);
+    set_profile("z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
@@ -290,7 +292,7 @@ TEST_F(LongTest, LongStreamTest_60FPS)
     // IgnorePNPMetric("CPU Consumption");
     run(streams,60);
 }
-
+/*
 TEST_F(LongTest, LongStreamTest_Specific_Profile)
 {
     configure(10 * 60 * 60, false);
@@ -335,3 +337,4 @@ TEST_F(LongTest, TempCaptureLongStreamTest)
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
 }
+*/
