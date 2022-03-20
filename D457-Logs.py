@@ -11,19 +11,17 @@ time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 # hosts="143.185.115.150" # fadi's host D457-Jetson-01
 # hosts = "143.185.126.16" # shadi's host D457-Jetson-02
 # hosts = "143.185.126.8" # Ashrafs Host D457-Jetson-05
-
 # hosts = "143.185.116.157" # Content host D457-Jetson-04
-hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
-
+# hosts = "143.185.115.38,143.185.116.128,143.185.227.166"
+hosts = "143.185.116.33,143.185.115.38"
+# hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
 host_list=hosts.split(",")
 logs_folder="/home/nvidia/Logs/"
 
 collect_raw_data=True
 # collect_raw_data=False
-
 collect_log_file = True
 # collect_log_file = False
-
 
 target_folder = r"c:\log"
 download_folder=os.path.join(r"c:\D457-temp",time_stamp)
@@ -82,7 +80,6 @@ def get_file_from_host(host,target_folder):
                             else:
                                 logger.error(
                                     "raw_data.csv not found in test: " + test + " SID: " + sid + " in host: " + host)
-
                         if collect_log_file:
                             if "test.log" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
                                 if not os.path.exists(os.path.join(target_folder, host, sid, test)):
@@ -98,6 +95,19 @@ def get_file_from_host(host,target_folder):
                                 logger.error(
                                     "test.log not found in test: " + test + " SID: " + sid + " in host: " + host)
 
+                        if "result.csv" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
+                            if not os.path.exists(os.path.join(target_folder, host, sid, test)):
+                                try:
+                                    os.makedirs(os.path.join(target_folder, host, sid, test))
+                                except:
+                                    pass
+                            logger.info(
+                                "getting result.csv from Test:" + test + " from SID:" + sid + " from host:" + host)
+                            sftp.get(logs_folder + "/" + sid + "/" + test + "/result.csv",
+                                     os.path.join(target_folder, host, sid, test, "result.csv"))
+                        else:
+                            logger.error(
+                                "result.csv not found in test: " + test + " SID: " + sid + " in host: " + host)
 
     if sftp: sftp.close()
     if transport: transport.close()
@@ -138,6 +148,11 @@ if __name__ == '__main__':
     iteration_summary_writer = csv.writer(iteration_summary)
     iterations_header_added=False
 
+    # intialize "backup_results.csv" file - including unfinished tests
+    backup_tests_results = open(os.path.join(target_folder, time_stamp + "_tests_results_fromIterations.csv"), "w+", newline='')
+    backup_tests_results_writer = csv.writer(backup_tests_results)
+    backup_tests_results_writer.writerow(["IP","SID","Test name","Total iterations","Failed iterations","Pass rate"])
+
     # go over hosts in logs folder
     for host in os.listdir(download_folder):
         logger.info("found host:"+host)
@@ -176,8 +191,41 @@ if __name__ == '__main__':
                             else:
                                 iteration_summary_writer.writerow(row)
                         iteration_summary.flush()
+
+                # adding backup_test_results - go over the result csv file and get the test name, total iterations and failed iterations
+                test_name=test
+                curr_iteration = -1
+                total_iterations = 0
+                Failed_iterations = 0
+                if not os.path.exists(os.path.join(download_folder, host, sid, test, "result.csv")):
+                    logger.error(
+                        "result.csv file is missing in:" + os.path.join(download_folder, host, sid, test))
+                else:
+                    with open(os.path.join(download_folder, host, sid, test, "result.csv")) as csv_file:
+                        csv_reader = csv.DictReader(csv_file, delimiter=',')
+                        logger.info("Adding data from:" + os.path.join(download_folder, host, sid, test,
+                                                                       "result.csv"))
+                        line_count = 0
+                        for row in csv_reader:
+                            if line_count == 0:
+                                line_count +=1
+                            else:
+                                line_count+=1
+                                if curr_iteration!= row["Iteration"]:
+                                    curr_iteration = row["Iteration"]
+                                    total_iterations+=1
+                                    if row["Iteration status"]=="Fail":
+                                        Failed_iterations+=1
+                    if total_iterations != 0:
+                        backup_tests_results_writer.writerow([host, sid, test,total_iterations, Failed_iterations, (total_iterations-Failed_iterations)/total_iterations])
+
+
+                    backup_tests_results.flush()
+
+
     tests_results.close()
     iteration_summary.close()
+    backup_tests_results.close()
 
 
 
