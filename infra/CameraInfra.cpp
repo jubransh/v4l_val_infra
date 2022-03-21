@@ -379,6 +379,7 @@ private:
     string name;
     SensorType type;
     bool stopRequested = false;
+    bool isStarted = false;
     Profile lastProfile;
     std::array<void *, NUMBER_OF_BUFFERS> framesBuffer{};
     std::array<void *, NUMBER_OF_BUFFERS> metaDataBuffers{};
@@ -768,7 +769,7 @@ public:
         Logger::getLogger().log("Starting Sensor: " + GetName(), "Sensor");
 
         cameraBusy = true;
-
+        isStarted = false;
         stopRequested = false;
         _t = std::make_shared<std::thread>([this, FramesCallback]()
                                            {
@@ -800,22 +801,23 @@ public:
                                                }
 
                                                // VIDIOC_STREAMON
-                                               if (ioctl(dataFileDescriptor, VIDIOC_STREAMON, &vType) != 0)
-                                               {
-                                                   Logger::getLogger().log("Stream VIDIOC_STREAMON Failed - " + name, "Sensor", LOG_ERROR);
-                                                   throw std::runtime_error("Failed to Start stream - " + name + "\n");
-                                               }
-                                               else
-                                               {
-                                                   Logger::getLogger().log("Stream VIDIOC_STREAMON Done", "Sensor");
-                                               }
-
-                                               if (metaFileOpened)
+                                                if (ioctl(dataFileDescriptor, VIDIOC_STREAMON, &vType) != 0)
+                                                {
+                                                    Logger::getLogger().log("Stream VIDIOC_STREAMON Failed - " + name, "Sensor", LOG_ERROR);
+                                                    //    throw std::runtime_error("Failed to Start stream - " + name + "\n");
+                                                }
+                                                else
+                                                {
+                                                    isStarted = true;
+                                                    Logger::getLogger().log("Stream VIDIOC_STREAMON Done", "Sensor");
+                                                }
+                                                
+                                                if (metaFileOpened && isStarted)
                                                {
                                                    if (ioctl(metaFileDescriptor, VIDIOC_STREAMON, &mdType) != 0)
                                                    {
                                                        Logger::getLogger().log("Stream VIDIOC_STREAMON Failed", "Sensor", LOG_ERROR);
-                                                       throw std::runtime_error("Failed to Start MD stream - " + name + "\n");
+                                                       //throw std::runtime_error("Failed to Start MD stream - " + name + "\n");
                                                    }
                                                    else
                                                    {
@@ -828,6 +830,10 @@ public:
                                                {
                                                     while (!stopRequested)
                                                     {
+                                                        if(!isStarted){
+                                                            continue;
+                                                        }
+
                                                         struct v4l2_buffer V4l2Buffer
                                                         {
                                                             0
@@ -863,7 +869,7 @@ public:
                                                         {
                                                             Logger::getLogger().log(name + " Frame VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor", LOG_ERROR);
                                                             Logger::getLogger().log(name + " Exiting Start Loop", "Sensor", LOG_ERROR);
-                                                            break;  
+                                                            continue;  
                                                         }
                                                         else//if the return value = 0 
                                                         {
