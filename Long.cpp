@@ -273,7 +273,7 @@ public:
 TEST_F(LongTest, LongStreamTest)
 {
     configure(5 *60 * 60, false);
-    set_profile("z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
+    set_profile("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);

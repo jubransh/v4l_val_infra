@@ -335,7 +335,7 @@ TEST_F(StabilityTest, Normal)
     streams.push_back(sT);
     //streams.push_back(sT2);
     //configure(30, 500, false,false,"");
-    configure(30, 500, false, false, "z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
+    configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
     run(streams);
 }
 TEST_F(StabilityTest, Normal_60FPS)
