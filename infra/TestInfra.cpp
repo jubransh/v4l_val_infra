@@ -1037,6 +1037,26 @@ public:
 					continue;
 			}
 			droppedFrames = round(actualDelta / expectedDelta) - 1;
+			double previousDelta;
+			for (int j = droppedFrames; j > 0; j--)
+			{
+				if (i - j - 1 >= 0)
+				{
+					if (_useSystemTs)
+					{
+						previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+					}
+					else
+					{
+						previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+					}
+					if (previousDelta == 0)
+					{
+						droppedFrames--;
+						actualDelta = -expectedDelta;
+					}
+				}
+			}
 			if (droppedFrames > 0)
 				totalFramesDropped += droppedFrames;
 			if (actualDelta >= 2.5 * expectedDelta)
@@ -1122,7 +1142,8 @@ public:
 		bool status = true;
 		int firstFail = -1;
 		double expectedDelta;
-
+		int droppedFrames;
+		double previousDelta;
 		if (!_autoExposureOff)
 		{
 			expectedDelta = 1000.0 / _profile.fps;
@@ -1141,6 +1162,27 @@ public:
 					if (actualDelta < 0)
 						continue;
 					currTS = _frames[i].frameMD.getMetaDataByString("Timestamp");
+				}
+				droppedFrames = round(actualDelta / expectedDelta) - 1;
+				previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
 				}
 				if (actualDelta > 2.5 * expectedDelta)
 				{
@@ -1197,6 +1239,27 @@ public:
 					if (actualDelta < 0)
 						continue;
 					currTS = _frames[i].frameMD.getMetaDataByString("Timestamp");
+				}
+				droppedFrames = round(actualDelta / expectedDelta) - 1;
+				previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
 				}
 				if (actualDelta > 2.5 * expectedDelta)
 				{
@@ -1336,6 +1399,29 @@ public:
 			}
 
 			droppedFrames = (actualDelta / expectedDelta) - 1;
+			if (droppedFrames > 0)
+			{
+				double previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
+				}
+			}
 
 			if (droppedFrames > 0)
 				totalFramesDropped += droppedFrames;
@@ -1772,8 +1858,33 @@ public:
 			}
 			else if (droppedFrames != idDelta - 1)
 			{
-				status = false;
-				numberOfInvalid++;
+				if (actualDelta == 0)
+					continue;
+				int previousDelta;
+				for (int j = droppedFrames; j > 0; j--)
+				{
+					if (i - j - 1 >= 0)
+					{
+						if (_useSystemTs)
+						{
+							previousDelta = (_frames[i - j].systemTimestamp - _frames[i - j - 1].systemTimestamp);
+						}
+						else
+						{
+							previousDelta = (_frames[i - j].frameMD.getMetaDataByString("Timestamp") - _frames[i - j - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+						}
+						if (previousDelta == 0)
+						{
+							droppedFrames--;
+							actualDelta = -expectedDelta;
+						}
+					}
+				}
+				if (droppedFrames != idDelta - 1)
+				{
+					status = false;
+					numberOfInvalid++;
+				}
 			}
 			if (status == false && indexOfFirstFail == -1)
 				indexOfFirstFail = _frames[i].ID;
@@ -1905,6 +2016,13 @@ public:
 
 class MetaDataCorrectnessMetric : public Metric
 {
+	
+private:
+	bool _autoExposureOff = false;
+	int _currExp;
+	double _changeTime;
+	double _value;
+	string _metaDataName;
 public:
 	MetaDataCorrectnessMetric()
 	{
@@ -1917,6 +2035,15 @@ public:
 	void setParams(int tolerance)
 	{
 		_tolerance = tolerance;
+	}
+	void setParams(int tolerance, int currExp, double changeTime, string metaDataName, double value)
+	{
+		_tolerance = tolerance;
+		_autoExposureOff = true;
+		_currExp = currExp;
+		_changeTime = changeTime;
+		_value = value;
+		_metaDataName = metaDataName;
 	}
 	MetricResult calc()
 	{
@@ -1932,34 +2059,115 @@ public:
 			r.value = "0";
 			return r;
 		}
-		int numberOfcorruptFrames = 0;
-		int indexOfFirstCorrupted = -1;
-		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
-		for (int i = 5; i < _frames.size(); i++)
+		int indexOfChange;
+		double fps;
+		if (_autoExposureOff)
 		{
-
-			if (!_frames[i].frameMD.getMetaDataByString("DataCorrectness"))
+			indexOfChange = -1;
+			for (int i = 0; i < _frames.size(); i++)
 			{
-				numberOfcorruptFrames++;
-				if (indexOfFirstCorrupted == -1)
+				if (_frames[i].frameMD.getMetaDataByString(_metaDataName) == _value)
 				{
-					indexOfFirstCorrupted == i;
+					indexOfChange = i+1;
+
+					break;
 				}
 			}
+			fps = getFPSByExposure(_currExp);
 		}
-		if (numberOfcorruptFrames > 0)
-			r.result = false;
 		else
-			r.result = true;
+		{
+			fps = _profile.fps;
+			indexOfChange = 5;
+		}
+		Logger::getLogger().log("Calculating metric: " + _metricName + " on " + _profile.GetText(), "Metric");
+		double actualDelta = 0;
+		string text = "";
+		r.result = true;
+		int numberOfSameTSEvents =0;
+		int indexOfFirstSameTSEvent = -1;
+		int maxSequentialSameTSEvents=0;
+		int currSequentialSameTSEvent=0;
+		int CountOfSameTSEvents=0;
 
-		r.remarks = "Number of corrupted frames: " + to_string(numberOfcorruptFrames) + "\nNumber of frames Arrived: " + to_string(_frames.size()) +
+		int numberOfSameIndexEvents =0;
+		int indexOfFirstSameIndexEvent = -1;
+		int maxSequentialSameIndexEvents=0;
+		int currSequentialSameIndexEvent=0;
+		int CountOfSameIndexEvents=0;
+
+		for (int i=indexOfChange; i< _frames.size(); i++)
+		{
+			
+			int idDelta;
+			if (_useSystemTs)
+			{
+				idDelta = _frames[i].ID - _frames[i - 1].ID;
+				actualDelta = (_frames[i].systemTimestamp - _frames[i - 1].systemTimestamp);
+				text = "Used System Timestamp to calculate this metric\n";
+			}
+			else
+			{
+				idDelta = _frames[i].frameMD.getMetaDataByString("frameId") - _frames[i - 1].frameMD.getMetaDataByString("frameId");
+				actualDelta = (_frames[i].frameMD.getMetaDataByString("Timestamp") - _frames[i - 1].frameMD.getMetaDataByString("Timestamp")) / 1000.0;
+			}
+			// check if delta is zero
+			if (actualDelta==0)
+			{
+				if (currSequentialSameTSEvent==0)
+				{
+					CountOfSameTSEvents++;
+				}
+				r.result = false;
+				numberOfSameTSEvents++;
+				if (indexOfFirstSameTSEvent==-1)
+					indexOfFirstSameTSEvent=_frames[i].ID;
+				currSequentialSameTSEvent++;
+				if (currSequentialSameTSEvent > maxSequentialSameTSEvents)
+				{
+					maxSequentialSameTSEvents = currSequentialSameTSEvent;
+				}
+			}
+			else
+			{
+				currSequentialSameTSEvent=0;
+			}
+		// check if ID Delta is zero
+			if (idDelta==0)
+			{
+				if (currSequentialSameIndexEvent==0)
+				{
+					CountOfSameIndexEvents++;
+				}
+				r.result = false;
+				numberOfSameIndexEvents++;
+				if (indexOfFirstSameIndexEvent==-1)
+					indexOfFirstSameIndexEvent=_frames[i].ID;
+				currSequentialSameIndexEvent++;
+				if (currSequentialSameIndexEvent > maxSequentialSameIndexEvents)
+				{
+					maxSequentialSameIndexEvents = currSequentialSameIndexEvent;
+				}
+			}
+			else
+			{
+				currSequentialSameIndexEvent=0;
+			}
+
+
+		}
+
+		r.remarks = text + "Index of first Same TS event: " + to_string(indexOfFirstSameTSEvent) + "\nNumber of Same TS events: " + to_string(CountOfSameTSEvents) +
+					"\nMax length of same TS event: " + to_string(maxSequentialSameTSEvents) + "\nNumber of Same TS frames: " + to_string(numberOfSameTSEvents) +
+					"\nIndex of first Same Index event: " + to_string(indexOfFirstSameIndexEvent) + "\nNumber of Same Index events: " + to_string(CountOfSameIndexEvents) +
+					"\nMax length of same Index event: " + to_string(maxSequentialSameIndexEvents) + "\nNumber of Same Index frames: " + to_string(numberOfSameIndexEvents) +
 					"\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
-		r.value = to_string(numberOfcorruptFrames);
+		r.value = to_string(numberOfSameIndexEvents + numberOfSameTSEvents);
 		return r;
 	}
 };

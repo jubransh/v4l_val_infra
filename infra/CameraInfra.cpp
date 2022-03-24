@@ -448,11 +448,13 @@ private:
 
         while (true)
         {
+
             //if (stopRequested)
             //{
             //    Logger::getLogger().log(buffType + "Stop was requested While waiting for IOCTL", "Sensor");
             //    break;
             //}
+
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             if (++i % 1000 == 0)
                 Logger::getLogger().log(buffType + "ioct_timeout still running", "Sensor");
@@ -1036,7 +1038,9 @@ public:
                                                             Logger::getLogger().log("No Need to perform VIDIOC_QBUF For " + name + " MD", "Sensor");
                                                         }
                                                         }
+
                                                         //std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
                                                 }
                                                 catch (...)
                                                 {
