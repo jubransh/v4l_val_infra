@@ -309,6 +309,13 @@ public:
 		else
 			return tolerance_FirstFrameDelay_low;
 	}
+	static int get_tolerance_FirstFrameDelay(Profile profile)
+	{
+		if (profile.fps == 5 || profile.fps == 15)
+			return tolerance_FirstFrameDelay_high;
+		else
+			return tolerance_FirstFrameDelay_low;
+	}
 	static int get_tolerance_SequentialFrameDrops()
 	{
 		return tolerance_SequentialFrameDrops;
@@ -926,7 +933,9 @@ public:
 	}
 	MetricResult calc()
 	{
+		_tolerance = get_tolerance_FirstFrameDelay(_profile);
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
+		
 		if (_startTime == 0)
 			throw std::runtime_error("Missing Start time in Metric");
 		MetricResult r;
@@ -2847,14 +2856,14 @@ public:
 					MetricResult r = metrics[i]->calc();
 					if (r.result == false)
 					{
-						if (!stringIsInVector(metrics[i]->_metricName, depthNonMandatoryMetrics))
-						{
-							iterationStatus = "Fail";
-						}
-						else
-						{
-							Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
-						}
+						//if (!stringIsInVector(metrics[i]->_metricName, depthNonMandatoryMetrics))
+						//{
+						//	iterationStatus = "Fail";
+						//}
+						//else
+						//{
+						//	Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
+						//}
 						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on Depth stream");
 					}
 					string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -2877,14 +2886,14 @@ public:
 					MetricResult r = metrics[i]->calc();
 					if (r.result == false)
 					{
-						if (!stringIsInVector(metrics[i]->_metricName, irNonMandatoryMetrics))
-						{
-							iterationStatus = "Fail";
-						}
-						else
-						{
-							Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
-						}
+						//if (!stringIsInVector(metrics[i]->_metricName, irNonMandatoryMetrics))
+						//{
+						//	iterationStatus = "Fail";
+						//}
+						//else
+						//{
+						//	Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
+						//}
 						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on IR stream");
 					}
 					string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
@@ -2906,14 +2915,14 @@ public:
 					MetricResult r = metrics[i]->calc();
 					if (r.result == false)
 					{
-						if (!stringIsInVector(metrics[i]->_metricName, colorNonMandatoryMetrics))
-						{
-							iterationStatus = "Fail";
-						}
-						else
-						{
-							Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
-						}
+						//if (!stringIsInVector(metrics[i]->_metricName, colorNonMandatoryMetrics))
+						//{
+						//	iterationStatus = "Fail";
+						//}
+						//else
+						//{
+						//	Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
+						//}
 						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on Color stream");
 					}
 					string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
