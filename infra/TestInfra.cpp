@@ -200,6 +200,7 @@ void AddFrame(Frame frame)
 				af.pixelFormat = currDepthProfile.GetFormatText();
 				af.width = currDepthProfile.resolution.width;
 				af.height = currDepthProfile.resolution.height;
+				af.size = currDepthProfile.GetSize();
 				fa.collect_depth_frame(af);
 			}
     }
@@ -216,6 +217,7 @@ void AddFrame(Frame frame)
 				af.pixelFormat = currIRProfile.GetFormatText();
 				af.width = currIRProfile.resolution.width;
 				af.height = currIRProfile.resolution.height;
+				af.size = currIRProfile.GetSize();
 				fa.collect_infrared_frame(af);
 			}
     }
@@ -233,6 +235,7 @@ void AddFrame(Frame frame)
 				af.pixelFormat = currColorProfile.GetFormatText();
 				af.width = currColorProfile.resolution.width;
 				af.height = currColorProfile.resolution.height;
+				af.size = currColorProfile.GetSize();
 				fa.collect_color_frame(af);
 			}
     }
@@ -506,13 +509,21 @@ public:
 	}
 	MetricResult calc()
 	{
+		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
+
+		MetricResult r;
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
 		if (_corrupted_results.size() == 0)
-			throw std::runtime_error("Corrupted results array is empty");
-
-		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
-		MetricResult r;
+		{
+			// throw std::runtime_error("Corrupted results array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = "0";
+			return r;
+		}
+			
 		bool is_first_corrupted = true;
 		int first_corrupted_index = -1;
 
@@ -566,13 +577,21 @@ public:
 	}
 	MetricResult calc()
 	{
+		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
+		MetricResult r;
+
 		if (_profile.fps == 0)
 			throw std::runtime_error("Missing profile in Metric");
 		if (_freeze_results.size() == 0)
-			throw std::runtime_error("Freeze results array is empty");
+		{
+			// throw std::runtime_error("Freeze results array is empty");
+			r.result = false;
+			r.remarks = "Error: Frames not arrived";
+			Logger::getLogger().log("Frames Not arrived", "Metric", LOG_ERROR);
+			r.value = "0";
+			return r;
+		}
 
-		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
-		MetricResult r;
 		int freeze_count = 0;
 		int first_seq_index = -1;
 		int last_seq_index = -1;

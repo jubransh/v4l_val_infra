@@ -62,7 +62,7 @@ public:
         {
             Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
             fa.reset();
-            fa.configure(FileUtils::join(testBasePath, name), 10, 0);
+            fa.configure(FileUtils::join(testBasePath, name), 10, 16);
 
         }
         _isContent = isContent;
@@ -409,7 +409,7 @@ TEST_F(StabilityTest, RandomMixDepthIRColor)
     configure(30, 500, true, false, "");
     run(streams);
 }
-/*
+
 TEST_F(StabilityTest, ContentRandom)
 {
     IgnoreMetricAllStreams("First frame delay");
@@ -441,12 +441,12 @@ TEST_F(StabilityTest, ContentRandom)
     streams.push_back(sT2);
     streams.push_back(sT3);
     streams.push_back(sT4);
-    // streams.push_back(sT5);
+    streams.push_back(sT5);
 
-    configure(10, 100, true, true,"");
+    configure(10, 500, true, true,"");
     run(streams);
 }
-
+/*
 TEST_F(StabilityTest, PnpRandom)
 {
     vector<vector<StreamType>> streams;

@@ -907,7 +907,8 @@ public:
                                                             if (copyFrameData)
                                                             {
                                                                 frame.Buff = (uint8_t *)malloc(V4l2Buffer.bytesused);
-                                                                memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
+                                                                // memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
+                                                                memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], lastProfile.GetSize());
                                                             }
 
                                                             frame.systemTimestamp = TimeUtils::getCurrentTimestamp();
@@ -1319,7 +1320,8 @@ public:
         // if command includes data, copy the data which receive by the function as a parameter to the hwmc
         if (hmc.dataSize > 0)
         {
-            memcpy(hwmc + sizeof(struct HWMC), &commandStruct + sizeof(struct HWMC), hmc.dataSize);
+            // memcpy(hwmc + sizeof(struct HWMC), &commandStruct + sizeof(struct HWMC), hmc.dataSize);
+            memcpy(hwmc + sizeof(struct HWMC), hmc.data, hmc.dataSize);
         }
 
         // send the HWMonitor command and make sure that the ioctl is successfull
