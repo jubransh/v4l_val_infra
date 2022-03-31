@@ -312,9 +312,9 @@ public:
 	static int get_tolerance_FirstFrameDelay(Profile profile)
 	{
 		if (profile.fps == 5 || profile.fps == 15)
-			return tolerance_FirstFrameDelay_high;
-		else
 			return tolerance_FirstFrameDelay_low;
+		else
+			return tolerance_FirstFrameDelay_high;
 	}
 	static int get_tolerance_SequentialFrameDrops()
 	{
