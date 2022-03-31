@@ -14,7 +14,7 @@ public:
 
         Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
         fa.reset();
-        fa.configure(FileUtils::join(testBasePath, name), 10, 0);
+        fa.configure(FileUtils::join(testBasePath, name), 10, 16);
 
         isContentTest = true;
         _is_depth_over_color = is_depth_over_color;
@@ -173,7 +173,7 @@ TEST_F(ContentSpecialTest, ContentDepthOverColorTest)
     cP.fps = 60;
     cP.streamType = StreamType::Color_Stream;
 
-    configure(5, 50, true);
+    configure(5, 200, true);
     run(dP, cP);
 }
 
@@ -199,6 +199,6 @@ TEST_F(ContentSpecialTest, ContentColorOverDepthTest)
     cP.fps = 60;
     cP.streamType = StreamType::Color_Stream;
 
-    configure(5, 50, false);
+    configure(5, 200, false);
     run(dP, cP);
 }

@@ -120,6 +120,7 @@ struct AnalayzerFrame
     Frame frame;
     int width;
     int height;
+    int size;
     string pixelFormat;
     int fps;
 };
@@ -249,7 +250,7 @@ class FrameAnalyzer
     {
         FreezeResult fr;
         int is_equal;
-        is_equal = memcmp(frame1.frame.Buff, frame2.frame.Buff, frame1.frame.size);
+        is_equal = memcmp(frame1.frame.Buff, frame2.frame.Buff, frame1.size);
         fr.fps = frame1.fps;
         fr.width = frame1.width;
         fr.height = frame1.height;
@@ -379,7 +380,7 @@ class FrameAnalyzer
                 cr.is_high_or_low_image_pixels = false;
             }
         }
-        else if (frame.pixelFormat == "Y8")
+        else if (frame.pixelFormat == "Y8" || frame.pixelFormat == "Y8i")
         {
             map = cv::Mat(height, width, CV_8UC1, (uint8_t *)frame.frame.Buff);
             cv::cvtColor(map, rgbMap, COLOR_GRAY2RGB);
@@ -478,22 +479,22 @@ class FrameAnalyzer
                         if (!File_Utils::isDirExist(image_path))
                             File_Utils::makePath(image_path);
                         image_path = File_Utils::join(image_path, image_name);
-                        write_image_to_bin_file(image_path, frame.frame.Buff, frame.frame.size);
+                        write_image_to_bin_file(image_path, frame.frame.Buff, frame.size);
                         saved_corrupted_frames++;
                     }
                 }
                 if (is_first_frame)
                 {
                     first_frame = frame;
-                    first_frame.frame.Buff = (uint8_t *)malloc(frame.frame.size);
-                    memcpy(first_frame.frame.Buff, frame.frame.Buff, frame.frame.size);
+                    first_frame.frame.Buff = (uint8_t *)malloc(frame.size);
+                    memcpy(first_frame.frame.Buff, frame.frame.Buff, frame.size);
                     is_first_frame = false;
                 }
                 else
                 {
                     second_frame = frame;
-                    second_frame.frame.Buff = (uint8_t *)malloc(frame.frame.size);
-                    memcpy(second_frame.frame.Buff, frame.frame.Buff, frame.frame.size);
+                    second_frame.frame.Buff = (uint8_t *)malloc(frame.size);
+                    memcpy(second_frame.frame.Buff, frame.frame.Buff, frame.size);
                     FreezeResult fr = calc_freeze_frames(first_frame, second_frame);
                     _depth_freeze_results.push_back(fr);
                     if (fr.is_freeze)
@@ -508,8 +509,8 @@ class FrameAnalyzer
                                 File_Utils::makePath(image_path);
                             string image1_path = File_Utils::join(image_path, image1_name);
                             string image2_path = File_Utils::join(image_path, image2_name);
-                            write_image_to_bin_file(image1_path, first_frame.frame.Buff, frame.frame.size);
-                            write_image_to_bin_file(image2_path, second_frame.frame.Buff, frame.frame.size);
+                            write_image_to_bin_file(image1_path, first_frame.frame.Buff, frame.size);
+                            write_image_to_bin_file(image2_path, second_frame.frame.Buff, frame.size);
                             saved_freeze_frames++;
                         }
                     }
@@ -562,22 +563,22 @@ class FrameAnalyzer
                         if (!File_Utils::isDirExist(image_path))
                             File_Utils::makePath(image_path);
                         image_path = File_Utils::join(image_path, image_name);
-                        write_image_to_bin_file(image_path, frame.frame.Buff, frame.frame.size);
+                        write_image_to_bin_file(image_path, frame.frame.Buff, frame.size);
                         saved_corrupted_frames++;
                     }
                 }
                 if (is_first_frame)
                 {
                     first_frame = frame;
-                    first_frame.frame.Buff = (uint8_t *)malloc(frame.frame.size);
-                    memcpy(first_frame.frame.Buff, frame.frame.Buff, frame.frame.size);
+                    first_frame.frame.Buff = (uint8_t *)malloc(frame.size);
+                    memcpy(first_frame.frame.Buff, frame.frame.Buff, frame.size);
                     is_first_frame = false;
                 }
                 else
                 {
                     second_frame = frame;
-                    second_frame.frame.Buff = (uint8_t *)malloc(frame.frame.size);
-                    memcpy(second_frame.frame.Buff, frame.frame.Buff, frame.frame.size);
+                    second_frame.frame.Buff = (uint8_t *)malloc(frame.size);
+                    memcpy(second_frame.frame.Buff, frame.frame.Buff, frame.size);
                     FreezeResult fr = calc_freeze_frames(first_frame, second_frame);
                     _color_freeze_results.push_back(fr);
                     if (fr.is_freeze)
@@ -592,8 +593,8 @@ class FrameAnalyzer
                                 File_Utils::makePath(image_path);
                             string image1_path = File_Utils::join(image_path, image1_name);
                             string image2_path = File_Utils::join(image_path, image2_name);
-                            write_image_to_bin_file(image1_path, first_frame.frame.Buff, frame.frame.size);
-                            write_image_to_bin_file(image2_path, second_frame.frame.Buff, frame.frame.size);
+                            write_image_to_bin_file(image1_path, first_frame.frame.Buff, frame.size);
+                            write_image_to_bin_file(image2_path, second_frame.frame.Buff, frame.size);
                             saved_freeze_frames++;
                         }
                     }
@@ -646,22 +647,22 @@ class FrameAnalyzer
                         if (!File_Utils::isDirExist(image_path))
                             File_Utils::makePath(image_path);
                         image_path = File_Utils::join(image_path, image_name);
-                        write_image_to_bin_file(image_path, frame.frame.Buff, frame.frame.size);
+                        write_image_to_bin_file(image_path, frame.frame.Buff, frame.size);
                         saved_corrupted_frames++;
                     }
                 }
                 if (is_first_frame)
                 {
                     first_frame = frame;
-                    first_frame.frame.Buff = (uint8_t *)malloc(frame.frame.size);
-                    memcpy(first_frame.frame.Buff, frame.frame.Buff, frame.frame.size);
+                    first_frame.frame.Buff = (uint8_t *)malloc(frame.size);
+                    memcpy(first_frame.frame.Buff, frame.frame.Buff, frame.size);
                     is_first_frame = false;
                 }
                 else
                 {
                     second_frame = frame;
-                    second_frame.frame.Buff = (uint8_t *)malloc(frame.frame.size);
-                    memcpy(second_frame.frame.Buff, frame.frame.Buff, frame.frame.size);
+                    second_frame.frame.Buff = (uint8_t *)malloc(frame.size);
+                    memcpy(second_frame.frame.Buff, frame.frame.Buff, frame.size);
                     FreezeResult fr = calc_freeze_frames(first_frame, second_frame);
                     _infrared_freeze_results.push_back(fr);
                     if (fr.is_freeze)
@@ -676,8 +677,8 @@ class FrameAnalyzer
                                 File_Utils::makePath(image_path);
                             string image1_path = File_Utils::join(image_path, image1_name);
                             string image2_path = File_Utils::join(image_path, image2_name);
-                            write_image_to_bin_file(image1_path, first_frame.frame.Buff, frame.frame.size);
-                            write_image_to_bin_file(image2_path, second_frame.frame.Buff, frame.frame.size);
+                            write_image_to_bin_file(image1_path, first_frame.frame.Buff, frame.size);
+                            write_image_to_bin_file(image2_path, second_frame.frame.Buff, frame.size);
                             saved_freeze_frames++;
                         }
                     }

@@ -44,7 +44,7 @@ public:
         {
             Logger::getLogger().log("Content test enabled", "Test", LOG_INFO);
             fa.reset();
-            fa.configure(FileUtils::join(testBasePath, name), 10, 0);
+            fa.configure(FileUtils::join(testBasePath, name), 10, 16);
         }
         _isContent = isContent;
         isContentTest = isContent;
@@ -304,7 +304,7 @@ TEST_F(LongTest, LongStreamTest_Specific_Profile)
     // IgnorePNPMetric("CPU Consumption");
     run(streams, 60);
 }
-
+*/
 TEST_F(LongTest, ContentLongStreamTest)
 {
     IgnoreMetricAllStreams("First frame delay");
@@ -319,14 +319,14 @@ TEST_F(LongTest, ContentLongStreamTest)
     IgnorePNPMetric("CPU Consumption");
     IgnorePNPMetric("Memory Consumption");
 
-    configure(10 * 60 * 60, false, true);
+    configure(5 * 60 * 60, false, true);
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
-    // streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
-
+/*
 TEST_F(LongTest, TempCaptureLongStreamTest)
 {
     configure(10 * 60 * 60, true);
