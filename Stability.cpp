@@ -135,7 +135,7 @@ public:
         FramesArrivedMetric met_arrived;
         FirstFrameDelayMetric met_delay;
         FpsValidityMetric met_fps;
-        FrameSizeMetric met_frame_size;
+        //FrameSizeMetric met_frame_size;
         FrameDropIntervalMetric met_drop_interval;
         FrameDropsPercentageMetric met_drop_percent;
         IDCorrectnessMetric met_id_cor;
@@ -151,7 +151,7 @@ public:
         metrics.push_back(&met_drop_percent);
         metrics.push_back(&met_delay);
         metrics.push_back(&met_fps);
-        metrics.push_back(&met_frame_size);
+        //metrics.push_back(&met_frame_size);
         metrics.push_back(&met_id_cor);
         metrics.push_back(&met_md_cor);
 
@@ -287,7 +287,7 @@ public:
             met_arrived.setParams(MetricDefaultTolerances::get_tolerance_FramesArrived(), startTime, testDuration);
             met_delay.setParams(MetricDefaultTolerances::get_tolerance_FirstFrameDelay(), startTime);
             met_fps.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity());
-            met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
+            //met_frame_size.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
             met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
             met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
             met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
