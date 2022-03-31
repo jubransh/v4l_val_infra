@@ -933,7 +933,7 @@ public:
 	}
 	MetricResult calc()
 	{
-		_tolerance = get_tolerance_FirstFrameDelay(_profile);
+		_tolerance = MetricDefaultTolerances::get_tolerance_FirstFrameDelay(_profile);
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
 		
 		if (_startTime == 0)
