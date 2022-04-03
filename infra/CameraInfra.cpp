@@ -1129,6 +1129,20 @@ public:
                 else
                     Logger::getLogger().log("Failed to Stop " + name + " MD with return value of " + to_string(ret), "Sensor");
             }
+            int bytes_per_line = 0;
+            
+            Logger::getLogger().log(GetName() + " Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
+            struct v4l2_control setStride;
+            setStride.id = TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE;
+            setStride.value = bytes_per_line; // this should be 64 aligned and large enough for width * bpp, for example for Y8 848 set bytes_per_line to 896.
+            ret = ioctl(dataFileDescriptor, VIDIOC_S_CTRL, &setStride);
+            if (0 != ret)
+            {
+                Logger::getLogger().log(GetName() + " Failed to Configure Stride to : " + to_string(bytes_per_line), "Sensor", LOG_ERROR);
+                throw std::runtime_error("Failed to set Fps");
+            }
+            else
+                Logger::getLogger().log(GetName() + " Done Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
         }
         catch (...)
         {
