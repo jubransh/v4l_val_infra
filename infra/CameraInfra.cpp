@@ -1129,7 +1129,8 @@ public:
             Logger::getLogger().log("unmapping " + name + " Stream buffers", "Sensor");
             for (int i = 0; i < framesBuffer.size(); i++)
             {
-                munmap(framesBuffer[i], lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
+                //munmap(framesBuffer[i], lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
+                munmap(framesBuffer[i], lastProfile.GetSize());
                 munmap(metaDataBuffers[i], 4096);
             }
             Logger::getLogger().log("unmapping " + name + " buffers Done", "Sensor");
