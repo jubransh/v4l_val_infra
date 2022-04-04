@@ -371,6 +371,7 @@ struct Frame
     int ID;
     int streamType;
     __u32 size;
+    __u32 buffSize;
 };
 
 class Sensor
@@ -824,11 +825,16 @@ public:
 
                                                for (int i = 0; i < framesBuffer.size(); ++i)
                                                {
+                                                   //framesBuffer[i] = queryMapQueueBuf(dataFileDescriptor,
+                                                    //                                  V4L2_BUF_TYPE_VIDEO_CAPTURE,
+                                                     //                                 V4L2_MEMORY_MMAP,
+                                                      //                                i,
+                                                       //                               lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
                                                    framesBuffer[i] = queryMapQueueBuf(dataFileDescriptor,
-                                                                                      V4L2_BUF_TYPE_VIDEO_CAPTURE,
-                                                                                      V4L2_MEMORY_MMAP,
-                                                                                      i,
-                                                                                      lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
+                                                       V4L2_BUF_TYPE_VIDEO_CAPTURE,
+                                                       V4L2_MEMORY_MMAP,
+                                                       i,
+                                                       lastProfile.GetSize());
                                                    if (metaFileOpened)
                                                        metaDataBuffers[i] = queryMapQueueBuf(metaFileDescriptor,
                                                                                              V4L2_BUF_TYPE_META_CAPTURE,
@@ -946,9 +952,24 @@ public:
                                                             //copy the frame content
                                                             if (copyFrameData)
                                                             {
-                                                                frame.Buff = (uint8_t *)malloc(V4l2Buffer.bytesused);
+                                                                int actualWidth = lastProfile.resolution.width;
+                                                                if (lastProfile.resolution.width != 640 && lastProfile.resolution.width != 1280)
+                                                                {
+                                                                    while (true)
+                                                                    {
+                                                                        if (actualWidth % 64 == 0)
+                                                                            break;
+                                                                        else
+                                                                            actualWidth += 1;
+                                                                    }
+                                                                }
+                                                                frame.buffSize = lastProfile.resolution.width * lastProfile.resolution.height * lastProfile.GetBpp();
+                                                                frame.Buff = (uint8_t *)malloc(frame.buffSize);
                                                                 // memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
-                                                                memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], lastProfile.GetSize());
+                                                                for (int line = 0; line < lastProfile.resolution.height; line++)
+                                                                {
+                                                                    memcpy(frame.Buff + line*lastProfile.resolution.width*lastProfile.GetBpp(), framesBuffer[V4l2Buffer.index] + line*actualWidth*lastProfile.GetBpp(), lastProfile.resolution.width*lastProfile.GetBpp());
+                                                                }
                                                             }
 
                                                             frame.systemTimestamp = TimeUtils::getCurrentTimestamp();
