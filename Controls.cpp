@@ -171,6 +171,27 @@ public:
 
         for (int j = 0; j < profiles.size(); j++)
         {
+            
+            pR.clear();
+            if (stream == StreamType::Depth_Stream)
+            {
+                Logger::getLogger().log("Depth Profile Used: " + profiles[j].GetText(), "Test");
+                depthSensor.Configure(profiles[j]);
+                pR.push_back(profiles[j]);
+            }
+            else if (stream == StreamType::IR_Stream)
+            {
+                Logger::getLogger().log("IR Profile Used: " + profiles[j].GetText(), "Test");
+                irSensor.Configure(profiles[j]);
+                pR.push_back(profiles[j]);
+            }
+            else if (stream == StreamType::Color_Stream)
+            {
+                Logger::getLogger().log("Color Profile Used: " + profiles[j].GetText(), "Test");
+                colorSensor.Configure(profiles[j]);
+                pR.push_back(profiles[j]);
+            }
+            setCurrentProfiles(pR);
             if (DepthUsed)
             {
                 if (controlName == "Gain")
@@ -204,26 +225,6 @@ public:
 
             Logger::getLogger().log("Sleeping for 3 seconds", "Test");
             std::this_thread::sleep_for(std::chrono::seconds(3));
-            pR.clear();
-            if (stream == StreamType::Depth_Stream)
-            {
-                Logger::getLogger().log("Depth Profile Used: " + profiles[j].GetText(), "Test");
-                depthSensor.Configure(profiles[j]);
-                pR.push_back(profiles[j]);
-            }
-            else if (stream == StreamType::IR_Stream)
-            {
-                Logger::getLogger().log("IR Profile Used: " + profiles[j].GetText(), "Test");
-                irSensor.Configure(profiles[j]);
-                pR.push_back(profiles[j]);
-            }
-            else if (stream == StreamType::Color_Stream)
-            {
-                Logger::getLogger().log("Color Profile Used: " + profiles[j].GetText(), "Test");
-                colorSensor.Configure(profiles[j]);
-                pR.push_back(profiles[j]);
-            }
-            setCurrentProfiles(pR);
 
             long startTime = TimeUtils::getCurrentTimestamp();
             if (DepthUsed)
