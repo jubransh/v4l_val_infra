@@ -46,7 +46,7 @@ void save_FrameArrived(Frame f)
 
         string fileName = fm + "_" + w + "_" + h + "_" + fps + "_" + to_string(f.ID) +".bin";
         string imagePath = File_Utils::join(scriptPath, fileName);
-        write_to_bin_file(imagePath, f.Buff, running_profile.GetSize());
+        write_to_bin_file(imagePath, f.Buff, running_profile.resolution.width * running_profile.resolution.height * running_profile.GetBpp());
         isCollectFrames = false;
     }
 }

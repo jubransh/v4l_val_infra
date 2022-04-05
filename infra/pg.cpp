@@ -79,7 +79,9 @@ private:
 
         if (formatStr=="y8")
             {
-            prof.pixelFormat = V4L2_PIX_FMT_Y8;
+            // prof.pixelFormat = V4L2_PIX_FMT_Y8;
+            prof.pixelFormat = V4L2_PIX_FMT_GREY;
+            
             prof.streamType = StreamType::IR_Stream;
             }
         else if (formatStr == "y8i")
