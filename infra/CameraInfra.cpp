@@ -123,6 +123,9 @@ public:
     {
         switch (pixelFormat)
         {
+        case V4L2_PIX_FMT_GREY:
+            return "Grey";
+            break;
         case V4L2_PIX_FMT_Y8:
             return "Y8";
             break;
@@ -153,6 +156,9 @@ public:
         case V4L2_PIX_FMT_Y8:
             bpp = 1;
             break;
+        case V4L2_PIX_FMT_GREY:
+            bpp = 1;
+            break;
         default:
             bpp = 2;
             break;
@@ -181,7 +187,9 @@ public:
         case V4L2_PIX_FMT_Y8:
             bpp = 1;
             break;
-
+        case V4L2_PIX_FMT_GREY:
+            bpp = 1;
+            break;
         default:
             bpp = 2;
             break;
