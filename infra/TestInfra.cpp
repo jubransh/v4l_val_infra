@@ -1157,7 +1157,7 @@ public:
 		}
 		fps = getActualFPS(_frames, fps, _useSystemTs, indexOfChange);
 		double expectedDelta = 1000.0 / fps;
-		int maxDropIndex = 0, maxDrops = 0, totalFramesDropped = 0, sequentialFrameDropEvents = 0, firstSequentialDropIndex = 0;
+		int minDropIndex = 0, minDrops = 0, maxDropIndex = 0, maxDrops = 0, totalFramesDropped = 0, totalSequentialFramesDropped = 0, sequentialFrameDropEvents = 0, firstSequentialDropIndex = 0;
 		Logger::getLogger().log("Calculating metric: " + _metricName + " with Tolerance: " + to_string(_tolerance) + " on " + _profile.GetText(), "Metric");
 		for (int i = indexOfChange; i < _frames.size(); i++)
 		{
@@ -1197,12 +1197,17 @@ public:
 				totalFramesDropped += droppedFrames;
 			if (actualDelta >= 2.5 * expectedDelta)
 			{
-
+				totalSequentialFramesDropped += droppedFrames;
 				sequentialFrameDropEvents++;
 				if (droppedFrames > maxDrops)
 				{
 					maxDropIndex = _frames[i].ID;
 					maxDrops = droppedFrames;
+				}
+				if (droppedFrames < minDrops || minDrops==0)
+				{
+					minDrops = droppedFrames;
+					minDropIndex = _frames[i].ID;
 				}
 				if (firstSequentialDropIndex == 0)
 					firstSequentialDropIndex = _frames[i].ID;
@@ -1213,7 +1218,9 @@ public:
 		else
 			r.result = true;
 
-		r.remarks = text + "First Sequential drop index: " + to_string(firstSequentialDropIndex) + "\nSequential frame Drop Events: " + to_string(sequentialFrameDropEvents) + "\nTotal frames dropped: " + to_string(totalFramesDropped) + "\nMax sequential frame drops: " + to_string(maxDrops) + "\nMax sequential drop index: " + to_string(maxDropIndex) + "\nTolerance: " + to_string(_tolerance) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		r.remarks = text + "First Sequential drop index: " + to_string(firstSequentialDropIndex) + "\nSequential frame Drop Events: " + to_string(sequentialFrameDropEvents) + "\nTotal frames dropped: " + to_string(totalFramesDropped) + "\nPercentage of sequential drops out of all drops: " + to_string(100.0*totalSequentialFramesDropped/totalFramesDropped) +
+			"\nMax sequential frame drops: " + to_string(maxDrops) + "\nMax sequential drop index: " + to_string(maxDropIndex) + "\nMin sequential frame drops: " + to_string(minDrops) + "\nMin sequential drop index: " + to_string(minDropIndex) +
+			"\nTolerance: " + to_string(_tolerance) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
 		{
@@ -1258,6 +1265,7 @@ public:
 	}
 	MetricResult calc()
 	{
+		int eventCount = 0;
 		double lastDropTS = 0;
 		double currTS;
 		double actualDelta;
@@ -1325,8 +1333,10 @@ public:
 				if (actualDelta > 2.5 * expectedDelta)
 				{
 					status = false;
-					firstFail = _frames[i].ID;
-					break;
+					eventCount += 1;
+					if (firstFail == -1)
+						firstFail = _frames[i].ID;
+					
 				}
 
 				else if (actualDelta > 1.5 * expectedDelta)
@@ -1339,8 +1349,10 @@ public:
 						if (currTS - lastDropTS < _interval * 1000)
 						{
 							status = false;
-							firstFail = _frames[i].ID;
-							break;
+							eventCount += 1;
+							if (firstFail==-1)
+								firstFail = _frames[i].ID;
+							
 						}
 						else
 							lastDropTS = currTS;
@@ -1402,8 +1414,9 @@ public:
 				if (actualDelta > 2.5 * expectedDelta)
 				{
 					status = false;
-					firstFail = _frames[i].ID;
-					break;
+					eventCount += 1;
+					if (firstFail == -1)
+						firstFail = _frames[i].ID;
 				}
 
 				else if (actualDelta > 1.5 * expectedDelta)
@@ -1416,8 +1429,9 @@ public:
 						if (currTS - lastDropTS < _interval * 1000)
 						{
 							status = false;
-							firstFail = _frames[i].ID;
-							break;
+							eventCount += 1;
+							if (firstFail == -1)
+								firstFail = _frames[i].ID;
 						}
 						else
 							lastDropTS = currTS;
@@ -1427,20 +1441,13 @@ public:
 		}
 		r.result = status;
 
-		r.remarks = text + "First fail index: " + to_string(firstFail) + "\nInterval: " + to_string(_interval) + "\nMetric result: " + ((r.result) ? "Pass" : "Fail");
+		r.remarks = text + "Interval Drop Event Count: "+ to_string(eventCount)+"\nFirst fail index : " + to_string(firstFail) + "\nInterval : " + to_string(_interval) + "\nMetric result : " + ((r.result) ? "Pass" : "Fail");
 		vector<string> results = r.getRemarksStrings();
 		for (int i = 0; i < results.size(); i++)
 		{
 			Logger::getLogger().log(results[i], "Metric");
 		}
-		if (status)
-		{
-			r.value = to_string(1);
-		}
-		else
-		{
-			r.value = to_string(0);
-		}
+		r.value = to_string(eventCount);
 		return r;
 	}
 };
