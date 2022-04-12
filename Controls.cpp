@@ -92,7 +92,7 @@ public:
         FrameDropsPercentageMetric frmPercMetric;
         SequentialFrameDropsMetric seqFrmMetric;
         IDCorrectnessMetric idMetric;
-        //FrameSizeMetric frmSizeMetric;
+        FrameSizeMetric frmSizeMetric;
         MetaDataCorrectnessMetric met_md_cor;
 
         metrics.push_back(&cntrlMetric);
@@ -101,7 +101,7 @@ public:
         metrics.push_back(&frmPercMetric);
         metrics.push_back(&seqFrmMetric);
         metrics.push_back(&idMetric);
-        //metrics.push_back(&frmSizeMetric);
+        metrics.push_back(&frmSizeMetric);
         metrics.push_back(&met_md_cor);
 
         Sensor depthSensor = cam.GetDepthSensor();
@@ -314,7 +314,7 @@ public:
                     met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                 }
 
-                //frmSizeMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
+                frmSizeMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
 
                 bool result = CalcMetrics(j * cntrl._values.size() + i);
                 if (!result)
