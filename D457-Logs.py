@@ -8,20 +8,19 @@ paramiko.util.log_to_file("paramiko.log")
 
 time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 
-# hosts="143.185.115.150" # fadi's host D457-Jetson-01
-# hosts = "143.185.126.16" # shadi's host D457-Jetson-02
-# hosts = "143.185.126.8" # Ashrafs Host D457-Jetson-05
-# hosts = "143.185.116.157" # Content host D457-Jetson-04
-# hosts = "143.185.115.38,143.185.116.128,143.185.227.166"
-hosts = "143.185.116.33,143.185.115.38"
+# hosts = "143.185.227.150,143.185.227.39"
+# hosts = "143.185.227.39"
+# hosts = "143.185.227.39,143.185.227.31"
+# hosts = "143.185.116.176"
+hosts = "143.185.227.31"
 # hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
 host_list=hosts.split(",")
 logs_folder="/home/nvidia/Logs/"
 
-collect_raw_data=True
-# collect_raw_data=False
-collect_log_file = True
-# collect_log_file = False
+# collect_raw_data=True
+collect_raw_data=False
+# collect_log_file = True
+collect_log_file = False
 
 target_folder = r"c:\log"
 download_folder=os.path.join(r"c:\D457-temp",time_stamp)
@@ -151,7 +150,7 @@ if __name__ == '__main__':
     # intialize "backup_results.csv" file - including unfinished tests
     backup_tests_results = open(os.path.join(target_folder, time_stamp + "_tests_results_fromIterations.csv"), "w+", newline='')
     backup_tests_results_writer = csv.writer(backup_tests_results)
-    backup_tests_results_writer.writerow(["IP","SID","Test name","Total iterations","Failed iterations","Pass rate"])
+    backup_tests_results_writer.writerow(["IP","Camera Serial","SID","Test name","Test Suite","Total iterations","Failed iterations","Pass rate"])
 
     # go over hosts in logs folder
     for host in os.listdir(download_folder):
@@ -194,6 +193,8 @@ if __name__ == '__main__':
 
                 # adding backup_test_results - go over the result csv file and get the test name, total iterations and failed iterations
                 test_name=test
+                testSuite=""
+                cameraSerial=""
                 curr_iteration = -1
                 total_iterations = 0
                 Failed_iterations = 0
@@ -212,12 +213,14 @@ if __name__ == '__main__':
                             else:
                                 line_count+=1
                                 if curr_iteration!= row["Iteration"]:
+                                    testSuite=row[" Test Suite"]
+                                    cameraSerial = row[" Camera Serial"]
                                     curr_iteration = row["Iteration"]
                                     total_iterations+=1
                                     if row["Iteration status"]=="Fail":
                                         Failed_iterations+=1
                     if total_iterations != 0:
-                        backup_tests_results_writer.writerow([host, sid, test,total_iterations, Failed_iterations, (total_iterations-Failed_iterations)/total_iterations])
+                        backup_tests_results_writer.writerow([host, cameraSerial,sid, test,testSuite, total_iterations, Failed_iterations, 100*(total_iterations-Failed_iterations)/total_iterations])
 
 
                     backup_tests_results.flush()

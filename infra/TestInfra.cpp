@@ -2463,7 +2463,7 @@ public:
 			Logger::getLogger().log("Cannot open result file: " + resultPath, LOG_ERROR);
 			throw std::runtime_error("Cannot open file: " + resultPath);
 		}
-		resultCsv << "Iteration,Stream Combination,Stream Duration,Tested Stream,Metric name,Metric status,Remarks,Iteration status" << endl;
+		resultCsv << "Iteration,Test name, Test Suite, Camera Serial,Stream Combination,Stream Duration,Tested Stream,Metric name,Metric status,Remarks,Iteration status" << endl;
 
 		// update Host name
 		char temp_hostname[HOST_NAME_MAX];
@@ -2504,6 +2504,8 @@ public:
 		{
 			is_tests_res_created = true;
 			TestsResults << "SID"
+					     << ","
+						 << "Camera Serial"
 						 << ","
 						 << "Test name"
 						 << ","
@@ -2518,10 +2520,10 @@ public:
 						 << "Pass rate" << endl;
 		}
 		if (testStatus)
-			TestsResults << sid << "," << name << "," << suiteName << ","
+			TestsResults << sid << ","<< cam.GetSerialNumber() << "," << name << "," << suiteName << ","
 						 << "Pass," << iterations << "," << failediter << "," << to_string(100 * double(iterations - failediter) / iterations) << endl;
 		else
-			TestsResults << sid << "," << name << "," << suiteName << ","
+			TestsResults << sid << "," << cam.GetSerialNumber() << "," << name << "," << suiteName << ","
 						 << "Fail," << iterations << "," << failediter << "," << to_string(100 * double(iterations - failediter) / iterations) << endl;
 
 		Logger::getLogger().log("Closing Log file", "TearDown()", LOG_INFO);
@@ -2831,7 +2833,7 @@ public:
 
 				failedMetrics.push_back("Metric: " + pnpMetrics[i]->_metricName + " Failed");
 			}
-			string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",PNP," + pnpMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+			string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",PNP," + pnpMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 			iterationResults.push_back(iRes);
 
 			rawline = "";
@@ -2865,7 +2867,7 @@ public:
 					}
 					failedMetrics.push_back("Metric: " + contentMetrics[i]->_metricName + " Failed on Depth stream");
 				}
-				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
 
 				rawline = "";
@@ -2894,7 +2896,7 @@ public:
 					}
 					failedMetrics.push_back("Metric: " + contentMetrics[i]->_metricName + " Failed on IR stream");
 				}
-				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
 
 				rawline = "";
@@ -2924,7 +2926,7 @@ public:
 					}
 					failedMetrics.push_back("Metric: " + contentMetrics[i]->_metricName + " Failed on Color stream");
 				}
-				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + contentMetrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
 
 				rawline = "";
@@ -2957,7 +2959,7 @@ public:
 					}
 					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on Depth stream");
 				}
-				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				string iRes = to_string(iteration) + "," + name  + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
 
 				rawline = "";
@@ -2987,7 +2989,7 @@ public:
 					}
 					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on IR stream");
 				}
-				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
 
 				rawline = "";
@@ -3016,7 +3018,7 @@ public:
 					}
 					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on Color stream");
 				}
-				string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 				iterationResults.push_back(iRes);
 
 				rawline = "";
@@ -3050,7 +3052,7 @@ public:
 						//}
 						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on Depth stream");
 					}
-					string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+					string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Depth," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 					iterationResults.push_back(iRes);
 
 					rawline = "";
@@ -3080,7 +3082,7 @@ public:
 						//}
 						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on IR stream");
 					}
-					string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+					string iRes = to_string(iteration) + "," + name +  "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",IR," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 					iterationResults.push_back(iRes);
 
 					rawline = "";
@@ -3109,7 +3111,7 @@ public:
 						//}
 						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on Color stream");
 					}
-					string iRes = to_string(iteration) + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+					string iRes = to_string(iteration)+","+name+","+suiteName+","+cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Color," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 					iterationResults.push_back(iRes);
 
 					rawline = "";
@@ -3127,7 +3129,7 @@ public:
 		{
 			AppendIterationResultCVS(iterationResults[j] + iterationStatus);
 		}
-		// Iteration,stream Combination, Stream Type,Image Format,Resolution,FPS,Frame Index,HW TimeStamp,System TimeStamp
+		// Iteration,Test name, Test Suite, Camrera Serial,stream Combination, Stream Type,Image Format,Resolution,FPS,Frame Index,HW TimeStamp,System TimeStamp
 		//  "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,HW TimeStamp,System TimeStamp" << endl;
 
 		if (currDepthProfile.fps != 0)
