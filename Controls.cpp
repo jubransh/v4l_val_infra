@@ -609,7 +609,7 @@ public:
                 streamName = "Color";
 
             result.remarks = "Control Name: " + cntrl._controlName + "\nSet Value: " + to_string(cntrl._values[j]) + "\nSet Status: " + ((setRes) ? "Pass" : "Fail") + "\nGet Value: " + to_string(currValue) + "\nMetric result: " + ((result.result) ? "Pass" : "Fail");
-            string iRes = to_string(j) + ",,," + streamName + ",Set/Get," + ((result.result) ? "Pass" : "Fail") + ",\"" + result.remarks + "\",";
+            string iRes = to_string(j) +"," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",Set/Get," +",,,"+ ((result.result) ? "Pass" : "Fail") + ",\"" + result.remarks + "\",";
             AppendIterationResultCVS(iRes + iterationStatus);
             if (!result.result)
             {
