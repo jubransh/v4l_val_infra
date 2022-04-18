@@ -519,9 +519,14 @@ private:
         v4L2ReqBufferrs.memory = memory;
         v4L2ReqBufferrs.count = count;
         int ret = ioctl(fd, VIDIOC_REQBUFS, &v4L2ReqBufferrs);
+        string t="";
+        if (type == V4L2_BUF_TYPE_VIDEO_CAPTURE)
+            t = "Frame ";
+        else if (type == V4L2_BUF_TYPE_META_CAPTURE)
+            t = "MetaData ";
 
-        Logger::getLogger().log("Requesting buffers " + string((0 == ret) ? "Succeeded" : "Failed"), "Sensor", LOG_INFO);
-        Logger::getLogger().log("Requested buffers number: " + to_string(v4L2ReqBufferrs.count), "Sensor", LOG_INFO);
+        Logger::getLogger().log(GetName() + " Requesting "+ t +"buffers " + string((0 == ret) ? "Succeeded" : "Failed"), "Sensor", LOG_INFO);
+        Logger::getLogger().log(GetName() + " Requested buffers number: " + to_string(v4L2ReqBufferrs.count), "Sensor", LOG_INFO);
 
         ASSERT_TRUE(0 == ret);
         ASSERT_TRUE(0 < v4L2ReqBufferrs.count);
@@ -860,25 +865,25 @@ public:
                                                // VIDIOC_STREAMON
                                                 if (ioctl(dataFileDescriptor, VIDIOC_STREAMON, &vType) != 0)
                                                 {
-                                                    Logger::getLogger().log("Stream VIDIOC_STREAMON Failed - " + name, "Sensor", LOG_ERROR);
+                                                    Logger::getLogger().log(GetName()+" Stream VIDIOC_STREAMON Failed - " + name, "Sensor", LOG_ERROR);
                                                     //    throw std::runtime_error("Failed to Start stream - " + name + "\n");
                                                 }
                                                 else
                                                 {
                                                     isStarted = true;
-                                                    Logger::getLogger().log("Stream VIDIOC_STREAMON Done", "Sensor");
+                                                    Logger::getLogger().log(GetName() + " Stream VIDIOC_STREAMON Done", "Sensor");
                                                 }
                                                 
                                                 if (metaFileOpened && isStarted)
                                                {
                                                    if (ioctl(metaFileDescriptor, VIDIOC_STREAMON, &mdType) != 0)
                                                    {
-                                                       Logger::getLogger().log("Stream VIDIOC_STREAMON Failed", "Sensor", LOG_ERROR);
+                                                       Logger::getLogger().log(GetName() + " Metadata VIDIOC_STREAMON Failed", "Sensor", LOG_ERROR);
                                                        //throw std::runtime_error("Failed to Start MD stream - " + name + "\n");
                                                    }
                                                    else
                                                    {
-                                                       Logger::getLogger().log("Metadata VIDIOC_STREAMON Done", "Sensor");
+                                                       Logger::getLogger().log(GetName() + " Metadata VIDIOC_STREAMON Done", "Sensor");
                                                    }
                                                }
 
