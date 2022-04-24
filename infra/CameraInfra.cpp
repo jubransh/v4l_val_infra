@@ -394,6 +394,7 @@ private:
     bool metaFileOpened = false;
     bool dataFileOpened = false;
     bool openMetaD = true;
+    int insideIOCTL = 0;
 
     string name;
     SensorType type;
@@ -454,7 +455,7 @@ private:
         string t_name = "ioctl_thread";
         int result = -1;
         bool isDone = false;
-
+        insideIOCTL ++;
         // thread open_thread(open, __path,__oflag);
         thread open_thread([&]()
                            {
@@ -505,7 +506,7 @@ private:
                 Logger::getLogger().log(buffType + " Task killed", "Sensor", LOG_ERROR);
             }
         }
-
+        insideIOCTL --;
         return result;
     }
 
@@ -824,7 +825,7 @@ public:
     void Start(void (*FramesCallback)(Frame f))
     {
         Logger::getLogger().log("Starting Sensor: " + GetName(), "Sensor");
-
+        insideIOCTL = 0;
         cameraBusy = true;
         isStarted = false;
         stopRequested = false;
@@ -923,196 +924,201 @@ public:
                                                             Logger::getLogger().log(name + " Stop is requested by user before Frame DQBUF - Exiting thread", "Sensor");
                                                             break;
                                                         }
+                                                        fd_set fds;
+                                                        struct timeval tv;
+                                                        int r;
 
+                                                        FD_ZERO(&fds);
+                                                        FD_SET(dataFileDescriptor, &fds);
 
+                                                        /* Timeout. */
+                                                        tv.tv_sec = 5;
+                                                        tv.tv_usec = 0;
+
+                                                        r = select(dataFileDescriptor + 1, &fds, NULL, NULL, &tv);
+
+                                                        if ( r == 0)
+                                                        {
+                                                            Logger::getLogger().log(name + " Select timed out " , "Sensor", LOG_ERROR);
+                                                            continue;
+                                                        }
+                                                        if (r == -1)
+                                                        {
+                                                            Logger::getLogger().log(name + " Select Returned error ", "Sensor", LOG_ERROR);
+                                                            continue;
+                                                        }
                                                         //Frame ioctl
                                                         int res = ioct_timeout(name + " Frame", dataFileDescriptor, VIDIOC_DQBUF, &V4l2Buffer, 5000);
                                                         if (res != 0) 
                                                         {
                                                             Logger::getLogger().log(name + " Frame VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor", LOG_ERROR);
-                                                            Logger::getLogger().log(name + " Exiting Start Loop", "Sensor", LOG_ERROR);
-                                                            continue;  
+                                                             
                                                         }
                                                         else//if the return value = 0 
                                                         {
                                                             frameReady = true;
                                                         }
-
-                                                        // if (stopRequested)
-                                                        // {
-                                                        //     Logger::getLogger().log(name + " Stop is requested by user - Exiting thread", "Sensor");
-                                                        //     break;
-                                                        // }
-
                                                         bool mdReady = false;
-                                                        //Prepare the new Frame
-                                                        if (frameReady)
+                                                        if (metaFileOpened)
                                                         {
-                                                            if (metaFileOpened)
+                                                            FD_ZERO(&fds);
+                                                            FD_SET(metaFileDescriptor, &fds);
+
+                                                            /* Timeout. */
+                                                            tv.tv_sec = 5;
+                                                            tv.tv_usec = 0;
+
+                                                            r = select(metaFileDescriptor + 1, &fds, NULL, NULL, &tv);
+
+                                                            if (r == 0)
                                                             {
-                                                                res = ioct_timeout(name + " MD frame", metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer, 5000);
-                                                                // res = ioctl(metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer);
-                                                                if (res != 0)
-                                                                {
-                                                                    errorFlag = true;
-                                                                    Logger::getLogger().log(name + " MD VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor", LOG_ERROR);
-                                                                }
-                                                                else
-                                                                    mdReady = true;
+                                                                Logger::getLogger().log(name + " MetaData Select timed out ", "Sensor", LOG_ERROR);
+                                                                continue;
                                                             }
-                                                            Frame frame;
-
-                                                            //copy the frame content
-                                                            if (copyFrameData)
+                                                            if (r == -1)
                                                             {
-                                                                int actualWidth = lastProfile.resolution.width;
-                                                                if (lastProfile.resolution.width != 640 && lastProfile.resolution.width != 1280)
-                                                                {
-                                                                    while (true)
-                                                                    {
-                                                                        if (actualWidth % 64 == 0)
-                                                                            break;
-                                                                        else
-                                                                            actualWidth += 1;
-                                                                    }
-                                                                }
-                                                                frame.buffSize = lastProfile.resolution.width * lastProfile.resolution.height * lastProfile.GetBpp();
-                                                                frame.Buff = (uint8_t *)malloc(frame.buffSize);
-                                                                // memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
-                                                                for (int line = 0; line < lastProfile.resolution.height; line++)
-                                                                {
-                                                                    memcpy(frame.Buff + line*lastProfile.resolution.width*lastProfile.GetBpp(), framesBuffer[V4l2Buffer.index] + line*actualWidth*lastProfile.GetBpp(), lastProfile.resolution.width*lastProfile.GetBpp());
-                                                                }
+                                                                Logger::getLogger().log(name + " MetaData Select Returned error ", "Sensor", LOG_ERROR);
+                                                                continue;
                                                             }
-
-                                                            frame.systemTimestamp = TimeUtils::getCurrentTimestamp();
-                                                            frame.ID = V4l2Buffer.sequence;
-                                                            frame.streamType = lastProfile.streamType;
-                                                            frame.size = V4l2Buffer.bytesused;
-                                                            frame.hwTimestamp = V4l2Buffer.timestamp.tv_usec;
-
-                                                            Metadata md;
-
-                                                            if (metaFileOpened && mdReady)
+                                                            res = ioct_timeout(name + " MD frame", metaFileDescriptor, VIDIOC_DQBUF, &mdV4l2Buffer, 5000);
+                                                            if (res != 0)
                                                             {
-                                                                md.commonMetadata.frameId = mdV4l2Buffer.sequence;
-                                                                if (type == SensorType::Depth or type == SensorType::IR)
-                                                                {
-                                                                    STMetaDataExtMipiDepthIR *ptr = static_cast<STMetaDataExtMipiDepthIR *>(metaDataBuffers[mdV4l2Buffer.index] + 16);
-
-                                                                    md.depthMetadata.preset = (uint16_t)ptr->preset;
-                                                                    md.depthMetadata.LaserPowerMode = (uint16_t)ptr->projectorMode;
-                                                                    md.depthMetadata.ManualLaserPower = ptr->laserPower;
-
-                                                                    md.commonMetadata.manualExposure = ptr->manualExposure;
-                                                                    md.commonMetadata.AutoExposureMode = (uint16_t)ptr->autoExposureMode;
-                                                                    md.commonMetadata.Gain = (uint16_t)ptr->manualGain;
-
-                                                                    //Common MD
-                                                                    md.commonMetadata.Timestamp = ptr->hwTimestamp;
-                                                                    md.commonMetadata.exposureTime = ptr->exposureTime;
-                                                                    md.commonMetadata.width = ptr->inputWidth;
-                                                                    md.commonMetadata.height = ptr->inputHeight;
-                                                                    // md.commonMetadata.frameId = ptr->frameCounter;
-                                                                    md.commonMetadata.CRC = ptr->crc32;
-
-                                                                    md.commonMetadata.Type = type;
-                                                                }
-                                                                if (type == SensorType::Color)
-                                                                {
-                                                                    STMetaDataExtMipiRgb *ptr = static_cast<STMetaDataExtMipiRgb *>(metaDataBuffers[mdV4l2Buffer.index] + 16);
-
-                                                                    md.colorMetadata.BackLighCompensation = (uint16_t)ptr->backlight_Comp;
-                                                                    md.colorMetadata.Brightness = (uint16_t)ptr->brightness;
-                                                                    md.colorMetadata.Contrast = (uint16_t)ptr->contrast;
-                                                                    md.colorMetadata.Gamma = ptr->gamma;
-                                                                    md.colorMetadata.Hue = (uint16_t)ptr->hue;
-                                                                    md.colorMetadata.Saturation = (uint16_t)ptr->saturation;
-                                                                    md.colorMetadata.Sharpness = (uint16_t)ptr->sharpness;
-                                                                    md.colorMetadata.WhiteBalance = ptr->manual_WB;
-                                                                    md.colorMetadata.PowerLineFrequency = ptr->powerLineFrequency;
-                                                                    md.colorMetadata.LowLightCompensation = ptr->low_Light_comp;
-                                                                    md.colorMetadata.AutoWhiteBalanceTemp = ptr->auto_WB_Temp;
-
-                                                                    md.commonMetadata.manualExposure = ptr->manual_Exp;
-                                                                    md.commonMetadata.AutoExposureMode = (uint16_t)ptr->auto_Exp_Mode;
-                                                                    md.commonMetadata.Gain = (uint16_t)ptr->gain;
-
-                                                                    //Common MD
-                                                                    md.commonMetadata.Timestamp = ptr->hwTimestamp;
-                                                                    md.commonMetadata.exposureTime = ptr->manual_Exp;
-                                                                    md.commonMetadata.width = ptr->inputWidth;
-                                                                    md.commonMetadata.height = ptr->inputHeight;
-                                                                    md.commonMetadata.CRC = ptr->crc32;
-                                                                    md.commonMetadata.Type = type;
-                                                                }
-
-                                                                //    // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
-                                                            }
-                                                            /* // code that prints the MetaData Buffer and the metadata actual data for comparison
-                                                            if (frame.ID == 10)
-                                                            {
-                                                                u_int* newPTR = static_cast<u_int*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
-                                                                for (int i = 0; i < 52; i++)
-                                                                {
-                                                                    cout << dec << newPTR[i] << " ";
-                                                                }
-                                                                cout << endl;
-                                                                md.print_MetaData();
-
-                                                            }
-                                                            */
-
-
-                                                            frame.frameMD = md;
-
-                                                            // if this is an actual frame then call the callback functtion
-                                                            if (frame.hwTimestamp == 0 || (metaFileOpened  && frame.frameMD.commonMetadata.Timestamp == 0))
-                                                            {
-                                                                Logger::getLogger().log("Sensor: " + name + ", Frame #" + to_string(frame.ID) + " with HW TimeStamp =0 was Dropped ", "Sensor", LOG_WARNING);
+                                                                errorFlag = true;
+                                                                Logger::getLogger().log(name + " MD VIDIOC_DQBUF Failed on result: " + to_string(res), "Sensor", LOG_ERROR);
                                                             }
                                                             else
+                                                                mdReady = true;
+                                                        }
+                                                        Frame frame;
+
+                                                        //copy the frame content
+                                                        if (copyFrameData)
+                                                        {
+                                                            int actualWidth = lastProfile.resolution.width;
+                                                            if (lastProfile.resolution.width != 640 && lastProfile.resolution.width != 1280)
                                                             {
-                                                                //Send the new created frame with the callback
-                                                                (*FramesCallback)(frame);
+                                                                while (true)
+                                                                {
+                                                                    if (actualWidth % 64 == 0)
+                                                                        break;
+                                                                    else
+                                                                        actualWidth += 1;
+                                                                }
                                                             }
+                                                            frame.buffSize = lastProfile.resolution.width * lastProfile.resolution.height * lastProfile.GetBpp();
+                                                            frame.Buff = (uint8_t *)malloc(frame.buffSize);
+                                                            // memcpy(frame.Buff, framesBuffer[V4l2Buffer.index], V4l2Buffer.bytesused);
+                                                            for (int line = 0; line < lastProfile.resolution.height; line++)
+                                                            {
+                                                                memcpy(frame.Buff + line*lastProfile.resolution.width*lastProfile.GetBpp(), framesBuffer[V4l2Buffer.index] + line*actualWidth*lastProfile.GetBpp(), lastProfile.resolution.width*lastProfile.GetBpp());
+                                                            }
+                                                        }
+
+                                                        frame.systemTimestamp = TimeUtils::getCurrentTimestamp();
+                                                        frame.ID = V4l2Buffer.sequence;
+                                                        frame.streamType = lastProfile.streamType;
+                                                        frame.size = V4l2Buffer.bytesused;
+                                                        frame.hwTimestamp = V4l2Buffer.timestamp.tv_usec;
+
+                                                        Metadata md;
+
+                                                        if (metaFileOpened && mdReady)
+                                                        {
+                                                            md.commonMetadata.frameId = mdV4l2Buffer.sequence;
+                                                            if (type == SensorType::Depth or type == SensorType::IR)
+                                                            {
+                                                                STMetaDataExtMipiDepthIR *ptr = static_cast<STMetaDataExtMipiDepthIR *>(metaDataBuffers[mdV4l2Buffer.index] + 16);
+
+                                                                md.depthMetadata.preset = (uint16_t)ptr->preset;
+                                                                md.depthMetadata.LaserPowerMode = (uint16_t)ptr->projectorMode;
+                                                                md.depthMetadata.ManualLaserPower = ptr->laserPower;
+
+                                                                md.commonMetadata.manualExposure = ptr->manualExposure;
+                                                                md.commonMetadata.AutoExposureMode = (uint16_t)ptr->autoExposureMode;
+                                                                md.commonMetadata.Gain = (uint16_t)ptr->manualGain;
+
+                                                                //Common MD
+                                                                md.commonMetadata.Timestamp = ptr->hwTimestamp;
+                                                                md.commonMetadata.exposureTime = ptr->exposureTime;
+                                                                md.commonMetadata.width = ptr->inputWidth;
+                                                                md.commonMetadata.height = ptr->inputHeight;
+                                                                // md.commonMetadata.frameId = ptr->frameCounter;
+                                                                md.commonMetadata.CRC = ptr->crc32;
+
+                                                                md.commonMetadata.Type = type;
+                                                            }
+                                                            if (type == SensorType::Color)
+                                                            {
+                                                                STMetaDataExtMipiRgb *ptr = static_cast<STMetaDataExtMipiRgb *>(metaDataBuffers[mdV4l2Buffer.index] + 16);
+
+                                                                md.colorMetadata.BackLighCompensation = (uint16_t)ptr->backlight_Comp;
+                                                                md.colorMetadata.Brightness = (uint16_t)ptr->brightness;
+                                                                md.colorMetadata.Contrast = (uint16_t)ptr->contrast;
+                                                                md.colorMetadata.Gamma = ptr->gamma;
+                                                                md.colorMetadata.Hue = (uint16_t)ptr->hue;
+                                                                md.colorMetadata.Saturation = (uint16_t)ptr->saturation;
+                                                                md.colorMetadata.Sharpness = (uint16_t)ptr->sharpness;
+                                                                md.colorMetadata.WhiteBalance = ptr->manual_WB;
+                                                                md.colorMetadata.PowerLineFrequency = ptr->powerLineFrequency;
+                                                                md.colorMetadata.LowLightCompensation = ptr->low_Light_comp;
+                                                                md.colorMetadata.AutoWhiteBalanceTemp = ptr->auto_WB_Temp;
+
+                                                                md.commonMetadata.manualExposure = ptr->manual_Exp;
+                                                                md.commonMetadata.AutoExposureMode = (uint16_t)ptr->auto_Exp_Mode;
+                                                                md.commonMetadata.Gain = (uint16_t)ptr->gain;
+
+                                                                //Common MD
+                                                                md.commonMetadata.Timestamp = ptr->hwTimestamp;
+                                                                md.commonMetadata.exposureTime = ptr->manual_Exp;
+                                                                md.commonMetadata.width = ptr->inputWidth;
+                                                                md.commonMetadata.height = ptr->inputHeight;
+                                                                md.commonMetadata.CRC = ptr->crc32;
+                                                                md.commonMetadata.Type = type;
+                                                            }
+
+                                                            //    // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
+                                                        }
+                                                        /* // code that prints the MetaData Buffer and the metadata actual data for comparison
+                                                        if (frame.ID == 10)
+                                                        {
+                                                            u_int* newPTR = static_cast<u_int*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
+                                                            for (int i = 0; i < 52; i++)
+                                                            {
+                                                                cout << dec << newPTR[i] << " ";
+                                                            }
+                                                            cout << endl;
+                                                            md.print_MetaData();
+
+                                                        }
+                                                        */
+
+
+                                                        frame.frameMD = md;
+
+                                                        // if this is an actual frame then call the callback functtion
+                                                        if (frame.hwTimestamp == 0 || (metaFileOpened  && frame.frameMD.commonMetadata.Timestamp == 0))
+                                                        {
+                                                            Logger::getLogger().log("Sensor: " + name + ", Frame #" + to_string(frame.ID) + " with HW TimeStamp =0 was Dropped ", "Sensor", LOG_WARNING);
+                                                        }
+                                                        else
+                                                        {
+                                                            //Send the new created frame with the callback
+                                                            (*FramesCallback)(frame);
+                                                        }
                                                                                                                 
-                                                            //Free memory of the allocated buffer
-                                                            if (copyFrameData)
-                                                            {
-                                                                free(frame.Buff);
-                                                            }
-                                                        }
-                                                        else //Frame Not Ready
+                                                        //Free memory of the allocated buffer
+                                                        if (copyFrameData)
                                                         {
-                                                                Logger::getLogger().log(name + " Frame Not ready returning buffers to V4l", "Sensor", LOG_ERROR);
+                                                            free(frame.Buff);
                                                         }
-
-                                                        //Return the buffer to the V4L
-                                                        if (frameReady)
+                                                        if (ioctl(dataFileDescriptor, VIDIOC_QBUF, &V4l2Buffer) != 0)
+                                                            Logger::getLogger().log(name + " Frame VIDIOC_QBUF Failed", "Sensor", LOG_ERROR);
+                                                        if (metaFileOpened)
                                                         {
-                                                            if(errorFlag)
-                                                                    Logger::getLogger().log("Trying to perform " + name + " frame VIDIOC_QBUF while error flag is true", "Sensor");
-                                                            if(ioctl(dataFileDescriptor, VIDIOC_QBUF, &V4l2Buffer) != 0)
-                                                                    Logger::getLogger().log(name + " Frame VIDIOC_QBUF Failed", "Sensor", LOG_ERROR);
+                                                            if (ioctl(metaFileDescriptor, VIDIOC_QBUF, &mdV4l2Buffer) != 0)
+                                                                Logger::getLogger().log(name + " MD VIDIOC_QBUF Failed", "Sensor", LOG_ERROR);
                                                         }
-                                                        else //Frame Not ready
-                                                        {                                                       
-                                                                Logger::getLogger().log("No Need to perform VIDIOC_QBUF For " + name + " Frame", "Sensor");													   
-                                                        }
-
-                                                        if (mdReady)
-                                                        {
-                                                                if(errorFlag)
-                                                                    Logger::getLogger().log("Trying to perform " + name + " frame VIDIOC_QBUF while error flag is true", "Sensor");
-                                                            if(ioctl(metaFileDescriptor, VIDIOC_QBUF, &mdV4l2Buffer) != 0)
-                                                                    Logger::getLogger().log(name + " MD VIDIOC_QBUF Failed", "Sensor", LOG_ERROR);														   
-                                                        }
-                                                        else if(metaFileOpened)//MD Not ready
-                                                        {
-                                                            Logger::getLogger().log("No Need to perform VIDIOC_QBUF For " + name + " MD", "Sensor");
-                                                        }
-                                                        }
+                                                    }
 
                                                         //std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
@@ -1135,19 +1141,17 @@ public:
         {
             _t->join();
         }
+        cout << "insideIOCTL= " << insideIOCTL << endl;
+        while (insideIOCTL!=0)
+        {
+            cout << "insideIOCTL= " << insideIOCTL << endl;
+            cout << GetName()<< " waiting for ioctl counter: " << insideIOCTL << endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        cout << "insideIOCTL= " << insideIOCTL << endl;
 
         try
         {
-            // Unmap Buffers
-            Logger::getLogger().log("unmapping " + name + " Stream buffers", "Sensor");
-            for (int i = 0; i < framesBuffer.size(); i++)
-            {
-                //munmap(framesBuffer[i], lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
-                munmap(framesBuffer[i], lastProfile.GetSize());
-                munmap(metaDataBuffers[i], 4096);
-            }
-            Logger::getLogger().log("unmapping " + name + " buffers Done", "Sensor");
-
             // VIDIOC_STREAMOFF
             Logger::getLogger().log("Stopping " + name + " Streaming", "Sensor");
             int ret = ioctl(dataFileDescriptor, VIDIOC_STREAMOFF, &vType);
@@ -1164,6 +1168,17 @@ public:
                 else
                     Logger::getLogger().log("Failed to Stop " + name + " MD with return value of " + to_string(ret), "Sensor");
             }
+            // Unmap Buffers
+            Logger::getLogger().log("unmapping " + name + " Stream buffers", "Sensor");
+            for (int i = 0; i < framesBuffer.size(); i++)
+            {
+                //munmap(framesBuffer[i], lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
+                munmap(framesBuffer[i], lastProfile.GetSize());
+                munmap(metaDataBuffers[i], 4096);
+            }
+            Logger::getLogger().log("unmapping " + name + " buffers Done", "Sensor");
+
+           
             int bytes_per_line = 0;
             
             Logger::getLogger().log(GetName() + " Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
