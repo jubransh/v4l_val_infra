@@ -140,7 +140,7 @@ public:
             break;
         case 0:
             return "XYZ";
-            break
+            break;
         default:
             return "";
             break;
@@ -783,8 +783,31 @@ public:
 
     void Configure(Profile p)
     {
+        int ret;
         if (isClosed)
             Init(type, openMetaD);
+        if (GetName() == "IMU Sensor")
+        {
+            // Set the fps
+            struct v4l2_streamparm setFps
+            {
+                0
+            };
+            setFps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            setFps.parm.capture.timeperframe.numerator = 1;
+            setFps.parm.capture.timeperframe.denominator = p.fps;
+            ret = ioctl(dataFileDescriptor, VIDIOC_S_PARM, &setFps);
+            if (0 != ret)
+            {
+                Logger::getLogger().log("Failed to set Fps", "Sensor", LOG_ERROR);
+                throw std::runtime_error("Failed to set Fps");
+            }
+            else
+            {
+                Logger::getLogger().log("Done configuring Sensor:" + GetName() + " with Profile: " + p.GetText(), "Sensor");
+            }
+            return;
+        }
         // Set Stream profile
         struct v4l2_format sFormat = {0};
         sFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -792,7 +815,7 @@ public:
         sFormat.fmt.pix.pixelformat = p.pixelFormat;
         sFormat.fmt.pix.width = p.resolution.width;
         sFormat.fmt.pix.height = p.resolution.height;
-        int ret = ioctl(dataFileDescriptor, VIDIOC_S_FMT, &sFormat);
+        ret = ioctl(dataFileDescriptor, VIDIOC_S_FMT, &sFormat);
         if (0 != ret)
         {
             Logger::getLogger().log("Failed to set Stream format", "Sensor", LOG_ERROR);

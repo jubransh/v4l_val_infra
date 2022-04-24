@@ -695,18 +695,9 @@ public:
             }
         }
         startingMix = finalMix;
-        if (findInVector(StreamType::Accel_Stream, streamTypes) && findInVector(StreamType::Gyro_Stream, streamTypes))
+        if (findInVector(StreamType::Imu_Stream, streamTypes))
             {
-                additionalMix = ParseProfilesFromVector(accel_gyro);
-            }
-        else if (findInVector(StreamType::Accel_Stream, streamTypes))
-            {
-                additionalMix = ParseProfilesFromVector(accel);
-            }
-            
-        else if (findInVector(StreamType::Gyro_Stream, streamTypes))
-            {
-                additionalMix = ParseProfilesFromVector(gyro);
+                additionalMix = ParseProfilesFromVector(imu);
             }
         else
             {
