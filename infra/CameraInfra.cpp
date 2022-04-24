@@ -66,14 +66,14 @@ enum StreamType
     Depth_Stream,
     IR_Stream,
     Color_Stream,
-    Accel_Stream,
-    Gyro_Stream
+    Imu_Stream
 };
 enum SensorType
 {
     Depth,
     IR,
-    Color
+    Color,
+    IMU
 };
 
 struct Resolution
@@ -106,11 +106,8 @@ public:
         case StreamType::Color_Stream:
             sT = "Color";
             break;
-        case StreamType::Accel_Stream:
-            sT = "Accel";
-            break;
-        case StreamType::Gyro_Stream:
-            sT = "Gyro";
+        case StreamType::Imu_Stream:
+            sT = "IMU";
             break;
         }
         string result = "";
@@ -141,8 +138,9 @@ public:
         case V4L2_PIX_FMT_YUYV:
             return "YUYV";
             break;
-        // Todo
-        // need to add the Pixel format for Accel and Gyro
+        case 0:
+            return "XYZ";
+            break
         default:
             return "";
             break;
@@ -651,6 +649,29 @@ public:
             isClosed = !dataFileOpened;
 
             Logger::getLogger().log("Init Sensor Color Done", "Sensor");
+            return dataFileOpened;
+        }
+        case SensorType::IMU:
+        {
+            videoNode = { "/dev/video5" };
+            Logger::getLogger().log("Openning /dev/video5", "Sensor");
+
+            dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+
+            //if (openMD)
+            //{
+            //    Logger::getLogger().log("Openning /dev/video5", "Sensor");
+            //    videoNode = {"/dev/video5"};
+            //    metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            //    // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            //}
+            name = "IMU Sensor";
+            dataFileOpened = dataFileDescriptor > 0;
+            metaFileOpened = metaFileDescriptor > 0;
+            isClosed = !dataFileOpened;
+
+            Logger::getLogger().log("Init Sensor IMU Done", "Sensor");
             return dataFileOpened;
         }
             return false;
@@ -1293,6 +1314,13 @@ public:
             sensors.push_back(colorSensor);
         }
 
+        // Try to add IMU sensor
+        Sensor imuSensor;
+        if (imuSensor.Init(SensorType::IMU, openMD))
+        {
+            sensors.push_back(imuSensor);
+        }
+
         // =========== Get FW Version and serial number =================
         uint32_t fwVersion_uint{0};
         struct v4l2_ext_control ctrl
@@ -1376,6 +1404,16 @@ public:
                 return sensors[i];
         }
         throw std::runtime_error("Failed to get Color Sensor ");
+    }
+
+    Sensor GetIMUSensor()
+    {
+        for (int i = 0; i < sensors.size(); i++)
+        {
+            if (sensors[i].GetName() == "IMU Sensor")
+                return sensors[i];
+        }
+        throw std::runtime_error("Failed to get IMU Sensor ");
     }
 
     CommandResult SendHWMonitorCommand(HWMonitorCommand hmc)

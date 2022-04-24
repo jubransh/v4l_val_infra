@@ -43,7 +43,7 @@ bool collectFrames = false;
 bool depth_collectFrames = false;
 bool ir_collectFrames = false;
 bool color_collectFrames = false;
-vector<Frame> depthFramesList, irFramesList, colorFramesList;
+vector<Frame> depthFramesList, irFramesList, colorFramesList, accelFrameList, gyroFrameList;
 vector<float> cpuSamples;
 vector<float> memSamples;
 double memoryBaseLine = 0;
@@ -124,6 +124,8 @@ void initFrameLists()
 	depthFramesList.clear();
 	irFramesList.clear();
 	colorFramesList.clear();
+	accelFrameList.clear();
+	gyroFrameList.clear();
 }
 
 void initSamplesList()
@@ -134,7 +136,7 @@ void initSamplesList()
 	projectorSamples.clear();
 }
 
-Profile currDepthProfile, currIRProfile, currColorProfile;
+Profile currDepthProfile, currIRProfile, currColorProfile, currIMUProfile;
 string streamComb;
 void setCurrentProfiles(vector<Profile> ps)
 {
