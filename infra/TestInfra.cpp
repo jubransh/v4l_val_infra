@@ -45,6 +45,8 @@ bool collectFrames = false;
 bool depth_collectFrames = false;
 bool ir_collectFrames = false;
 bool color_collectFrames = false;
+bool imu_collectFrames = false;
+
 vector<Frame> depthFramesList, irFramesList, colorFramesList, accelFrameList, gyroFrameList;
 vector<float> cpuSamples;
 vector<float> memSamples;
@@ -148,10 +150,13 @@ void setCurrentProfiles(vector<Profile> ps)
 	currIRProfile.fps = 0;
 	currColorProfile = Profile();
 	currColorProfile.fps = 0;
+	currIMUProfile = Profile();
+	currIMUProfile.fps = 0;
 	streamComb = "";
 	string depthStr = "";
 	string irStr = "";
 	string colorStr = "";
+	string imuStr = "";
 	for (int i = 0; i < ps.size(); i++)
 	{
 		Profile p = ps[i];
@@ -169,6 +174,10 @@ void setCurrentProfiles(vector<Profile> ps)
 			currColorProfile = p;
 			colorStr = p.GetText();
 			break;
+		case StreamType::Imu_Stream:
+			currIMUProfile = p;
+			imuStr = p.GetText();
+			break;
 		default:
 			break;
 		}
@@ -179,6 +188,8 @@ void setCurrentProfiles(vector<Profile> ps)
 		streamComb += irStr + "\n";
 	if (colorStr != "")
 		streamComb += colorStr + "\n";
+	if (imuStr != "")
+		streamComb += imuStr + "\n";
 }
 
 void addToPnpList(Sample s)
@@ -243,6 +254,17 @@ void AddFrame(Frame frame)
 				fa.collect_color_frame(af);
 			}
     }
+
+		break;
+		case StreamType::Imu_Stream:
+		if (imu_collectFrames)
+
+		{
+			if (frame.frameMD.getMetaDataByString("imuType")==1)
+				accelFrameList.push_back(frame);
+			else if (frame.frameMD.getMetaDataByString("imuType")==2)
+				gyroFrameList.push_back(frame);
+		}
 
 		break;
 	default:
@@ -3169,6 +3191,27 @@ public:
 				rawline = "";
 				rawline += to_string(iteration) + ",\"" + streamComb + "\",Color," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "x" +
 						   to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(colorFramesList[i].hwTimestamp) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp);
+
+				AppendRAwDataCVS(rawline);
+			}
+		}
+		if (currIMUProfile.fps != 0)
+		{
+
+			for (int i = 0; i < gyroFrameList.size(); i++)
+			{
+				rawline = "";
+				rawline += to_string(iteration) + ",\"" + streamComb + "\",Gyro," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
+						   to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(gyroFrameList[i].ID) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(gyroFrameList[i].hwTimestamp) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(gyroFrameList[i].systemTimestamp);
+
+				AppendRAwDataCVS(rawline);
+			}
+
+			for (int i = 0; i < accelFrameList.size(); i++)
+			{
+				rawline = "";
+				rawline += to_string(iteration) + ",\"" + streamComb + "\",Accel," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
+						   to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(accelFrameList[i].ID) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(accelFrameList[i].hwTimestamp) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(accelFrameList[i].systemTimestamp);
 
 				AppendRAwDataCVS(rawline);
 			}

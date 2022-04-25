@@ -76,6 +76,30 @@ enum SensorType
     IMU
 };
 
+typedef struct
+{
+    uint8_t typeID;
+    uint8_t skip1;
+    uint64_t hwTimestamp;
+    uint16_t x;
+    uint16_t y;
+    uint16_t z;
+    uint64_t hwTimestamp_2;
+    uint64_t skip2;
+} __attribute__((packed))IMUFrameData;
+
+// struct IMUFrameData
+// {
+//     uint8_t typeID;
+//     uint8_t skip1;
+//     uint64_t hwTimestamp;
+//     uint16_t x;
+//     uint16_t y;
+//     uint16_t z;
+//     uint64_t hwTimestamp_2;
+//     uint64_t skip2;
+// };
+
 struct Resolution
 {
     uint32_t width;
@@ -148,6 +172,10 @@ public:
     }
     double GetSize()
     {
+        if (streamType == StreamType::Imu_Stream)
+        {
+            return 32;
+        }
         int bpp;
         switch (pixelFormat)
         {
@@ -237,6 +265,11 @@ struct CommonMetadata
     double width = 0;
     double height = 0;
 };
+struct ImuMetaData
+{
+    int imuType = 0;
+    float x,y,z;
+};
 
 struct ColorMetadata
 {
@@ -266,6 +299,7 @@ public:
     CommonMetadata commonMetadata;
     ColorMetadata colorMetadata;
     DepthMetadata depthMetadata;
+    ImuMetaData imuMetadata;
     void print_MetaData()
     {
         string text = "commonMetadata values:";
@@ -303,12 +337,27 @@ public:
         text += ", PowerLineFrequency=" + to_string(colorMetadata.PowerLineFrequency);
         text += ", AutoWhiteBalanceTemp=" + to_string(colorMetadata.AutoWhiteBalanceTemp);
         Logger::getLogger().log(text, LOG_INFO);
+        text = "IMUMetadata values:";
+        text += ", imuType=" + to_string(imuMetadata.imuType);
+        text += ", x=" + to_string(imuMetadata.x);
+        text += ", y=" + to_string(imuMetadata.y);
+        text += ", z=" + to_string(imuMetadata.z);
+       
+        Logger::getLogger().log(text, LOG_INFO);
     }
 
     double getMetaDataByString(string name)
     {
         if (name == "frameId")
             return commonMetadata.frameId;
+        else if (name == "imuType")
+            return imuMetadata.imuType;
+        else if (name == "x")
+            return imuMetadata.x;
+        else if (name == "y")
+            return imuMetadata.y;
+        else if (name == "z")
+            return imuMetadata.z;
         else if (name == "CRC")
             return commonMetadata.CRC;
         else if (name == "exposureTime")
@@ -382,6 +431,18 @@ struct Frame
 
 class Sensor
 {
+        // For debugging
+    void PrintBytes(uint8_t buff[], int len)
+    {
+
+        for (int i = 0; i < len; i++)
+        {
+            if (i % 16 == 0)
+                cout << endl;
+
+            cout << hex << unsigned(buff[i]) << " ";
+        }
+    }
 private:
     bool isClosed = true;
     std::shared_ptr<std::thread> _t;
@@ -797,6 +858,7 @@ public:
             setFps.parm.capture.timeperframe.numerator = 1;
             setFps.parm.capture.timeperframe.denominator = p.fps;
             ret = ioctl(dataFileDescriptor, VIDIOC_S_PARM, &setFps);
+            lastProfile = p;
             if (0 != ret)
             {
                 Logger::getLogger().log("Failed to set Fps", "Sensor", LOG_ERROR);
@@ -1065,8 +1127,23 @@ public:
                                                         frame.hwTimestamp = V4l2Buffer.timestamp.tv_usec;
 
                                                         Metadata md;
+                                                        if (type == SensorType::IMU)
+                                                        {
+                                                                IMUFrameData* newPTR = static_cast<IMUFrameData*>(framesBuffer[V4l2Buffer.index]);
+                                                                md.imuMetadata.imuType = newPTR->typeID;
+                                                                md.imuMetadata.x = newPTR->x;
+                                                                md.imuMetadata.y = newPTR->y;
+                                                                md.imuMetadata.z = newPTR->z;
 
-                                                        if (metaFileOpened && mdReady)
+                                                                md.commonMetadata.Timestamp = newPTR->hwTimestamp;
+
+                                                               
+                                                               if (frame.ID%10 == 0)
+                                                                md.print_MetaData();
+                                                         
+                                                        
+                                                        }
+                                                        else if (metaFileOpened && mdReady)
                                                         {
                                                             md.commonMetadata.frameId = mdV4l2Buffer.sequence;
                                                             if (type == SensorType::Depth or type == SensorType::IR)
