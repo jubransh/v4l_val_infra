@@ -37,6 +37,8 @@ using namespace std;
 #include <direct.h> // _mkdir
 #endif
 
+bool calcSystemTSMetrics = false;
+
 string sid = TimeUtils::getDateandTime();
 bool is_tests_res_created = false;
 bool collectFrames = false;
@@ -3033,7 +3035,8 @@ public:
 				AppendIterationSummaryCVS(rawline);
 			}
 		}
-
+		if (calcSystemTSMetrics)
+		{
 		// calculate metric using System timeStamp
 			for (int i = 0; i < metrics.size(); i++)
 			{
@@ -3126,6 +3129,7 @@ public:
 					AppendIterationSummaryCVS(rawline);
 				}
 			}
+		}
 
 		for (int j = 0; j < iterationResults.size(); j++)
 		{
