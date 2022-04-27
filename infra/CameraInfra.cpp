@@ -81,9 +81,9 @@ typedef struct
     uint8_t typeID;
     uint8_t skip1;
     uint64_t hwTimestamp;
-    uint16_t x;
-    uint16_t y;
-    uint16_t z;
+    int16_t x;
+    int16_t y;
+    int16_t z;
     uint64_t hwTimestamp_2;
     uint64_t skip2;
 } __attribute__((packed))IMUFrameData;
@@ -1131,15 +1131,15 @@ public:
                                                         {
                                                                 IMUFrameData* newPTR = static_cast<IMUFrameData*>(framesBuffer[V4l2Buffer.index]);
                                                                 md.imuMetadata.imuType = newPTR->typeID;
-                                                                md.imuMetadata.x = newPTR->x;
-                                                                md.imuMetadata.y = newPTR->y;
-                                                                md.imuMetadata.z = newPTR->z;
+                                                                md.imuMetadata.x = newPTR->x/100.0;
+                                                                md.imuMetadata.y = newPTR->y/100.0;
+                                                                md.imuMetadata.z = newPTR->z/100.0;
 
                                                                 md.commonMetadata.Timestamp = newPTR->hwTimestamp;
 
                                                                
-                                                               if (frame.ID%10 == 0)
-                                                                md.print_MetaData();
+                                                            //    if (newPTR->typeID == 2)
+                                                            //     md.print_MetaData();
                                                          
                                                         
                                                         }

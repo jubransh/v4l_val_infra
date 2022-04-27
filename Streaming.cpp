@@ -239,6 +239,15 @@ TEST_F(StreamingTest, ColorStreamingTest)
     streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
+
+TEST_F(StreamingTest, ImuStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Imu_Stream);
+    run(streams);
+}
+
 TEST_F(StreamingTest, DepthIRStreamingTest)
 {
     configure(30);
@@ -255,14 +264,35 @@ TEST_F(StreamingTest, DepthColorStreamingTest)
     streams.push_back(StreamType::Depth_Stream);
     run(streams);
 }
+
+TEST_F(StreamingTest, DepthImuStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Imu_Stream);
+    streams.push_back(StreamType::Depth_Stream);
+    run(streams);
+}
+
 TEST_F(StreamingTest, IRColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::IR_Stream);
     run(streams);
 }
+
+TEST_F(StreamingTest, IRColorImuStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Imu_Stream);
+    run(streams);
+}
+
 TEST_F(StreamingTest, DepthIRColorStreamingTest)
 {
     configure(30);
@@ -273,10 +303,13 @@ TEST_F(StreamingTest, DepthIRColorStreamingTest)
     run(streams);
 }
 
-TEST_F(StreamingTest, IMUStreamingTest)
+TEST_F(StreamingTest, DepthIRColorImuStreamingTest)
 {
     configure(30);
     vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Imu_Stream);
     run(streams);
 }
