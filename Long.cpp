@@ -148,10 +148,11 @@ public:
                 pR.push_back(profiles[j]);
             }
             else if (profiles[j].streamType == StreamType::Imu_Stream)
-                {
-                    Logger::getLogger().log("IMU Profile Used: " + profiles[j].GetText(), "Test");
-                    imuSensor.Configure(profiles[j]);
-                }
+            {
+                Logger::getLogger().log("IMU Profile Used: " + profiles[j].GetText(), "Test");
+                imuSensor.Configure(profiles[j]);
+                pR.push_back(profiles[j]);
+            }
         }
         setCurrentProfiles(pR);
         if (ColorUsed)
