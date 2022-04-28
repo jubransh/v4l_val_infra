@@ -106,7 +106,7 @@ public:
 
         run(streams);
 
-        string testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
+        string testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
         name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
         // Creating test folder

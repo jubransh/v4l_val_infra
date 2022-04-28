@@ -968,7 +968,7 @@ public:
         _stop_collecting = false;
         _save_image_count = 10;
         _first_frames_to_skip = 15;
-        _csv_root_path = "/home/nvidia/Logs/";
+        _csv_root_path = FileUtils::getHomeDir()+"/Logs";
         _depth_queue.set_capacity(1);
         _color_queue.set_capacity(1);
         _infrared_queue.set_capacity(1);
