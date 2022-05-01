@@ -1134,6 +1134,7 @@ public:
                                                                 md.imuMetadata.x = newPTR->x/100.0;
                                                                 md.imuMetadata.y = newPTR->y/100.0;
                                                                 md.imuMetadata.z = newPTR->z/100.0;
+                                                                md.commonMetadata.frameId= V4l2Buffer.sequence;
 
                                                                 md.commonMetadata.Timestamp = newPTR->hwTimestamp;
 
