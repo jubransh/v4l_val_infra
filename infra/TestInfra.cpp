@@ -3400,7 +3400,7 @@ public:
 			{
 				Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
 			}
-			rawDataFirstIter = iteration;
+			rawDataFirstIter = iteration+1;
 			OpenRawDataCSV();
 
 		}
