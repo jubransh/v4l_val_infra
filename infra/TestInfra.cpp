@@ -38,6 +38,7 @@ using namespace std;
 #include <direct.h> // _mkdir
 #endif
 
+int RawDataMAxSize = 10000000;
 bool calcSystemTSMetrics = false;
 
 string sid = TimeUtils::getDateandTime();
@@ -2424,9 +2425,12 @@ public:
 	ofstream rawDataCsv;
 	ofstream iterationCsv;
 	ofstream pnpCsv;
+
+	int rawDataFirstIter=0;
 	bool isPNPtest = false;
 	bool testStatus = true;
 	int testDuration;
+	string rawDataPath;
 	// vector<Frame> depthFrames, irFrames, colorFrames;
 	// vector<Sample> pnpSamples;
 	Profile depthProfile, irProfile, colorProfile;
@@ -2436,6 +2440,18 @@ public:
 	vector<string> depthNonMandatoryMetrics, irNonMandatoryMetrics, colorNonMandatoryMetrics, gyroNonMandatoryMetrics, accelNonMandatoryMetrics, pnpNonMandatoryMetrics;
 	string testBasePath;
 	Camera cam;
+
+	void OpenRawDataCSV()
+	{
+		rawDataCsv.open(rawDataPath, std::ios_base::app);
+		if (rawDataCsv.fail())
+		{
+			Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
+			throw std::runtime_error("Cannot open file: " + rawDataPath);
+		}
+		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+
+	}
 	void SetUp() override
 	{
 
@@ -2460,14 +2476,15 @@ public:
 
 		// Creating raw data csv file
 		Logger::getLogger().log("Creating raw data CSV file", "Setup()", LOG_INFO);
-		string rawDataPath = FileUtils::join(testPath, "raw_data.csv");
-		rawDataCsv.open(rawDataPath, std::ios_base::app);
-		if (rawDataCsv.fail())
-		{
-			Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
-			throw std::runtime_error("Cannot open file: " + rawDataPath);
-		}
-		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+		rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+		// rawDataCsv.open(rawDataPath, std::ios_base::app);
+		// if (rawDataCsv.fail())
+		// {
+		// 	Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
+		// 	throw std::runtime_error("Cannot open file: " + rawDataPath);
+		// }
+		// rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+		OpenRawDataCSV();
 
 		// Creating iteration Summary data csv file
 		Logger::getLogger().log("Creating iteration Summary CSV file", "Setup()", LOG_INFO);
@@ -2533,6 +2550,20 @@ public:
 		Logger::getLogger().log("Closing raw data CSV file", "TearDown()", LOG_INFO);
 		rawDataCsv.close();
 		Logger::getLogger().log("Closing iteartions results CSV file", "TearDown()", LOG_INFO);
+		if (rawDataFirstIter>0)
+		{
+			//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+			string testPath =FileUtils::join(testBasePath, name);
+			string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_End.csv");
+			if (rename(rawDataPath.c_str(),newname.c_str())!=0)
+			{
+				Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
+			}
+			else
+			{
+				Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
+			}
+		}
 		iterationCsv.close();
 
 		string TestsResultsPath = FileUtils::join(testBasePath, "tests_results.csv");
@@ -3351,6 +3382,27 @@ public:
 
 				AppendRAwDataCVS(rawline);
 			}
+		}
+		// Check size of RawData File
+		if (rawDataCsv.tellp()>RawDataMAxSize)
+		{
+			Logger::getLogger().log("RAW DATA FILE SIZE is:" + to_string(rawDataCsv.tellp()) , "Test");
+			Logger::getLogger().log("RAW DATA FILE SIZE is Greater than Max size -" + to_string(RawDataMAxSize) , "Test");
+			rawDataCsv.close();
+			//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+			string testPath =FileUtils::join(testBasePath, name);
+			string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_"+to_string(iteration)+".csv");
+			if (rename(rawDataPath.c_str(),newname.c_str())!=0)
+			{
+				Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
+			}
+			else
+			{
+				Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
+			}
+			rawDataFirstIter = iteration;
+			OpenRawDataCSV();
+
 		}
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + " Summary", "Test");
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + ":[" + iterationStatus + "]", "Test");
