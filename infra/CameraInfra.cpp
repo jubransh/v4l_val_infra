@@ -163,7 +163,10 @@ public:
             return "YUYV";
             break;
         case 0:
-            return "XYZ";
+            if (streamType == StreamType::Imu_Stream)
+                return "XYZ";
+            else
+                return "";
             break;
         default:
             return "";
