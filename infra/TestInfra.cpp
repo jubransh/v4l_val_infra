@@ -3107,7 +3107,7 @@ public:
 
 				AppendIterationSummaryCVS(rawline);
 			}
-			if (currIMUProfile.fps != 0)
+			if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
 			{
 				metrics[i]->configure(currIMUProfile, accelFrameList);
 				metrics[i]->_useSystemTs = false;
@@ -3136,7 +3136,7 @@ public:
 
 				AppendIterationSummaryCVS(rawline);
 			}
-			if (currIMUProfile.fps != 0)
+			if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
 			{
 				metrics[i]->configure(currIMUProfile, gyroFrameList);
 				metrics[i]->_useSystemTs = false;
@@ -3259,7 +3259,7 @@ public:
 
 					AppendIterationSummaryCVS(rawline);
 				}
-				if (currIMUProfile.fps != 0)
+				if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
 				{
 					metrics[i]->configure(currIMUProfile, accelFrameList);
 					metrics[i]->_useSystemTs = true;
@@ -3288,7 +3288,7 @@ public:
 
 					AppendIterationSummaryCVS(rawline);
 				}
-				if (currIMUProfile.fps != 0)
+				if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
 				{
 					metrics[i]->configure(currIMUProfile, gyroFrameList);
 					metrics[i]->_useSystemTs = true;
