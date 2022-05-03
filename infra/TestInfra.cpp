@@ -25,6 +25,7 @@ using namespace std;
 #include <string.h> /* for strncpy */
 
 #include <sys/types.h>
+#include <pwd.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
@@ -358,6 +359,14 @@ class FileUtils
 {
 private:
 public:
+	static string getHomeDir()
+	{
+
+		struct passwd* pw = getpwuid(getuid());
+
+		char* homedir = pw->pw_dir;
+		return homedir;
+	}
 	static bool isDirExist(const std::string &path)
 	{
 #if defined(_WIN32)
@@ -2403,10 +2412,13 @@ public:
 	Camera cam;
 	void SetUp() override
 	{
+		struct passwd* pw = getpwuid(getuid());
+
+		char* homedir = pw->pw_dir;
 
 		memoryBaseLine = 0;
-		// testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
-		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
+		// testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs",TimeUtils::getDateandTime());
+		testBasePath = FileUtils::join(FileUtils::getHomeDir() + "/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 		suiteName = ::testing::UnitTest::GetInstance()->current_test_case()->name();
 

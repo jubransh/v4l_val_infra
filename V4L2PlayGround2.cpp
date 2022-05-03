@@ -66,7 +66,7 @@ void save_depthFrameArrived(Frame f)
     if (f.ID ==10)
     {
         cout << " Depth Delta for frame = " << f.ID << endl;
-        write_to_file("/home/nvidia/Logs/image"+to_string(f.streamType)+".bin", f.Buff, f.size);
+        write_to_file(FileUtils::getHomeDir() + "/Logs/image" + to_string(f.streamType) + ".bin", f.Buff, f.size);
     }
 
     // frames.push_back(s);
@@ -90,7 +90,7 @@ void save_colorFrameArrived(Frame f)
 {
     if (f.ID == 10)
     {
-        write_to_file("/home/nvidia/Logs/" + to_string(f.hwTimestamp) + "Color_image.bin", f.Buff, f.size);
+        write_to_file(FileUtils::getHomeDir() + "/Logs" + to_string(f.hwTimestamp) + "Color_image.bin", f.Buff, f.size);
         cout << " Color Delta for frame = " << f.ID << endl;
     }
     // frames.push_back(s);
