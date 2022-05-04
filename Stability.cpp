@@ -350,6 +350,7 @@ TEST_F(StabilityTest, Normal)
     sT.push_back(StreamType::Depth_Stream);
     sT.push_back(StreamType::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
+    sT.push_back(StreamType::Imu_Stream);
 
     //vector<StreamType> sT2;
     //sT2.push_back(StreamType::IR_Stream);
@@ -357,7 +358,7 @@ TEST_F(StabilityTest, Normal)
     //streams.push_back(sT2);
     //configure(30, 500, false,false,"");
     // configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
-    configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+imu_0x0_200");
+    configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+imu_0x0_400");
     run(streams);
 }
 TEST_F(StabilityTest, Normal_60FPS)
@@ -367,12 +368,13 @@ TEST_F(StabilityTest, Normal_60FPS)
     sT.push_back(StreamType::Depth_Stream);
     sT.push_back(StreamType::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
+    sT.push_back(StreamType::Imu_Stream);
 
     //vector<StreamType> sT2;
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60+imu_0x0_200");
+    configure(30, 500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60+imu_0x0_400");
     run(streams);
 }
 
