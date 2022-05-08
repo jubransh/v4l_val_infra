@@ -25,6 +25,7 @@ using namespace std;
 #include <string.h> /* for strncpy */
 
 #include <sys/types.h>
+#include <pwd.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
@@ -37,13 +38,18 @@ using namespace std;
 #include <direct.h> // _mkdir
 #endif
 
+int RawDataMAxSize = 10000000;
+bool calcSystemTSMetrics = false;
+
 string sid = TimeUtils::getDateandTime();
 bool is_tests_res_created = false;
 bool collectFrames = false;
 bool depth_collectFrames = false;
 bool ir_collectFrames = false;
 bool color_collectFrames = false;
-vector<Frame> depthFramesList, irFramesList, colorFramesList;
+bool imu_collectFrames = false;
+
+vector<Frame> depthFramesList, irFramesList, colorFramesList, accelFrameList, gyroFrameList;
 vector<float> cpuSamples;
 vector<float> memSamples;
 double memoryBaseLine = 0;
@@ -124,6 +130,8 @@ void initFrameLists()
 	depthFramesList.clear();
 	irFramesList.clear();
 	colorFramesList.clear();
+	accelFrameList.clear();
+	gyroFrameList.clear();
 }
 
 void initSamplesList()
@@ -134,7 +142,7 @@ void initSamplesList()
 	projectorSamples.clear();
 }
 
-Profile currDepthProfile, currIRProfile, currColorProfile;
+Profile currDepthProfile, currIRProfile, currColorProfile, currIMUProfile;
 string streamComb;
 void setCurrentProfiles(vector<Profile> ps)
 {
@@ -144,10 +152,13 @@ void setCurrentProfiles(vector<Profile> ps)
 	currIRProfile.fps = 0;
 	currColorProfile = Profile();
 	currColorProfile.fps = 0;
+	currIMUProfile = Profile();
+	currIMUProfile.fps = 0;
 	streamComb = "";
 	string depthStr = "";
 	string irStr = "";
 	string colorStr = "";
+	string imuStr = "";
 	for (int i = 0; i < ps.size(); i++)
 	{
 		Profile p = ps[i];
@@ -165,6 +176,10 @@ void setCurrentProfiles(vector<Profile> ps)
 			currColorProfile = p;
 			colorStr = p.GetText();
 			break;
+		case StreamType::Imu_Stream:
+			currIMUProfile = p;
+			imuStr = p.GetText();
+			break;
 		default:
 			break;
 		}
@@ -175,6 +190,8 @@ void setCurrentProfiles(vector<Profile> ps)
 		streamComb += irStr + "\n";
 	if (colorStr != "")
 		streamComb += colorStr + "\n";
+	if (imuStr != "")
+		streamComb += imuStr + "\n";
 }
 
 void addToPnpList(Sample s)
@@ -239,6 +256,17 @@ void AddFrame(Frame frame)
 				fa.collect_color_frame(af);
 			}
     }
+
+		break;
+		case StreamType::Imu_Stream:
+		if (imu_collectFrames)
+
+		{
+			if (frame.frameMD.getMetaDataByString("imuType")==1)
+				accelFrameList.push_back(frame);
+			else if (frame.frameMD.getMetaDataByString("imuType")==2)
+				gyroFrameList.push_back(frame);
+		}
 
 		break;
 	default:
@@ -358,6 +386,14 @@ class FileUtils
 {
 private:
 public:
+	static string getHomeDir()
+	{
+
+		struct passwd *pw = getpwuid(getuid());
+
+		char *homedir = pw->pw_dir;
+		return homedir;
+	}
 	static bool isDirExist(const std::string &path)
 	{
 #if defined(_WIN32)
@@ -2389,24 +2425,42 @@ public:
 	ofstream rawDataCsv;
 	ofstream iterationCsv;
 	ofstream pnpCsv;
+
+	int rawDataFirstIter=0;
 	bool isPNPtest = false;
 	bool testStatus = true;
 	int testDuration;
+	string rawDataPath;
 	// vector<Frame> depthFrames, irFrames, colorFrames;
 	// vector<Sample> pnpSamples;
 	Profile depthProfile, irProfile, colorProfile;
 	vector<Metric *> metrics;
 	vector<ContentMetric *> contentMetrics;
 	vector<PnpMetric *> pnpMetrics;
-	vector<string> depthNonMandatoryMetrics, irNonMandatoryMetrics, colorNonMandatoryMetrics, pnpNonMandatoryMetrics;
+	vector<string> depthNonMandatoryMetrics, irNonMandatoryMetrics, colorNonMandatoryMetrics, gyroNonMandatoryMetrics, accelNonMandatoryMetrics, pnpNonMandatoryMetrics;
 	string testBasePath;
 	Camera cam;
+
+	void OpenRawDataCSV()
+	{
+		rawDataCsv.open(rawDataPath, std::ios_base::app);
+		if (rawDataCsv.fail())
+		{
+			Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
+			throw std::runtime_error("Cannot open file: " + rawDataPath);
+		}
+		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+
+	}
 	void SetUp() override
 	{
 
+		struct passwd *pw = getpwuid(getuid());
+
+		char *homedir = pw->pw_dir;
 		memoryBaseLine = 0;
-		// testBasePath = FileUtils::join("/home/nvidia/Logs",TimeUtils::getDateandTime());
-		testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
+		// testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs",TimeUtils::getDateandTime());
+		testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 		suiteName = ::testing::UnitTest::GetInstance()->current_test_case()->name();
 
@@ -2422,14 +2476,15 @@ public:
 
 		// Creating raw data csv file
 		Logger::getLogger().log("Creating raw data CSV file", "Setup()", LOG_INFO);
-		string rawDataPath = FileUtils::join(testPath, "raw_data.csv");
-		rawDataCsv.open(rawDataPath, std::ios_base::app);
-		if (rawDataCsv.fail())
-		{
-			Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
-			throw std::runtime_error("Cannot open file: " + rawDataPath);
-		}
-		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+		rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+		// rawDataCsv.open(rawDataPath, std::ios_base::app);
+		// if (rawDataCsv.fail())
+		// {
+		// 	Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
+		// 	throw std::runtime_error("Cannot open file: " + rawDataPath);
+		// }
+		// rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+		OpenRawDataCSV();
 
 		// Creating iteration Summary data csv file
 		Logger::getLogger().log("Creating iteration Summary CSV file", "Setup()", LOG_INFO);
@@ -2440,7 +2495,7 @@ public:
 			Logger::getLogger().log("Cannot open iteration Summary file: " + iterationSummaryPath, LOG_ERROR);
 			throw std::runtime_error("Cannot open file: " + iterationSummaryPath);
 		}
-		iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,BandWidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+		iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,BandWidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 
 		if (isPNPtest)
 		{
@@ -2495,6 +2550,20 @@ public:
 		Logger::getLogger().log("Closing raw data CSV file", "TearDown()", LOG_INFO);
 		rawDataCsv.close();
 		Logger::getLogger().log("Closing iteartions results CSV file", "TearDown()", LOG_INFO);
+		if (rawDataFirstIter>0)
+		{
+			//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+			string testPath =FileUtils::join(testBasePath, name);
+			string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_End.csv");
+			if (rename(rawDataPath.c_str(),newname.c_str())!=0)
+			{
+				Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
+			}
+			else
+			{
+				Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
+			}
+		}
 		iterationCsv.close();
 
 		string TestsResultsPath = FileUtils::join(testBasePath, "tests_results.csv");
@@ -2595,7 +2664,7 @@ public:
 	bool AppendIterationSummaryCVS(string rawDataLine)
 	{
 		// data structure example:
-		//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,Bandwidth,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+		//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,Bandwidth,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 
 		try
 		{
@@ -2809,6 +2878,14 @@ public:
 				streams += "+Color";
 			bandWidth += currColorProfile.GetSize() * currColorProfile.fps;
 		}
+		if (currIMUProfile.fps != 0)
+		{
+			if (streams == "")
+				streams += "Imu";
+			else
+				streams += "+Imu";
+			bandWidth += currIMUProfile.GetSize() * currIMUProfile.fps;
+		}
 		// update the result csv
 		for (int i = 0; i < pnpMetrics.size(); i++)
 		{
@@ -2841,10 +2918,10 @@ public:
 
 			AppendPNPDataCVS(rawline);
 			rawline = "";
-			//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+			//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 			rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 					   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-					   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+					   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 					   ",PNP, " + pnpMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 			AppendIterationSummaryCVS(rawline);
@@ -2871,10 +2948,10 @@ public:
 				iterationResults.push_back(iRes);
 
 				rawline = "";
-				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 					"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-					"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+					"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 					",Depth, " + contentMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 				AppendIterationSummaryCVS(rawline);
@@ -2900,10 +2977,10 @@ public:
 				iterationResults.push_back(iRes);
 
 				rawline = "";
-				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 					"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-					"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+					"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 					",IR, " + contentMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 				AppendIterationSummaryCVS(rawline);
@@ -2930,10 +3007,10 @@ public:
 				iterationResults.push_back(iRes);
 
 				rawline = "";
-				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 					"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-					"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+					"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 					",Color, " + contentMetrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 				AppendIterationSummaryCVS(rawline);
@@ -2963,10 +3040,10 @@ public:
 				iterationResults.push_back(iRes);
 
 				rawline = "";
-				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\","+to_string(bandWidth)+"," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 						   ",Depth, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 				AppendIterationSummaryCVS(rawline);
@@ -2993,10 +3070,10 @@ public:
 				iterationResults.push_back(iRes);
 
 				rawline = "";
-				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\","+ to_string(bandWidth) + ","  + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 						   ",IR, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 				AppendIterationSummaryCVS(rawline);
@@ -3022,16 +3099,75 @@ public:
 				iterationResults.push_back(iRes);
 
 				rawline = "";
-				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 						   ",Color, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 				AppendIterationSummaryCVS(rawline);
 			}
-		}
+			if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
+			{
+				metrics[i]->configure(currIMUProfile, accelFrameList);
+				metrics[i]->_useSystemTs = false;
+				MetricResult r = metrics[i]->calc();
+				if (r.result == false)
+				{
+					if (!stringIsInVector(metrics[i]->_metricName, accelNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + metrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
+					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on Accel stream");
+				}
+				string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Accel," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				iterationResults.push_back(iRes);
 
+				rawline = "";
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
+						   ",Accel, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+				AppendIterationSummaryCVS(rawline);
+			}
+			if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
+			{
+				metrics[i]->configure(currIMUProfile, gyroFrameList);
+				metrics[i]->_useSystemTs = false;
+				MetricResult r = metrics[i]->calc();
+				if (r.result == false)
+				{
+					if (!stringIsInVector(metrics[i]->_metricName, gyroNonMandatoryMetrics))
+					{
+						iterationStatus = "Fail";
+					}
+					else
+					{
+						Logger::getLogger().log("Metric: " + metrics[i]->_metricName + " Failed, but ignored because its in the ignore list", "Test");
+					}
+					failedMetrics.push_back("Metric: " + metrics[i]->_metricName + " Failed on Gyro stream");
+				}
+				string iRes = to_string(iteration) + "," + name + "," + suiteName + "," + cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Gyro," + metrics[i]->_metricName + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+				iterationResults.push_back(iRes);
+
+				rawline = "";
+				//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+				rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						   "," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						   "," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
+						   ",Gyro, " + metrics[i]->_metricName + "," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+				AppendIterationSummaryCVS(rawline);
+			}
+		}
+		if (calcSystemTSMetrics)
+		{
 		// calculate metric using System timeStamp
 			for (int i = 0; i < metrics.size(); i++)
 			{
@@ -3056,10 +3192,10 @@ public:
 					iterationResults.push_back(iRes);
 
 					rawline = "";
-					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 					rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 						",Depth, " + metrics[i]->_metricName + "(System TS)," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 					AppendIterationSummaryCVS(rawline);
@@ -3086,10 +3222,10 @@ public:
 					iterationResults.push_back(iRes);
 
 					rawline = "";
-					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID, Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 					rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 						",IR, " + metrics[i]->_metricName + "(System TS)," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 					AppendIterationSummaryCVS(rawline);
@@ -3115,15 +3251,74 @@ public:
 					iterationResults.push_back(iRes);
 
 					rawline = "";
-					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
 					rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
 						"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
-						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) +
+						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
 						",Color, " + metrics[i]->_metricName + "(System TS)," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
 
 					AppendIterationSummaryCVS(rawline);
 				}
+				if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
+				{
+					metrics[i]->configure(currIMUProfile, accelFrameList);
+					metrics[i]->_useSystemTs = true;
+					MetricResult r = metrics[i]->calc();
+					if (r.result == false)
+					{
+						//if (!stringIsInVector(metrics[i]->_metricName, accelNonMandatoryMetrics))
+						//{
+						//	iterationStatus = "Fail";
+						//}
+						//else
+						//{
+						//	Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
+						//}
+						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on Accel stream");
+					}
+					string iRes = to_string(iteration)+","+name+","+suiteName+","+cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Accel," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+					iterationResults.push_back(iRes);
+
+					rawline = "";
+					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+					rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
+						",Accel, " + metrics[i]->_metricName + "(System TS)," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+					AppendIterationSummaryCVS(rawline);
+				}
+				if (currIMUProfile.fps != 0 && metrics[i]->_metricName != "ID Correctness")
+				{
+					metrics[i]->configure(currIMUProfile, gyroFrameList);
+					metrics[i]->_useSystemTs = true;
+					MetricResult r = metrics[i]->calc();
+					if (r.result == false)
+					{
+						//if (!stringIsInVector(metrics[i]->_metricName, gyroNonMandatoryMetrics))
+						//{
+						//	iterationStatus = "Fail";
+						//}
+						//else
+						//{
+						//	Logger::getLogger().log("Metric: " + metrics[i]->_metricName + "(System TS) Failed, but ignored because its in the ignore list", "Test");
+						//}
+						failedMetrics.push_back("Metric: " + metrics[i]->_metricName + "(System TS) Failed on Accel stream");
+					}
+					string iRes = to_string(iteration)+","+name+","+suiteName+","+cam.GetSerialNumber() + ",\"" + streamComb + "\"," + to_string(testDuration) + ",Gyro," + metrics[i]->_metricName + "(System TS)," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+					iterationResults.push_back(iRes);
+
+					rawline = "";
+					//iterationCsv << "Host name, IP, FW version,Serial number ,Driver version,SID,Test Name,Test Suite,Iteration,Duration,StreamCombination,ProfileCombination,Bandwidth,Depth Image Format,Depth Width,Depth Hight,Depth FPS,IR Image Format,IR Width,IR Hight,IR FPS,Color Image Format,Color Width,Color Hight,Color FPS,IMU FPS,Tested Stream, Metric name,Metric Value,Metric Status,Metric Remarks,Iteration Result" << endl;
+					rawline += hostname + "," + IPaddress + "," + cam.GetFwVersion() + "," + cam.GetSerialNumber() + "," + DriverVersion + "," + sid + "," + name + "," + suiteName + "," + to_string(iteration) + "," + to_string(testDuration) + "," + streams + ",\"" + streamComb + "\"," + to_string(bandWidth) + "," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "," + to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) +
+						"," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "," + to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) +
+						"," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "," + to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(currIMUProfile.fps) +
+						",Gyro, " + metrics[i]->_metricName + "(System TS)," + r.value + "," + ((r.result) ? "Pass" : "Fail") + ",\"" + r.remarks + "\",";
+
+					AppendIterationSummaryCVS(rawline);
+				}
 			}
+		}
 
 		for (int j = 0; j < iterationResults.size(); j++)
 		{
@@ -3166,6 +3361,48 @@ public:
 
 				AppendRAwDataCVS(rawline);
 			}
+		}
+		if (currIMUProfile.fps != 0)
+		{
+
+			for (int i = 0; i < gyroFrameList.size(); i++)
+			{
+				rawline = "";
+				rawline += to_string(iteration) + ",\"" + streamComb + "\",Gyro," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
+						   to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(gyroFrameList[i].ID) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(gyroFrameList[i].hwTimestamp) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(gyroFrameList[i].systemTimestamp);
+
+				AppendRAwDataCVS(rawline);
+			}
+
+			for (int i = 0; i < accelFrameList.size(); i++)
+			{
+				rawline = "";
+				rawline += to_string(iteration) + ",\"" + streamComb + "\",Accel," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
+						   to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(accelFrameList[i].ID) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(accelFrameList[i].hwTimestamp) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(accelFrameList[i].systemTimestamp);
+
+				AppendRAwDataCVS(rawline);
+			}
+		}
+		// Check size of RawData File
+		if (rawDataCsv.tellp()>RawDataMAxSize)
+		{
+			Logger::getLogger().log("RAW DATA FILE SIZE is:" + to_string(rawDataCsv.tellp()) , "Test");
+			Logger::getLogger().log("RAW DATA FILE SIZE is Greater than Max size -" + to_string(RawDataMAxSize) , "Test");
+			rawDataCsv.close();
+			//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+			string testPath =FileUtils::join(testBasePath, name);
+			string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_"+to_string(iteration)+".csv");
+			if (rename(rawDataPath.c_str(),newname.c_str())!=0)
+			{
+				Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
+			}
+			else
+			{
+				Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
+			}
+			rawDataFirstIter = iteration+1;
+			OpenRawDataCSV();
+
 		}
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + " Summary", "Test");
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + ":[" + iterationStatus + "]", "Test");

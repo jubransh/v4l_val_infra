@@ -55,6 +55,7 @@ public:
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
+        Sensor imuSensor = cam.GetIMUSensor();
         vector<vector<Profile>> profiles;
         if (!isMixed)
             profiles = GetProfiles(streams);
@@ -71,6 +72,7 @@ public:
         bool DepthUsed=false;
         bool ColorUsed=false;
         bool IRUsed=false;
+        bool ImuUsed = false;
         for (int f=0;f< streams.size();f++)
         {
             if (streams[f]==StreamType::Depth_Stream)
@@ -79,6 +81,8 @@ public:
                 IRUsed=true;
             else if (streams[f]==StreamType::Color_Stream)
                 ColorUsed=true;
+            else if (streams[f] == StreamType::Imu_Stream)
+                ImuUsed = true;
         }
         for (int j = 0; j < profiles.size(); j++)
         {
@@ -107,6 +111,12 @@ public:
                     colorSensor.Configure(profiles[j][i]);
                     pR.push_back(profiles[j][i]);
                 }
+                else if (profiles[j][i].streamType == StreamType::Imu_Stream)
+                {
+                    Logger::getLogger().log("IMU Profile Used: " + profiles[j][i].GetText(), "Test");
+                    imuSensor.Configure(profiles[j][i]);
+                    pR.push_back(profiles[j][i]);
+                }
             }                      
             setCurrentProfiles(pR);
 
@@ -131,6 +141,11 @@ public:
             {
                 ir_collectFrames = true;
                 irSensor.Start(AddFrame);
+            }
+            if (ImuUsed)
+            {
+                imu_collectFrames = true;
+                imuSensor.Start(AddFrame);
             }
 
 
@@ -157,6 +172,12 @@ public:
                 ir_collectFrames = false;
                 irSensor.Stop();
                 irSensor.Close();
+            }
+            if (ImuUsed)
+            {
+                imu_collectFrames = false;
+                imuSensor.Stop();
+                imuSensor.Close();
             }
             
             
@@ -218,6 +239,15 @@ TEST_F(StreamingTest, ColorStreamingTest)
     streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
+
+TEST_F(StreamingTest, ImuStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Imu_Stream);
+    run(streams);
+}
+
 TEST_F(StreamingTest, DepthIRStreamingTest)
 {
     configure(30);
@@ -234,14 +264,35 @@ TEST_F(StreamingTest, DepthColorStreamingTest)
     streams.push_back(StreamType::Depth_Stream);
     run(streams);
 }
+
+TEST_F(StreamingTest, DepthImuStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Imu_Stream);
+    streams.push_back(StreamType::Depth_Stream);
+    run(streams);
+}
+
 TEST_F(StreamingTest, IRColorStreamingTest)
 {
-    configure(10);
+    configure(30);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::IR_Stream);
     run(streams);
 }
+
+TEST_F(StreamingTest, IRColorImuStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Imu_Stream);
+    run(streams);
+}
+
 TEST_F(StreamingTest, DepthIRColorStreamingTest)
 {
     configure(30);
@@ -249,6 +300,17 @@ TEST_F(StreamingTest, DepthIRColorStreamingTest)
     streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
+    run(streams);
+}
+
+TEST_F(StreamingTest, DepthIRColorImuStreamingTest)
+{
+    configure(30);
+    vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::Depth_Stream);
+    streams.push_back(StreamType::IR_Stream);
+    streams.push_back(StreamType::Imu_Stream);
     run(streams);
 }
 
@@ -261,5 +323,7 @@ TEST_F(StreamingTest, DepthIRColorMixStreamingTest)
     streams.push_back(StreamType::IR_Stream);
     run(streams,true);
 }
+
+
 
 

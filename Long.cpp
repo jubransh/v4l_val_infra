@@ -88,6 +88,7 @@ public:
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
+        Sensor imuSensor = cam.GetIMUSensor();
 
         if (_isContent)
         {
@@ -114,6 +115,7 @@ public:
         bool DepthUsed = false;
         bool ColorUsed = false;
         bool IRUsed = false;
+        bool ImuUsed = false;
         for (int f = 0; f < streams.size(); f++)
         {
             if (streams[f] == StreamType::Depth_Stream)
@@ -122,6 +124,8 @@ public:
                 IRUsed = true;
             else if (streams[f] == StreamType::Color_Stream)
                 ColorUsed = true;
+            else if (streams[f] == StreamType::Imu_Stream)
+                    ImuUsed = true;
         }
         for (int j = 0; j < profiles.size(); j++)
         {
@@ -143,6 +147,12 @@ public:
                 colorSensor.Configure(profiles[j]);
                 pR.push_back(profiles[j]);
             }
+            else if (profiles[j].streamType == StreamType::Imu_Stream)
+            {
+                Logger::getLogger().log("IMU Profile Used: " + profiles[j].GetText(), "Test");
+                imuSensor.Configure(profiles[j]);
+                pR.push_back(profiles[j]);
+            }
         }
         setCurrentProfiles(pR);
         if (ColorUsed)
@@ -158,6 +168,11 @@ public:
         if (IRUsed)
         {
             irSensor.Start(AddFrame);
+        }
+        if (ImuUsed)
+        {
+
+            imuSensor.Start(AddFrame);
         }
 
         int Iterations = testDuration / iterationDuration;
@@ -177,6 +192,7 @@ public:
             depth_collectFrames = true;
             ir_collectFrames = true;
             color_collectFrames = true;
+            imu_collectFrames = true;
             Logger::getLogger().log("collecting frames for half iteration duration(" + to_string(iterationDuration / 2) + "Seconds)", "Test");
             int duration = iterationDuration / 2;
             if (!_captureTempWhileStream)
@@ -201,6 +217,7 @@ public:
             depth_collectFrames = false;
             ir_collectFrames = false;
             color_collectFrames = false;
+            imu_collectFrames = false;
             
             Logger::getLogger().log("Stopping PNP measurements", "Test");
             sysMon2.StopMeasurment();
@@ -259,6 +276,11 @@ public:
             irSensor.Stop();
             irSensor.Close();
         }
+        if (ImuUsed)
+        {
+            imuSensor.Stop();
+            imuSensor.Close();
+        }
 
         Logger::getLogger().log("Test Summary:", "Run");
         Logger::getLogger().log(testStatus ? "Pass" : "Fail", "Run");
@@ -273,22 +295,24 @@ public:
 TEST_F(LongTest, LongStreamTest)
 {
     configure(5 *60 * 60, false);
-    set_profile("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
+    set_profile("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+imu_0x0_400");
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::Imu_Stream);
     // IgnorePNPMetric("CPU Consumption");
     run(streams);
 }
 TEST_F(LongTest, LongStreamTest_60FPS)
 {
     configure(5 * 60 * 60, false);
-    set_profile("z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
+    set_profile("z16_640x480_60+y8_640x480_60+yuyv_640x480_60+imu_0x0_400");
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::Imu_Stream);
     // IgnorePNPMetric("CPU Consumption");
     run(streams,60);
 }

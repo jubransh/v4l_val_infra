@@ -106,7 +106,7 @@ public:
 
         run(streams);
 
-        string testBasePath = FileUtils::join("/home/nvidia/Logs", sid);
+        string testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
         name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
         // Creating test folder
@@ -164,6 +164,7 @@ public:
         Sensor depthSensor = cam.GetDepthSensor();
         Sensor irSensor = cam.GetIRSensor();
         Sensor colorSensor = cam.GetColorSensor();
+        Sensor imuSensor = cam.GetIMUSensor();
 
         if (_isContent)
         {
@@ -175,12 +176,14 @@ public:
         bool DepthUsed;
         bool ColorUsed;
         bool IRUsed;
+        bool ImuUsed;
 
         for (int i = 0; i < _iterations; i++)
         {
             DepthUsed = false;
             ColorUsed = false;
             IRUsed = false;
+            ImuUsed = false;
             if (_isRandom)
                 StreamCollection = getRandomProfile(streams);
             else
@@ -204,6 +207,8 @@ public:
                     IRUsed = true;
                 else if (StreamCollection[f].streamType == StreamType::Color_Stream)
                     ColorUsed = true;
+                else if (StreamCollection[f].streamType == StreamType::Imu_Stream)
+                    ImuUsed = true;
             }
             Logger::getLogger().log("Started Iteration: " + to_string(i), "Test");
             initFrameLists();
@@ -231,6 +236,11 @@ public:
                     Logger::getLogger().log("Color Profile Used: " + StreamCollection[i].GetText(), "Test");
                     colorSensor.Configure(StreamCollection[i]);
                 }
+                else if (StreamCollection[i].streamType == StreamType::Imu_Stream)
+                {
+                    Logger::getLogger().log("IMU Profile Used: " + StreamCollection[i].GetText(), "Test");
+                    imuSensor.Configure(StreamCollection[i]);
+                }
             }
             long startTime = TimeUtils::getCurrentTimestamp();
             //int slept=0;
@@ -252,6 +262,11 @@ public:
             {
                 ir_collectFrames = true;
                 irSensor.Start(AddFrame);
+            }
+            if (ImuUsed)
+            {
+                imu_collectFrames = true;
+                imuSensor.Start(AddFrame);
             }
 
             std::this_thread::sleep_for(std::chrono::seconds(testDuration));
@@ -280,6 +295,12 @@ public:
                 ir_collectFrames = false;
                 irSensor.Stop();
                 irSensor.Close();
+            }
+            if (ImuUsed)
+            {
+                imu_collectFrames = false;
+                imuSensor.Stop();
+                imuSensor.Close();
             }
             
 
@@ -329,13 +350,15 @@ TEST_F(StabilityTest, Normal)
     sT.push_back(StreamType::Depth_Stream);
     sT.push_back(StreamType::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
+    sT.push_back(StreamType::Imu_Stream);
 
     //vector<StreamType> sT2;
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
     //configure(30, 500, false,false,"");
-    configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
+    // configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
+    configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+imu_0x0_400");
     run(streams);
 }
 TEST_F(StabilityTest, Normal_60FPS)
@@ -345,12 +368,13 @@ TEST_F(StabilityTest, Normal_60FPS)
     sT.push_back(StreamType::Depth_Stream);
     sT.push_back(StreamType::IR_Stream);
     sT.push_back(StreamType::Color_Stream);
+    sT.push_back(StreamType::Imu_Stream);
 
     //vector<StreamType> sT2;
     //sT2.push_back(StreamType::IR_Stream);
     streams.push_back(sT);
     //streams.push_back(sT2);
-    configure(30, 500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
+    configure(30, 500, false,false, "z16_640x480_60+y8_640x480_60+yuyv_640x480_60+imu_0x0_400");
     run(streams);
 }
 
@@ -381,6 +405,26 @@ TEST_F(StabilityTest, Random)
     sT7.push_back(StreamType::IR_Stream);
     sT7.push_back(StreamType::Color_Stream);
 
+    vector<StreamType> sT8;
+    sT8.push_back(StreamType::Imu_Stream);
+        
+    vector<StreamType> sT9;
+    sT9.push_back(StreamType::Depth_Stream);
+    sT9.push_back(StreamType::Imu_Stream);
+
+    vector<StreamType> sT10;
+    sT10.push_back(StreamType::Imu_Stream);
+    sT10.push_back(StreamType::IR_Stream);
+    sT10.push_back(StreamType::Color_Stream);
+
+    vector<StreamType> sT11;
+    sT11.push_back(StreamType::Depth_Stream);
+    sT11.push_back(StreamType::Imu_Stream);
+    sT11.push_back(StreamType::IR_Stream);
+    sT11.push_back(StreamType::Color_Stream);
+    
+
+
     streams.push_back(sT);
     streams.push_back(sT2);
     streams.push_back(sT3);
@@ -388,6 +432,10 @@ TEST_F(StabilityTest, Random)
     streams.push_back(sT5);
     streams.push_back(sT6);
     streams.push_back(sT7);
+    streams.push_back(sT8);
+    streams.push_back(sT9);
+    streams.push_back(sT10);
+    streams.push_back(sT11);
 
     configure(30, 500, true,false,"");
     run(streams);

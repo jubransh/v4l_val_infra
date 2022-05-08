@@ -391,6 +391,7 @@ TEST_F(ControlsTest, Depth_LaserPowerMode)
     configure(10);
     run(StreamType::Depth_Stream, "LaserPowerMode");
 }
+/*
 ////////////////////////////////////////////////////////////////////////////
 // IR Control Tests
 
@@ -420,6 +421,7 @@ TEST_F(ControlsTest, IR_LaserPowerMode)
     configure(10);
     run(StreamType::IR_Stream, "LaserPowerMode");
 }
+*/
 // ////////////////////////////////////////////////////////////////////////////
 // // Color Controls - Still not ready
 // TEST_F(ControlsTest, Color_BackLighCompensation)

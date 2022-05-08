@@ -66,15 +66,39 @@ enum StreamType
     Depth_Stream,
     IR_Stream,
     Color_Stream,
-    Accel_Stream,
-    Gyro_Stream
+    Imu_Stream
 };
 enum SensorType
 {
     Depth,
     IR,
-    Color
+    Color,
+    IMU
 };
+
+typedef struct
+{
+    uint8_t typeID;
+    uint8_t skip1;
+    uint64_t hwTimestamp;
+    int16_t x;
+    int16_t y;
+    int16_t z;
+    uint64_t hwTimestamp_2;
+    uint64_t skip2;
+} __attribute__((packed))IMUFrameData;
+
+// struct IMUFrameData
+// {
+//     uint8_t typeID;
+//     uint8_t skip1;
+//     uint64_t hwTimestamp;
+//     uint16_t x;
+//     uint16_t y;
+//     uint16_t z;
+//     uint64_t hwTimestamp_2;
+//     uint64_t skip2;
+// };
 
 struct Resolution
 {
@@ -106,11 +130,8 @@ public:
         case StreamType::Color_Stream:
             sT = "Color";
             break;
-        case StreamType::Accel_Stream:
-            sT = "Accel";
-            break;
-        case StreamType::Gyro_Stream:
-            sT = "Gyro";
+        case StreamType::Imu_Stream:
+            sT = "IMU";
             break;
         }
         string result = "";
@@ -141,8 +162,12 @@ public:
         case V4L2_PIX_FMT_YUYV:
             return "YUYV";
             break;
-        // Todo
-        // need to add the Pixel format for Accel and Gyro
+        case 0:
+            if (streamType == StreamType::Imu_Stream)
+                return "XYZ";
+            else
+                return "";
+            break;
         default:
             return "";
             break;
@@ -150,6 +175,10 @@ public:
     }
     double GetSize()
     {
+        if (streamType == StreamType::Imu_Stream)
+        {
+            return 32;
+        }
         int bpp;
         switch (pixelFormat)
         {
@@ -239,6 +268,11 @@ struct CommonMetadata
     double width = 0;
     double height = 0;
 };
+struct ImuMetaData
+{
+    int imuType = 0;
+    float x,y,z;
+};
 
 struct ColorMetadata
 {
@@ -268,6 +302,7 @@ public:
     CommonMetadata commonMetadata;
     ColorMetadata colorMetadata;
     DepthMetadata depthMetadata;
+    ImuMetaData imuMetadata;
     void print_MetaData()
     {
         string text = "commonMetadata values:";
@@ -305,12 +340,27 @@ public:
         text += ", PowerLineFrequency=" + to_string(colorMetadata.PowerLineFrequency);
         text += ", AutoWhiteBalanceTemp=" + to_string(colorMetadata.AutoWhiteBalanceTemp);
         Logger::getLogger().log(text, LOG_INFO);
+        text = "IMUMetadata values:";
+        text += ", imuType=" + to_string(imuMetadata.imuType);
+        text += ", x=" + to_string(imuMetadata.x);
+        text += ", y=" + to_string(imuMetadata.y);
+        text += ", z=" + to_string(imuMetadata.z);
+       
+        Logger::getLogger().log(text, LOG_INFO);
     }
 
     double getMetaDataByString(string name)
     {
         if (name == "frameId")
             return commonMetadata.frameId;
+        else if (name == "imuType")
+            return imuMetadata.imuType;
+        else if (name == "x")
+            return imuMetadata.x;
+        else if (name == "y")
+            return imuMetadata.y;
+        else if (name == "z")
+            return imuMetadata.z;
         else if (name == "CRC")
             return commonMetadata.CRC;
         else if (name == "exposureTime")
@@ -384,6 +434,18 @@ struct Frame
 
 class Sensor
 {
+        // For debugging
+    void PrintBytes(uint8_t buff[], int len)
+    {
+
+        for (int i = 0; i < len; i++)
+        {
+            if (i % 16 == 0)
+                cout << endl;
+
+            cout << hex << unsigned(buff[i]) << " ";
+        }
+    }
 private:
     bool isClosed = true;
     std::shared_ptr<std::thread> _t;
@@ -653,6 +715,29 @@ public:
             Logger::getLogger().log("Init Sensor Color Done", "Sensor");
             return dataFileOpened;
         }
+        case SensorType::IMU:
+        {
+            videoNode = { "/dev/video5" };
+            Logger::getLogger().log("Openning /dev/video5", "Sensor");
+
+            dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+
+            //if (openMD)
+            //{
+            //    Logger::getLogger().log("Openning /dev/video5", "Sensor");
+            //    videoNode = {"/dev/video5"};
+            //    metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            //    // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            //}
+            name = "IMU Sensor";
+            dataFileOpened = dataFileDescriptor > 0;
+            metaFileOpened = metaFileDescriptor > 0;
+            isClosed = !dataFileOpened;
+
+            Logger::getLogger().log("Init Sensor IMU Done", "Sensor");
+            return dataFileOpened;
+        }
             return false;
         }
     }
@@ -762,8 +847,32 @@ public:
 
     void Configure(Profile p)
     {
+        int ret;
         if (isClosed)
             Init(type, openMetaD);
+        if (GetName() == "IMU Sensor")
+        {
+            // Set the fps
+            struct v4l2_streamparm setFps
+            {
+                0
+            };
+            setFps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            setFps.parm.capture.timeperframe.numerator = 1;
+            setFps.parm.capture.timeperframe.denominator = p.fps;
+            ret = ioctl(dataFileDescriptor, VIDIOC_S_PARM, &setFps);
+            lastProfile = p;
+            if (0 != ret)
+            {
+                Logger::getLogger().log("Failed to set Fps", "Sensor", LOG_ERROR);
+                throw std::runtime_error("Failed to set Fps");
+            }
+            else
+            {
+                Logger::getLogger().log("Done configuring Sensor:" + GetName() + " with Profile: " + p.GetText(), "Sensor");
+            }
+            return;
+        }
         // Set Stream profile
         struct v4l2_format sFormat = {0};
         sFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -771,7 +880,7 @@ public:
         sFormat.fmt.pix.pixelformat = p.pixelFormat;
         sFormat.fmt.pix.width = p.resolution.width;
         sFormat.fmt.pix.height = p.resolution.height;
-        int ret = ioctl(dataFileDescriptor, VIDIOC_S_FMT, &sFormat);
+        ret = ioctl(dataFileDescriptor, VIDIOC_S_FMT, &sFormat);
         if (0 != ret)
         {
             Logger::getLogger().log("Failed to set Stream format", "Sensor", LOG_ERROR);
@@ -1021,8 +1130,24 @@ public:
                                                         frame.hwTimestamp = V4l2Buffer.timestamp.tv_usec;
 
                                                         Metadata md;
+                                                        if (type == SensorType::IMU)
+                                                        {
+                                                                IMUFrameData* newPTR = static_cast<IMUFrameData*>(framesBuffer[V4l2Buffer.index]);
+                                                                md.imuMetadata.imuType = newPTR->typeID;
+                                                                md.imuMetadata.x = newPTR->x/100.0;
+                                                                md.imuMetadata.y = newPTR->y/100.0;
+                                                                md.imuMetadata.z = newPTR->z/100.0;
+                                                                md.commonMetadata.frameId= V4l2Buffer.sequence;
 
-                                                        if (metaFileOpened && mdReady)
+                                                                md.commonMetadata.Timestamp = newPTR->hwTimestamp;
+
+                                                               
+                                                            //    if (newPTR->typeID == 2)
+                                                            //     md.print_MetaData();
+                                                         
+                                                        
+                                                        }
+                                                        else if (metaFileOpened && mdReady)
                                                         {
                                                             md.commonMetadata.frameId = mdV4l2Buffer.sequence;
                                                             if (type == SensorType::Depth or type == SensorType::IR)
@@ -1293,6 +1418,13 @@ public:
             sensors.push_back(colorSensor);
         }
 
+        // Try to add IMU sensor
+        Sensor imuSensor;
+        if (imuSensor.Init(SensorType::IMU, openMD))
+        {
+            sensors.push_back(imuSensor);
+        }
+
         // =========== Get FW Version and serial number =================
         uint32_t fwVersion_uint{0};
         struct v4l2_ext_control ctrl
@@ -1376,6 +1508,16 @@ public:
                 return sensors[i];
         }
         throw std::runtime_error("Failed to get Color Sensor ");
+    }
+
+    Sensor GetIMUSensor()
+    {
+        for (int i = 0; i < sensors.size(); i++)
+        {
+            if (sensors[i].GetName() == "IMU Sensor")
+                return sensors[i];
+        }
+        throw std::runtime_error("Failed to get IMU Sensor ");
     }
 
     CommandResult SendHWMonitorCommand(HWMonitorCommand hmc)
