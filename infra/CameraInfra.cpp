@@ -188,6 +188,9 @@ public:
         case V4L2_PIX_FMT_GREY:
             bpp = 1;
             break;
+        case V4L2_PIX_FMT_Y12I:
+            bpp = 4;
+            break;
         default:
             bpp = 2;
             break;
@@ -218,6 +221,9 @@ public:
             break;
         case V4L2_PIX_FMT_GREY:
             bpp = 1;
+            break;
+        case V4L2_PIX_FMT_Y12I:
+            bpp = 4;
             break;
         default:
             bpp = 2;
