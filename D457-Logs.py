@@ -12,10 +12,13 @@ time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 # hosts = "143.185.227.39"
 # hosts = "143.185.227.39,143.185.227.31"
 # hosts = "143.185.116.176"
-hosts = "143.185.227.31"
+# hosts = "143.185.227.31"
+# hosts = "143.185.227.39,143.185.227.31,143.185.116.176"
 # hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
+hosts = "d457jetson08.iil.intel.com,d457jetson07.iil.intel.com,d457jetson06.iil.intel.com,d457jetson03.iil.intel.com,d457jetson01.iil.intel.com"
+# hosts = "d457jetson08.iil.intel.com,d457jetson07.iil.intel.com,d457jetson06.iil.intel.com,d457jetson05.iil.intel.com,d457jetson03.iil.intel.com,d457jetson01.iil.intel.com"
 host_list=hosts.split(",")
-logs_folder="/home/nvidia/Logs/"
+logs_folder="/home/administrator/Logs/"
 
 # collect_raw_data=True
 collect_raw_data=False
@@ -29,7 +32,7 @@ download_folder=os.path.join(r"c:\D457-temp",time_stamp)
 def get_file_from_host(host,target_folder):
     logger.info("connecting to :{}".format(host))
     transport = paramiko.Transport((host,22))
-    transport.connect(None,"nvidia","nvidia")
+    transport.connect(None,"administrator","trio_012")
     sftp = paramiko.SFTPClient.from_transport(transport)
     sids=sftp.listdir(logs_folder)
     logger.info("going over SIDs")
