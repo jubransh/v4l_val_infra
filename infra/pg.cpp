@@ -234,8 +234,8 @@ public:
         ir.push_back("y8i_1280x720_30");
 
         //Y12i
-        //ir.push_back("y12i_1280x800_15");
-        //ir.push_back("y12i_1280x800_25");
+        ir.push_back("y12i_1280x800_15");
+        ir.push_back("y12i_1280x800_30");
 
         //============ Color Only =================
         color.push_back("yuyv_424x240_5");
@@ -377,8 +377,8 @@ public:
         ir_color.push_back("y8i_1280x720_30+yuyv_1280x720_30");
 
             //Y12i
-        //ir_color.push_back("y12i_1280x800_15+yuyv_1280x720_30");
-        //ir_color.push_back("y12i_1280x800_25+yuyv_1280x720_30");
+        ir_color.push_back("y12i_1280x800_15+yuyv_1280x720_30");
+        ir_color.push_back("y12i_1280x800_30+yuyv_1280x720_30");
 
         //============ Depth + IR + Color =================
             //Y8
@@ -525,17 +525,17 @@ public:
         ir_color_imu.push_back("y8i_1280x720_30+yuyv_1280x720_30+imu_0x0_400");
         
         //Y12i
-        //ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_50");
-        //ir_color_imu.push_back("y12i_1280x800_25+yuyv_1280x720_30+imu_0x0_50");
+        ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_50");
+        ir_color_imu.push_back("y12i_1280x800_30+yuyv_1280x720_30+imu_0x0_50");
 
-        //ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_100");
-        //ir_color_imu.push_back("y12i_1280x800_25+yuyv_1280x720_30+imu_0x0_100");
+        ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_100");
+        ir_color_imu.push_back("y12i_1280x800_30+yuyv_1280x720_30+imu_0x0_100");
 
-        //ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_200");
-        //ir_color_imu.push_back("y12i_1280x800_25+yuyv_1280x720_30+imu_0x0_200");
+        ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_200");
+        ir_color_imu.push_back("y12i_1280x800_30+yuyv_1280x720_30+imu_0x0_200");
 
-        //ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_400");
-        //ir_color_imu.push_back("y12i_1280x800_25+yuyv_1280x720_30+imu_0x0_400");
+        ir_color_imu.push_back("y12i_1280x800_15+yuyv_1280x720_30+imu_0x0_400");
+        ir_color_imu.push_back("y12i_1280x800_30+yuyv_1280x720_30+imu_0x0_400");
 
         //============ Depth + IR + Color + IMU =================
             // IR Y8
