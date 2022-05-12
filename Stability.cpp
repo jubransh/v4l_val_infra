@@ -457,7 +457,7 @@ TEST_F(StabilityTest, RandomMixDepthIRColor)
     configure(30, 500, true, false, "");
     run(streams);
 }
-
+/*
 TEST_F(StabilityTest, ContentRandom)
 {
     IgnoreMetricAllStreams("First frame delay");
@@ -494,7 +494,7 @@ TEST_F(StabilityTest, ContentRandom)
     configure(10, 500, true, true,"");
     run(streams);
 }
-/*
+
 TEST_F(StabilityTest, PnpRandom)
 {
     vector<vector<StreamType>> streams;

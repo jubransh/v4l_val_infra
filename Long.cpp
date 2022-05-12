@@ -328,7 +328,7 @@ TEST_F(LongTest, LongStreamTest_Specific_Profile)
     // IgnorePNPMetric("CPU Consumption");
     run(streams, 60);
 }
-*/
+
 TEST_F(LongTest, ContentLongStreamTest)
 {
     IgnoreMetricAllStreams("First frame delay");
@@ -350,7 +350,7 @@ TEST_F(LongTest, ContentLongStreamTest)
     streams.push_back(StreamType::Color_Stream);
     run(streams);
 }
-/*
+
 TEST_F(LongTest, TempCaptureLongStreamTest)
 {
     configure(10 * 60 * 60, true);
