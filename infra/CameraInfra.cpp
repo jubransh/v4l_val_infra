@@ -1393,6 +1393,58 @@ private:
     }
 
 public:
+    bool HWReset(int timeout=10)
+    {
+        string serial_number_before;
+        string serial_number_after;
+        serial_number_before = CalcSerialNumber();
+        // Perform HW Reset
+
+        HWMonitorCommand hmc = {0};
+
+        
+        hmc.dataSize = 0;
+        hmc.opCode = 0x20; // HW reset opcode
+
+        auto cR = SendHWMonitorCommand(hmc);
+        if (cR.Result)
+        {
+
+            Logger::getLogger().log("Camera HW reset performed", "Camera");
+        }
+        else
+        {
+            // throw std::runtime_error("Failed to perform camera HW reset");
+            Logger::getLogger().log("Camera HW reset Failed ", "Camera", LOG_ERROR);
+            return false;
+        }
+        
+        bool cameraConnected=false;
+        for(int i=0; i<timeout; i++)
+        {
+            try
+            {
+                serial_number_after = CalcSerialNumber();
+                
+            }
+            catch(const std::exception& e)
+            {
+            }
+            if (serial_number_after!=serial_number_before)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            else
+            {
+                Logger::getLogger().log("Camera recognized after HW reset", "Camera");
+                cameraConnected=true;
+                break;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        return cameraConnected;
+        
+
+    }
+
     string GetFwVersion()
     {
         return fwVersion;
@@ -1401,6 +1453,29 @@ public:
     string GetSerialNumber()
     {
         return serial;
+    };
+
+    string CalcSerialNumber()
+    {
+        string serial_number;
+        HWMonitorCommand hmc = {0};
+        // GVD command
+        hmc.dataSize = 0;
+        hmc.opCode = 0x10; // GVD
+
+        auto cR = SendHWMonitorCommand(hmc);
+        if (cR.Result)
+        {
+            stringstream ss;
+            ss << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[48]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[49]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[50]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[51]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[52]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[53]) << endl;
+            serial_number = ss.str();
+            serial_number.erase(std::remove(serial_number.begin(), serial_number.end(), '\n'), serial_number.end());
+        }
+        else
+        {
+            throw std::runtime_error("Failed to Read Serial number");
+        }
+        return serial_number;
     };
 
     void Init(bool openMD = true)
@@ -1458,25 +1533,25 @@ public:
         fwVersion = uintToVersion(fwVersion_uint);
 
         // get Serial number
+        serial = CalcSerialNumber();
+        // HWMonitorCommand hmc = {0};
 
-        HWMonitorCommand hmc = {0};
+        // // GVD command
+        // hmc.dataSize = 0;
+        // hmc.opCode = 0x10; // GVD
 
-        // GVD command
-        hmc.dataSize = 0;
-        hmc.opCode = 0x10; // GVD
-
-        auto cR = SendHWMonitorCommand(hmc);
-        if (cR.Result)
-        {
-            stringstream ss;
-            ss << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[48]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[49]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[50]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[51]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[52]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[53]) << endl;
-            serial = ss.str();
-            serial.erase(std::remove(serial.begin(), serial.end(), '\n'), serial.end());
-        }
-        else
-        {
-            throw std::runtime_error("Failed to Read Serial number");
-        }
+        // auto cR = SendHWMonitorCommand(hmc);
+        // if (cR.Result)
+        // {
+        //     stringstream ss;
+        //     ss << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[48]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[49]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[50]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[51]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[52]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[53]) << endl;
+        //     serial = ss.str();
+        //     serial.erase(std::remove(serial.begin(), serial.end(), '\n'), serial.end());
+        // }
+        // else
+        // {
+        //     throw std::runtime_error("Failed to Read Serial number");
+        // }
 
         //=================================================================
     }

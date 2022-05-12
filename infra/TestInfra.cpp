@@ -2606,6 +2606,8 @@ public:
 
 	bool ResetDefaults()
 	{
+		return cam.HWReset();
+		/*
 		bool result = true;
 		bool res;
 		Logger::getLogger().log("Reseting default controls", "Setup()", LOG_INFO);
@@ -2636,6 +2638,7 @@ public:
 		result = result && res;
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 		return result;
+		*/
 	}
 
 	bool AppendPNPDataCVS(string pnpDataLine)
