@@ -1874,6 +1874,11 @@ public:
 			else
 			{
 				expectedFps = _profile.fps;
+				// check if Gyro stream and FPS is 50, set FPS to 100
+				if (_profile.fps == 50 && _frames[5].frameMD.getMetaDataByString("imuType")==2)
+					{
+						expectedFps = 100;
+					}
 				indexOfChange = 5;
 			}
 			// expected delta according to the FPS before calculating the actual FPS
