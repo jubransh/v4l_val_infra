@@ -106,7 +106,16 @@ public:
 
         run(streams);
 
-        string testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
+        string testBasePath;
+
+        if (FileUtils::isDirExist(FileUtils::getHomeDir()+"/storage"))
+            {
+                testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/storage/Logs", sid);
+            }
+            else
+            {
+                testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
+            }
         name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
         // Creating test folder

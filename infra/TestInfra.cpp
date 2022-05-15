@@ -2465,7 +2465,14 @@ public:
 		char *homedir = pw->pw_dir;
 		memoryBaseLine = 0;
 		// testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs",TimeUtils::getDateandTime());
-		testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
+		if (FileUtils::isDirExist(FileUtils::getHomeDir()+"/storage"))
+		{
+			testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/storage/Logs", sid);
+		}
+		else
+		{
+			testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
+		}
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 		suiteName = ::testing::UnitTest::GetInstance()->current_test_case()->name();
 

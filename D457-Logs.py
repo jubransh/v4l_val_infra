@@ -15,13 +15,14 @@ time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 # hosts = "143.185.227.31"
 # hosts = "143.185.227.39,143.185.227.31,143.185.116.176"
 # hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
-hosts = "d457jetson08.iil.intel.com,d457jetson07.iil.intel.com,d457jetson06.iil.intel.com,d457jetson03.iil.intel.com,d457jetson01.iil.intel.com"
+hosts = "d457jetson01.iil.intel.com,d457jetson04.iil.intel.com"
 # hosts = "d457jetson08.iil.intel.com,d457jetson07.iil.intel.com,d457jetson06.iil.intel.com,d457jetson05.iil.intel.com,d457jetson03.iil.intel.com,d457jetson01.iil.intel.com"
 host_list=hosts.split(",")
-logs_folder="/home/administrator/Logs/"
+orig_logs_folder="/home/administrator/Logs/"
+ssd_logs_folder="/home/administrator/storage/Logs/"
 
-# collect_raw_data=True
-collect_raw_data=False
+collect_raw_data=True
+# collect_raw_data=False
 # collect_log_file = True
 collect_log_file = False
 
@@ -34,6 +35,12 @@ def get_file_from_host(host,target_folder):
     transport = paramiko.Transport((host,22))
     transport.connect(None,"administrator","trio_012")
     sftp = paramiko.SFTPClient.from_transport(transport)
+    try:
+        sftp.chdir(ssd_logs_folder)
+        logs_folder=ssd_logs_folder
+    except IOError as e:
+        logs_folder=orig_logs_folder
+    logger.info("Log Folder : " + logs_folder + " in host: " + host)
     sids=sftp.listdir(logs_folder)
     logger.info("going over SIDs")
     for sid in sids:
@@ -69,19 +76,19 @@ def get_file_from_host(host,target_folder):
                         else:
                             logger.error("iteration_summary.csv not found in test: "+test+" SID: "+sid+ " in host: "+host)
                         if collect_raw_data:
-                            if "raw_data.csv" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
-                                if not os.path.exists(os.path.join(target_folder, host, sid, test)):
-                                    try:
-                                        os.makedirs(os.path.join(target_folder, host, sid, test))
-                                    except:
-                                        pass
-                                logger.info(
-                                    "getting raw_data.csv from Test:" + test + " from SID:" + sid + " from host:" + host)
-                                sftp.get(logs_folder + "/" + sid + "/" + test + "/raw_data.csv",
-                                         os.path.join(target_folder, host, sid, test, "raw_data.csv"))
-                            else:
-                                logger.error(
-                                    "raw_data.csv not found in test: " + test + " SID: " + sid + " in host: " + host)
+
+                            if not os.path.exists(os.path.join(target_folder, host, sid, test)):
+                                try:
+                                    os.makedirs(os.path.join(target_folder, host, sid, test))
+                                except:
+                                    pass
+                            for raw in sftp.listdir(logs_folder + "/" + sid + "/" + test):
+                                if "raw_data" in raw:
+                                    logger.info(
+                                        "getting "+raw+" from Test:" + test + " from SID:" + sid + " from host:" + host)
+                                    sftp.get(logs_folder + "/" + sid + "/" + test + "/"+raw,
+                                             os.path.join(target_folder, host, sid, test, raw))
+
                         if collect_log_file:
                             if "test.log" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
                                 if not os.path.exists(os.path.join(target_folder, host, sid, test)):
