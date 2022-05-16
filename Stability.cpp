@@ -108,9 +108,9 @@ public:
 
         string testBasePath;
 
-        if (FileUtils::isDirExist(FileUtils::getHomeDir()+"/storage"))
+        if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
             {
-                testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/storage/Logs", sid);
+                testBasePath = FileUtils::join("/media/administrator/DataUSB/storage/Logs", sid);
             }
             else
             {

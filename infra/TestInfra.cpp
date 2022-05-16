@@ -2435,6 +2435,7 @@ public:
 	bool isPNPtest = false;
 	bool testStatus = true;
 	int testDuration;
+	bool _saveRawData=true;
 	string rawDataPath;
 	// vector<Frame> depthFrames, irFrames, colorFrames;
 	// vector<Sample> pnpSamples;
@@ -2465,9 +2466,9 @@ public:
 		char *homedir = pw->pw_dir;
 		memoryBaseLine = 0;
 		// testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs",TimeUtils::getDateandTime());
-		if (FileUtils::isDirExist(FileUtils::getHomeDir()+"/storage"))
+		if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
 		{
-			testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/storage/Logs", sid);
+			testBasePath = FileUtils::join("/media/administrator/DataUSB/storage/Logs", sid);
 		}
 		else
 		{
@@ -2486,17 +2487,20 @@ public:
 
 		Logger::getLogger().log("Starting test Setup()", "Setup()", LOG_INFO);
 
-		// Creating raw data csv file
-		Logger::getLogger().log("Creating raw data CSV file", "Setup()", LOG_INFO);
-		rawDataPath = FileUtils::join(testPath, "raw_data.csv");
-		// rawDataCsv.open(rawDataPath, std::ios_base::app);
-		// if (rawDataCsv.fail())
-		// {
-		// 	Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
-		// 	throw std::runtime_error("Cannot open file: " + rawDataPath);
-		// }
-		// rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
-		OpenRawDataCSV();
+		if (_saveRawData)
+		{
+			// Creating raw data csv file
+			Logger::getLogger().log("Creating raw data CSV file", "Setup()", LOG_INFO);
+			rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+			// rawDataCsv.open(rawDataPath, std::ios_base::app);
+			// if (rawDataCsv.fail())
+			// {
+			// 	Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
+			// 	throw std::runtime_error("Cannot open file: " + rawDataPath);
+			// }
+			// rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+			OpenRawDataCSV();
+		}
 
 		// Creating iteration Summary data csv file
 		Logger::getLogger().log("Creating iteration Summary CSV file", "Setup()", LOG_INFO);
@@ -2559,23 +2563,29 @@ public:
 	{
 		Logger::getLogger().log("Closing iteartions results CSV file", "TearDown()", LOG_INFO);
 		resultCsv.close();
-		Logger::getLogger().log("Closing raw data CSV file", "TearDown()", LOG_INFO);
-		rawDataCsv.close();
-		Logger::getLogger().log("Closing iteartions results CSV file", "TearDown()", LOG_INFO);
-		if (rawDataFirstIter>0)
+		
+		if (_saveRawData)
 		{
-			//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
-			string testPath =FileUtils::join(testBasePath, name);
-			string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_End.csv");
-			if (rename(rawDataPath.c_str(),newname.c_str())!=0)
+			Logger::getLogger().log("Closing raw data CSV file", "TearDown()", LOG_INFO);
+			rawDataCsv.close();
+			
+
+			if (rawDataFirstIter>0)
 			{
-				Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
-			}
-			else
-			{
-				Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
+				//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+				string testPath =FileUtils::join(testBasePath, name);
+				string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_End.csv");
+				if (rename(rawDataPath.c_str(),newname.c_str())!=0)
+				{
+					Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
+				}
+				else
+				{
+					Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
+				}
 			}
 		}
+		Logger::getLogger().log("Closing iteartions results CSV file", "TearDown()", LOG_INFO);
 		iterationCsv.close();
 
 		string TestsResultsPath = FileUtils::join(testBasePath, "tests_results.csv");
@@ -3338,83 +3348,85 @@ public:
 		}
 		// Iteration,Test name, Test Suite, Camrera Serial,stream Combination, Stream Type,Image Format,Resolution,FPS,Frame Index,HW TimeStamp,System TimeStamp
 		//  "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,HW TimeStamp,System TimeStamp" << endl;
-
-		if (currDepthProfile.fps != 0)
+		if (_saveRawData)
 		{
-
-			for (int i = 0; i < depthFramesList.size(); i++)
+			if (currDepthProfile.fps != 0)
 			{
-				rawline = "";
-				rawline += to_string(iteration) + ",\"" + streamComb + "\",Depth," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "x" +
-						   to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(depthFramesList[i].ID) +  "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(depthFramesList[i].hwTimestamp) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(depthFramesList[i].systemTimestamp);
-				AppendRAwDataCVS(rawline);
-			}
-		}
-		if (currIRProfile.fps != 0)
-		{
 
-			for (int i = 0; i < irFramesList.size(); i++)
+				for (int i = 0; i < depthFramesList.size(); i++)
+				{
+					rawline = "";
+					rawline += to_string(iteration) + ",\"" + streamComb + "\",Depth," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "x" +
+							to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(depthFramesList[i].ID) +  "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(depthFramesList[i].hwTimestamp) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(depthFramesList[i].systemTimestamp);
+					AppendRAwDataCVS(rawline);
+				}
+			}
+			if (currIRProfile.fps != 0)
 			{
-				rawline = "";
-				rawline += to_string(iteration) + ",\"" + streamComb + "\",IR," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "x" +
-						   to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(irFramesList[i].ID) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(irFramesList[i].hwTimestamp) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(irFramesList[i].systemTimestamp);
 
-				AppendRAwDataCVS(rawline);
+				for (int i = 0; i < irFramesList.size(); i++)
+				{
+					rawline = "";
+					rawline += to_string(iteration) + ",\"" + streamComb + "\",IR," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "x" +
+							to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(irFramesList[i].ID) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(irFramesList[i].hwTimestamp) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(irFramesList[i].systemTimestamp);
+
+					AppendRAwDataCVS(rawline);
+				}
 			}
-		}
-		if (currColorProfile.fps != 0)
-		{
-
-			for (int i = 0; i < colorFramesList.size(); i++)
+			if (currColorProfile.fps != 0)
 			{
-				rawline = "";
-				rawline += to_string(iteration) + ",\"" + streamComb + "\",Color," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "x" +
-						   to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(colorFramesList[i].hwTimestamp) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp);
 
-				AppendRAwDataCVS(rawline);
+				for (int i = 0; i < colorFramesList.size(); i++)
+				{
+					rawline = "";
+					rawline += to_string(iteration) + ",\"" + streamComb + "\",Color," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "x" +
+							to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(colorFramesList[i].hwTimestamp) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp);
+
+					AppendRAwDataCVS(rawline);
+				}
 			}
-		}
-		if (currIMUProfile.fps != 0)
-		{
-
-			for (int i = 0; i < gyroFrameList.size(); i++)
+			if (currIMUProfile.fps != 0)
 			{
-				rawline = "";
-				rawline += to_string(iteration) + ",\"" + streamComb + "\",Gyro," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
-						   to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(gyroFrameList[i].ID) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(gyroFrameList[i].hwTimestamp) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(gyroFrameList[i].systemTimestamp);
 
-				AppendRAwDataCVS(rawline);
+				for (int i = 0; i < gyroFrameList.size(); i++)
+				{
+					rawline = "";
+					rawline += to_string(iteration) + ",\"" + streamComb + "\",Gyro," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
+							to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(gyroFrameList[i].ID) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(gyroFrameList[i].hwTimestamp) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(gyroFrameList[i].systemTimestamp);
+
+					AppendRAwDataCVS(rawline);
+				}
+
+				for (int i = 0; i < accelFrameList.size(); i++)
+				{
+					rawline = "";
+					rawline += to_string(iteration) + ",\"" + streamComb + "\",Accel," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
+							to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(accelFrameList[i].ID) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(accelFrameList[i].hwTimestamp) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(accelFrameList[i].systemTimestamp);
+
+					AppendRAwDataCVS(rawline);
+				}
 			}
-
-			for (int i = 0; i < accelFrameList.size(); i++)
+			// Check size of RawData File
+			if (rawDataCsv.tellp()>RawDataMAxSize)
 			{
-				rawline = "";
-				rawline += to_string(iteration) + ",\"" + streamComb + "\",Accel," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
-						   to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(accelFrameList[i].ID) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(accelFrameList[i].hwTimestamp) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(accelFrameList[i].systemTimestamp);
+				Logger::getLogger().log("RAW DATA FILE SIZE is:" + to_string(rawDataCsv.tellp()) , "Test");
+				Logger::getLogger().log("RAW DATA FILE SIZE is Greater than Max size -" + to_string(RawDataMAxSize) , "Test");
+				rawDataCsv.close();
+				//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
+				string testPath =FileUtils::join(testBasePath, name);
+				string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_"+to_string(iteration)+".csv");
+				if (rename(rawDataPath.c_str(),newname.c_str())!=0)
+				{
+					Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
+				}
+				else
+				{
+					Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
+				}
+				rawDataFirstIter = iteration+1;
+				OpenRawDataCSV();
 
-				AppendRAwDataCVS(rawline);
 			}
-		}
-		// Check size of RawData File
-		if (rawDataCsv.tellp()>RawDataMAxSize)
-		{
-			Logger::getLogger().log("RAW DATA FILE SIZE is:" + to_string(rawDataCsv.tellp()) , "Test");
-			Logger::getLogger().log("RAW DATA FILE SIZE is Greater than Max size -" + to_string(RawDataMAxSize) , "Test");
-			rawDataCsv.close();
-			//rawDataPath = FileUtils::join(testPath, "raw_data.csv");
-			string testPath =FileUtils::join(testBasePath, name);
-			string newname=FileUtils::join(testPath, "raw_data_"+to_string(rawDataFirstIter)+"_"+to_string(iteration)+".csv");
-			if (rename(rawDataPath.c_str(),newname.c_str())!=0)
-			{
-				Logger::getLogger().log("Failed to rename RawData file", "Test", LOG_ERROR);
-			}
-			else
-			{
-				Logger::getLogger().log("Renamed Raw Data CSV to: "+ newname , "Test");
-			}
-			rawDataFirstIter = iteration+1;
-			OpenRawDataCSV();
-
 		}
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + " Summary", "Test");
 		Logger::getLogger().log("Iteration #" + to_string(iteration) + ":[" + iterationStatus + "]", "Test");
