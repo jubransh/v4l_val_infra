@@ -2466,14 +2466,14 @@ public:
 		char *homedir = pw->pw_dir;
 		memoryBaseLine = 0;
 		// testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs",TimeUtils::getDateandTime());
-		if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
-		{
-			testBasePath = FileUtils::join("/media/administrator/DataUSB/storage/Logs", sid);
-		}
-		else
-		{
+		//if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
+		//{
+		//	testBasePath = FileUtils::join("/media/administrator/DataUSB/storage/Logs", sid);
+		//}
+		//else
+		//{
 			testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
-		}
+		//}
 		name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 		suiteName = ::testing::UnitTest::GetInstance()->current_test_case()->name();
 
@@ -2616,11 +2616,35 @@ public:
 		else
 			TestsResults << sid << "," << cam.GetSerialNumber() << "," << name << "," << suiteName << ","
 						 << "Fail," << iterations << "," << failediter << "," << to_string(100 * double(iterations - failediter) / iterations) << endl;
-
+		TestsResults.close();
 		Logger::getLogger().log("Closing Log file", "TearDown()", LOG_INFO);
 		Logger::getLogger().close();
+		CopyFolderToUSB();
 	}
 
+
+	void CopyFolderToUSB()
+	{
+		if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
+		{
+			cout << "USB Device found, Copying Folder: " << testBasePath << endl;
+			if (!FileUtils::isDirExist("/media/administrator/DataUSB/storage/Logs"))
+			{
+				File_Utils::makePath("/media/administrator/DataUSB/storage/Logs");
+			}
+			string command = "cp -r '" + testBasePath + "/.' '/media/administrator/DataUSB/storage/Logs/"+sid+"/'";
+			cout << command << endl;
+			exec(command.c_str());
+			command = "rm -r '" + testBasePath + "/" +name +"'";
+			cout << command << endl;
+			exec(command.c_str());
+
+		}
+		else
+		{
+			cout << "USB Not Device found, Logs remain at: " << testBasePath << endl;
+		}
+	}
 	bool ResetDefaults()
 	{
 		bool result = true;

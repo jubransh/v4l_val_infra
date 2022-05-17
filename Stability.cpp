@@ -108,14 +108,14 @@ public:
 
         string testBasePath;
 
-        if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
-            {
-                testBasePath = FileUtils::join("/media/administrator/DataUSB/storage/Logs", sid);
-            }
-            else
-            {
+        //if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
+        //    {
+        //        testBasePath = FileUtils::join("/media/administrator/DataUSB/storage/Logs", sid);
+        //    }
+        //    else
+        //    {
                 testBasePath = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
-            }
+        //    }
         name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
         // Creating test folder

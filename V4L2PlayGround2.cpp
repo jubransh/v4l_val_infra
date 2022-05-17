@@ -66,14 +66,14 @@ void save_depthFrameArrived(Frame f)
     if (f.ID ==10)
     {
         cout << " Depth Delta for frame = " << f.ID << endl;
-        if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
-            {
-                write_to_file("/media/administrator/DataUSB/storage/Logs/image"+to_string(f.streamType)+".bin", f.Buff, f.size);
-            }
-            else
-            {
+        //if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
+        //    {
+        //        write_to_file("/media/administrator/DataUSB/storage/Logs/image"+to_string(f.streamType)+".bin", f.Buff, f.size);
+        //    }
+        //    else
+        //    {
                 write_to_file(FileUtils::getHomeDir()+"/Logs/image"+to_string(f.streamType)+".bin", f.Buff, f.size);
-            }
+        //    }
         
     }
 
