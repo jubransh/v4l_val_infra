@@ -2627,17 +2627,26 @@ public:
 	{
 		if (FileUtils::isDirExist("/media/administrator/DataUSB/storage"))
 		{
-			cout << "USB Device found, Copying Folder: " << testBasePath << endl;
+			
 			if (!FileUtils::isDirExist("/media/administrator/DataUSB/storage/Logs"))
 			{
 				File_Utils::makePath("/media/administrator/DataUSB/storage/Logs");
 			}
+			ofstream copyToUSBLog;
+			copyToUSBLog.open("/media/administrator/DataUSB/storage/Logs/USBLog.txt", std::ios_base::app);
+			copyToUSBLog << "USB Device found, Copying Folder: " << testBasePath << endl;
 			string command = "cp -r '" + testBasePath + "/.' '/media/administrator/DataUSB/storage/Logs/"+sid+"/'";
-			cout << command << endl;
-			exec(command.c_str());
-			command = "rm -r '" + testBasePath + "/" +name +"'";
-			cout << command << endl;
-			exec(command.c_str());
+			copyToUSBLog << command << endl;
+			string res = exec(command.c_str());
+			copyToUSBLog << exec(command.c_str())<<endl;
+			if (res=="")
+			{
+				copyToUSBLog << "copy process finished succesfully, removing oriGinal folder" << endl;
+				command = "rm -r '" + testBasePath + "/" +name +"'";
+				copyToUSBLog << command << endl;
+				copyToUSBLog<< exec(command.c_str()) << endl;;
+			}
+			copyToUSBLog.close();
 
 		}
 		else
