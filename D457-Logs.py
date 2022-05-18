@@ -8,21 +8,14 @@ paramiko.util.log_to_file("paramiko.log")
 
 time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 
-# hosts = "143.185.227.150,143.185.227.39"
-# hosts = "143.185.227.39"
-# hosts = "143.185.227.39,143.185.227.31"
-# hosts = "143.185.116.176"
-# hosts = "143.185.227.31"
-# hosts = "143.185.227.39,143.185.227.31,143.185.116.176"
-# hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
-hosts = "d457jetson01.iil.intel.com,d457jetson04.iil.intel.com"
+hosts = "d457jetson03.iil.intel.com,d457jetson05.iil.intel.com,d457jetson06.iil.intel.com,d457jetson08.iil.intel.com"
 # hosts = "d457jetson08.iil.intel.com,d457jetson07.iil.intel.com,d457jetson06.iil.intel.com,d457jetson05.iil.intel.com,d457jetson03.iil.intel.com,d457jetson01.iil.intel.com"
 host_list=hosts.split(",")
 orig_logs_folder="/home/administrator/Logs/"
-ssd_logs_folder="/home/administrator/storage/Logs/"
+ssd_logs_folder="/media/administrator/DataUSB/storage/Logs/"
 
-collect_raw_data=True
-# collect_raw_data=False
+# collect_raw_data=True
+collect_raw_data=False
 # collect_log_file = True
 collect_log_file = False
 

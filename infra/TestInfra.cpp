@@ -62,7 +62,8 @@ string exec(const char *cmd)
 {
 	array<char, 128> buffer;
 	string result;
-	unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+	string stderrcmd=string(cmd) + " 2>&1";
+	unique_ptr<FILE, decltype(&pclose)> pipe(popen( stderrcmd.c_str(), "r"), pclose);
 	if (!pipe)
 	{
 		throw runtime_error("popen() failed!");
@@ -2638,13 +2639,17 @@ public:
 			string command = "cp -r '" + testBasePath + "/.' '/media/administrator/DataUSB/storage/Logs/"+sid+"/'";
 			copyToUSBLog << command << endl;
 			string res = exec(command.c_str());
-			copyToUSBLog << exec(command.c_str())<<endl;
+			copyToUSBLog << res<<endl;
 			if (res=="")
 			{
-				copyToUSBLog << "copy process finished succesfully, removing oriGinal folder" << endl;
+				copyToUSBLog << "copy process finished succesfully, removing original folder" << endl;
 				command = "rm -r '" + testBasePath + "/" +name +"'";
 				copyToUSBLog << command << endl;
 				copyToUSBLog<< exec(command.c_str()) << endl;;
+			}
+			else
+			{
+				copyToUSBLog << "copy process Failed, Leaving original folder" << endl;
 			}
 			copyToUSBLog.close();
 
