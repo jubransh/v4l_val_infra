@@ -95,6 +95,17 @@ public:
             depthSensor.copyFrameData = true;
             irSensor.copyFrameData = true;
             colorSensor.copyFrameData = true;
+            bool res;
+            Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor", "Test");
+		    res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 90);
+		    Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
+            // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor", "Test");
+		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
+		    // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
+            // Logger::getLogger().log("Setting Exposure to 50 for Depth Sensor", "Test");
+		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_ABSOLUTE, 50);
+		    // Logger::getLogger().log("Setting Exposure Power to 50 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
+
         }
         vector<Profile> profiles;
         if (_profileText.compare("") != 0)
@@ -344,10 +355,12 @@ TEST_F(LongTest, ContentLongStreamTest)
     IgnorePNPMetric("Memory Consumption");
 
     configure(5 * 60 * 60, false, true);
+    set_profile("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+imu_0x0_400");
     vector<StreamType> streams;
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
     streams.push_back(StreamType::Color_Stream);
+    streams.push_back(StreamType::Imu_Stream);
     run(streams);
 }
 

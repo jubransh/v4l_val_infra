@@ -271,7 +271,7 @@ class FrameAnalyzer
         {
             fr.is_freeze = true;
 
-            if (frame1.pixelFormat == "UYVY" || frame1.pixelFormat == "Y8"|| frame1.pixelFormat == "Y8i")
+            if (frame1.pixelFormat == "UYVY" || frame1.pixelFormat == "Y8"|| frame1.pixelFormat == "Y8i" || frame1.pixelFormat == "Grey")
             {
                 if (_infrared_first_freeze_index == -1)
                     _infrared_first_freeze_index = frame1.frame.ID;
@@ -390,7 +390,7 @@ class FrameAnalyzer
                 cr.is_high_or_low_image_pixels = false;
             }
         }
-        else if (frame.pixelFormat == "Y8" || frame.pixelFormat == "Y8i")
+        else if (frame.pixelFormat == "Y8" || frame.pixelFormat == "Y8i"  || frame.pixelFormat == "Grey")
         {
             map = cv::Mat(height, width, CV_8UC1, (uint8_t *)frame.frame.Buff);
             cv::cvtColor(map, rgbMap, COLOR_GRAY2RGB);

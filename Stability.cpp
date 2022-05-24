@@ -180,6 +180,16 @@ public:
             depthSensor.copyFrameData = true;
             irSensor.copyFrameData = true;
             colorSensor.copyFrameData = true;
+            bool res;
+            Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor", "Test");
+		    res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 90);
+		    Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
+            // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor", "Test");
+		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
+		    // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
+            // Logger::getLogger().log("Setting Exposure to 50 for Depth Sensor", "Test");
+		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_ABSOLUTE, 50);
+		    // Logger::getLogger().log("Setting Exposure Power to 50 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
         }
 
         bool DepthUsed;
@@ -487,11 +497,37 @@ TEST_F(StabilityTest, ContentRandom)
     sT3.push_back(StreamType::IR_Stream);
     vector<StreamType> sT4;
     sT4.push_back(StreamType::Depth_Stream);
+    sT4.push_back(StreamType::IR_Stream);
     sT4.push_back(StreamType::Color_Stream);
     vector<StreamType> sT5;
     sT5.push_back(StreamType::Depth_Stream);
     sT5.push_back(StreamType::IR_Stream);
-    sT5.push_back(StreamType::Color_Stream);
+    //sT5.push_back(StreamType::Color_Stream);
+    vector<StreamType> sT6;
+    sT6.push_back(StreamType::Depth_Stream);
+    //sT6.push_back(StreamType::IR_Stream);
+    sT6.push_back(StreamType::Color_Stream);
+
+    vector<StreamType> sT7;
+    //sT7.push_back(StreamType::Depth_Stream);
+    sT7.push_back(StreamType::IR_Stream);
+    sT7.push_back(StreamType::Color_Stream);
+        
+    vector<StreamType> sT8;
+    sT8.push_back(StreamType::Depth_Stream);
+    sT8.push_back(StreamType::Imu_Stream);
+
+    vector<StreamType> sT9;
+    sT9.push_back(StreamType::Imu_Stream);
+    sT9.push_back(StreamType::IR_Stream);
+    sT9.push_back(StreamType::Color_Stream);
+
+    vector<StreamType> sT10;
+    sT10.push_back(StreamType::Depth_Stream);
+    sT10.push_back(StreamType::Imu_Stream);
+    sT10.push_back(StreamType::IR_Stream);
+    sT10.push_back(StreamType::Color_Stream);
+    
 
 
     streams.push_back(sT);
@@ -499,8 +535,13 @@ TEST_F(StabilityTest, ContentRandom)
     streams.push_back(sT3);
     streams.push_back(sT4);
     streams.push_back(sT5);
+    streams.push_back(sT6);
+    streams.push_back(sT7);
+    streams.push_back(sT8);
+    streams.push_back(sT9);
+    streams.push_back(sT10);
 
-    configure(10, 500, true, true,"");
+    configure(30, 500, true, true,"");
     run(streams);
 }
 
