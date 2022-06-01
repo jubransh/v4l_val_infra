@@ -635,6 +635,18 @@ private:
     enum v4l2_buf_type mdType = V4L2_BUF_TYPE_META_CAPTURE;
 
 public:
+    bool getIsClosed()
+    {
+        return isClosed;
+    }
+    bool getOpenMetaD()
+    {
+        return openMetaD;
+    }
+    SensorType getType()
+    {
+        return type;
+    }
     bool copyFrameData = false;
     int GetFileDescriptor()
     {
@@ -1395,9 +1407,25 @@ private:
 public:
     bool HWReset(int timeout=10)
     {
+        Sensor depthSensor=GetDepthSensor();
+        if (depthSensor.getIsClosed())
+            depthSensor.Init(depthSensor.getType(),depthSensor.getOpenMetaD());
         string serial_number_before;
         string serial_number_after;
-        serial_number_before = CalcSerialNumber();
+
+         for(int i=0; i<10; i++)
+        {
+            try
+            {
+                serial_number_before = CalcSerialNumber();
+                break;
+                
+            }
+            catch(const std::exception& e)
+            {
+            }
+        }
+        
         // Perform HW Reset
 
         HWMonitorCommand hmc = {0};
@@ -1416,6 +1444,7 @@ public:
         {
             // throw std::runtime_error("Failed to perform camera HW reset");
             Logger::getLogger().log("Camera HW reset Failed ", "Camera", LOG_ERROR);
+            depthSensor.Close();
             return false;
         }
         
@@ -1439,7 +1468,10 @@ public:
                 break;
             }
         }
+        if (!cameraConnected)
+            Logger::getLogger().log("Failed to recognize the camera after HW reset", "Camera", LOG_ERROR);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        depthSensor.Close();
         return cameraConnected;
         
 
