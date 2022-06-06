@@ -125,9 +125,9 @@ TEST_F(V4L2BasicTest2, SaveImagesDepthStreamingExample)
 
     Camera cam;
     cam.Init();
-    Sensor depthSensor = cam.GetDepthSensor();
-    depthSensor.copyFrameData = true;
-    // depthSensor.copyFrameData = true;
+    Sensor* depthSensor = cam.GetDepthSensor();
+    depthSensor->copyFrameData = true;
+    // depthSensor->copyFrameData = true;
 
     // Depth Configuration
     Resolution r = {0};
@@ -139,13 +139,13 @@ TEST_F(V4L2BasicTest2, SaveImagesDepthStreamingExample)
     dP.fps = 60;
     dP.streamType = StreamType::Depth_Stream;
 
-    depthSensor.Configure(dP);
-    depthSensor.Start(save_depthFrameArrived);
+    depthSensor->Configure(dP);
+    depthSensor->Start(save_depthFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    depthSensor.Stop();
-    depthSensor.Close();
+    depthSensor->Stop();
+    depthSensor->Close();
 }
 
 TEST_F(V4L2BasicTest2, SaveImagesIRStreamingExample)
@@ -157,7 +157,7 @@ TEST_F(V4L2BasicTest2, SaveImagesIRStreamingExample)
     Camera cam;
     cam.Init(false);
     auto irSensor = cam.GetIRSensor();
-    irSensor.copyFrameData = true;
+    irSensor->copyFrameData = true;
 
     // Depth Configuration
     Resolution r = {0};
@@ -169,15 +169,15 @@ TEST_F(V4L2BasicTest2, SaveImagesIRStreamingExample)
     dP.fps = 30;
     dP.streamType = StreamType::IR_Stream;
 
-    irSensor.Configure(dP);
+    irSensor->Configure(dP);
 
-    irSensor.Start(save_depthFrameArrived);
+    irSensor->Start(save_depthFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    irSensor.Stop();
+    irSensor->Stop();
 
-    irSensor.Close();
+    irSensor->Close();
 }
 
 TEST_F(V4L2BasicTest2, SaveImagesColorStreamingExample)
@@ -189,7 +189,7 @@ TEST_F(V4L2BasicTest2, SaveImagesColorStreamingExample)
     Camera cam;
     cam.Init();
     auto colorSensor = cam.GetColorSensor();
-    colorSensor.copyFrameData = true;
+    colorSensor->copyFrameData = true;
 
     // Color Configuration
     Resolution cR = {0};
@@ -201,13 +201,13 @@ TEST_F(V4L2BasicTest2, SaveImagesColorStreamingExample)
     cP.fps = 30;
     cP.streamType = StreamType::Color_Stream;
 
-    colorSensor.Configure(cP);
+    colorSensor->Configure(cP);
 
-    colorSensor.Start(save_colorFrameArrived);
+    colorSensor->Start(save_colorFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    colorSensor.Stop();
+    colorSensor->Stop();
 
-    colorSensor.Close();
+    colorSensor->Close();
 }
