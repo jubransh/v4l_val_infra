@@ -85,25 +85,25 @@ public:
             contentMetrics.push_back(&met_freeze);
         }
 
-        Sensor depthSensor = cam.GetDepthSensor();
-        Sensor irSensor = cam.GetIRSensor();
-        Sensor colorSensor = cam.GetColorSensor();
-        Sensor imuSensor = cam.GetIMUSensor();
+        Sensor* depthSensor = cam.GetDepthSensor();
+        Sensor* irSensor = cam.GetIRSensor();
+        Sensor* colorSensor = cam.GetColorSensor();
+        Sensor* imuSensor = cam.GetIMUSensor();
 
         if (_isContent)
         {
-            depthSensor.copyFrameData = true;
-            irSensor.copyFrameData = true;
-            colorSensor.copyFrameData = true;
+            depthSensor->copyFrameData = true;
+            irSensor->copyFrameData = true;
+            colorSensor->copyFrameData = true;
             bool res;
             Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor", "Test");
-		    res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 90);
+		    res = depthSensor->SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 90);
 		    Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
             // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor", "Test");
-		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
+		    // res = depthSensor->SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
 		    // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
             // Logger::getLogger().log("Setting Exposure to 50 for Depth Sensor", "Test");
-		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_ABSOLUTE, 50);
+		    // res = depthSensor->SetControl(V4L2_CID_EXPOSURE_ABSOLUTE, 50);
 		    // Logger::getLogger().log("Setting Exposure Power to 50 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
 
         }
@@ -143,47 +143,47 @@ public:
             if (profiles[j].streamType == StreamType::Depth_Stream)
             {
                 Logger::getLogger().log("Depth Profile Used: " + profiles[j].GetText(), "Test");
-                depthSensor.Configure(profiles[j]);
+                depthSensor->Configure(profiles[j]);
                 pR.push_back(profiles[j]);
             }
             else if (profiles[j].streamType == StreamType::IR_Stream)
             {
                 Logger::getLogger().log("IR Profile Used: " + profiles[j].GetText(), "Test");
-                irSensor.Configure(profiles[j]);
+                irSensor->Configure(profiles[j]);
                 pR.push_back(profiles[j]);
             }
             else if (profiles[j].streamType == StreamType::Color_Stream)
             {
                 Logger::getLogger().log("Color Profile Used: " + profiles[j].GetText(), "Test");
-                colorSensor.Configure(profiles[j]);
+                colorSensor->Configure(profiles[j]);
                 pR.push_back(profiles[j]);
             }
             else if (profiles[j].streamType == StreamType::Imu_Stream)
             {
                 Logger::getLogger().log("IMU Profile Used: " + profiles[j].GetText(), "Test");
-                imuSensor.Configure(profiles[j]);
+                imuSensor->Configure(profiles[j]);
                 pR.push_back(profiles[j]);
             }
         }
         setCurrentProfiles(pR);
         if (ColorUsed)
         {
-            colorSensor.Start(AddFrame);
+            colorSensor->Start(AddFrame);
             //std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (DepthUsed)
         {
-            depthSensor.Start(AddFrame);
+            depthSensor->Start(AddFrame);
             //std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         if (IRUsed)
         {
-            irSensor.Start(AddFrame);
+            irSensor->Start(AddFrame);
         }
         if (ImuUsed)
         {
 
-            imuSensor.Start(AddFrame);
+            imuSensor->Start(AddFrame);
         }
 
         int Iterations = testDuration / iterationDuration;
@@ -274,23 +274,23 @@ public:
 
         if (ColorUsed)
         {
-            colorSensor.Stop();
-            colorSensor.Close();
+            colorSensor->Stop();
+            colorSensor->Close();
         }
         if (DepthUsed)
         {
-            depthSensor.Stop();
-            depthSensor.Close();
+            depthSensor->Stop();
+            depthSensor->Close();
         }
         if (IRUsed)
         {
-            irSensor.Stop();
-            irSensor.Close();
+            irSensor->Stop();
+            irSensor->Close();
         }
         if (ImuUsed)
         {
-            imuSensor.Stop();
-            imuSensor.Close();
+            imuSensor->Stop();
+            imuSensor->Close();
         }
 
         Logger::getLogger().log("Test Summary:", "Run");

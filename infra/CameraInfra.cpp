@@ -1486,42 +1486,42 @@ public:
         return sensors;
     }
 
-    Sensor GetDepthSensor()
+    Sensor* GetDepthSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "Depth Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get Depth Sensor ");
     }
 
-    Sensor GetIRSensor()
+    Sensor* GetIRSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "IR Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get IR Sensor ");
     }
 
-    Sensor GetColorSensor()
+    Sensor* GetColorSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "Color Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get Color Sensor ");
     }
 
-    Sensor GetIMUSensor()
+    Sensor* GetIMUSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "IMU Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get IMU Sensor ");
     }
@@ -1532,7 +1532,7 @@ public:
 
         // preapare the depth sensor where the HWMonitor command should be run with
         auto depthSensor = GetDepthSensor();
-        int fd = depthSensor.GetFileDescriptor();
+        int fd = depthSensor->GetFileDescriptor();
 
         // init the byte array of the hwmc
         int buffSize = 1028;
