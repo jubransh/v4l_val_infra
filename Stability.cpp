@@ -34,6 +34,7 @@ public:
     bool _isRandom;
     bool _isContent;
     bool _isMix = false;
+    bool _isReset = false;
     std::string _profilesToRun;
     void configure(int StreamDuration, int Iterations, bool isRandom, bool isContent, std::string profilesToRun="")
     {
@@ -72,6 +73,11 @@ public:
     void setIsMix(bool isMix)
     {
         _isMix = isMix;
+    }
+
+    void setIsReset(bool isReset)
+    {
+        _isReset = isReset;
     }
 
     vector<Profile> getRandomProfile(vector<vector<StreamType>> streams)
@@ -199,6 +205,10 @@ public:
 
         for (int i = 0; i < _iterations; i++)
         {
+            if (_isReset && i%10==0)
+            {
+                cam.HWReset();
+            }
             DepthUsed = false;
             ColorUsed = false;
             IRUsed = false;
@@ -397,6 +407,19 @@ TEST_F(StabilityTest, Normal_60FPS)
     run(streams);
 }
 
+TEST_F(StabilityTest, Reset)
+{
+    vector<vector<StreamType>> streams;
+    vector<StreamType> sT;
+    sT.push_back(StreamType::Depth_Stream);
+    sT.push_back(StreamType::IR_Stream);
+    sT.push_back(StreamType::Color_Stream);
+    sT.push_back(StreamType::Imu_Stream);
+    streams.push_back(sT);
+    setIsReset(true);
+    configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+imu_0x0_400");
+    run(streams);
+}
 TEST_F(StabilityTest, Random)
 {
     vector<vector<StreamType>> streams;
