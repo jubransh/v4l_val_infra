@@ -763,6 +763,13 @@ public:
 
     double GetControl(__u32 controlId)
     {
+        bool wasClosed;
+        if(isClosed)
+            wasClosed=true;
+        else
+            wasClosed=false;
+        if (wasClosed)
+            Init(getType(),getOpenMetaD());
         struct v4l2_ext_control control
         {
             0
@@ -785,7 +792,8 @@ public:
         ext.controls = &control;
         ext.count = 1;
         int ret = ioctl(dataFileDescriptor, VIDIOC_G_EXT_CTRLS, &ext);
-
+        if (wasClosed)
+            Close();
         if (0 != ret)
         {
             // throw std::runtime_error("Failed to get control " + controlId);
@@ -812,6 +820,13 @@ public:
         {
             0
         };
+        bool wasClosed;
+        if(isClosed)
+            wasClosed=true;
+        else
+            wasClosed=false;
+        if (wasClosed)
+            Init(getType(),getOpenMetaD());
         if (controlId==V4L2_CID_ANALOGUE_GAIN)
             ext.ctrl_class= V4L2_CTRL_CLASS_IMAGE_SOURCE;
         else
@@ -819,6 +834,8 @@ public:
         ext.controls = &control;
         ext.count = 1;
         int ret = ioctl(dataFileDescriptor, VIDIOC_S_EXT_CTRLS, &ext);
+        if (wasClosed)
+            Close();
         return (0 == ret);
     }
 
