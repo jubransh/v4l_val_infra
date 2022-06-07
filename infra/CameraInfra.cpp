@@ -1656,6 +1656,13 @@ public:
 
         // preapare the depth sensor where the HWMonitor command should be run with
         auto depthSensor = GetDepthSensor();
+        bool wasClosed;
+        if (depthSensor->getIsClosed())
+            wasClosed = true;
+        else
+            wasClosed = false;
+        if (wasClosed)
+            depthSensor->Init(getType(), getOpenMetaD());
         int fd = depthSensor->GetFileDescriptor();
 
         // init the byte array of the hwmc
@@ -1704,6 +1711,10 @@ public:
         if (0 != ioctl(fd, VIDIOC_S_EXT_CTRLS, &ext))
         {
             cR.Result = false;
+            if (wasClosed)
+            {
+                depthSensor->Close()
+            }
             return cR;
         }
 
@@ -1723,7 +1734,10 @@ public:
         {
             cR.Result = false;
         }
-
+        if (wasClosed)
+        {
+            depthSensor->Close()
+        }
         return cR;
     }
 
@@ -1741,7 +1755,8 @@ public:
         else
         {
             Logger::getLogger().log("Failed to get Asic temperature from Camera", "Camera", LOG_ERROR);
-            throw std::runtime_error("Failed to get Asic temperature from Camera");
+            //throw std::runtime_error("Failed to get Asic temperature from Camera");
+            return -1;
         }
     }
     int GetProjectorTemperature()
@@ -1758,7 +1773,8 @@ public:
         else
         {
             Logger::getLogger().log("Failed to get Projector temperature from Camera", "Camera", LOG_ERROR);
-            throw std::runtime_error("Failed to get Projector temperature from Camera");
+            //throw std::runtime_error("Failed to get Projector temperature from Camera");
+            return -1;
         }
     }
     // For debugging
