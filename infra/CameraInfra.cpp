@@ -1662,7 +1662,7 @@ public:
         else
             wasClosed = false;
         if (wasClosed)
-            depthSensor->Init(getType(), getOpenMetaD());
+            depthSensor->Init(depthSensor->getType(), depthSensor->getOpenMetaD());
         int fd = depthSensor->GetFileDescriptor();
 
         // init the byte array of the hwmc
@@ -1713,7 +1713,7 @@ public:
             cR.Result = false;
             if (wasClosed)
             {
-                depthSensor->Close()
+                depthSensor->Close();
             }
             return cR;
         }
@@ -1736,7 +1736,7 @@ public:
         }
         if (wasClosed)
         {
-            depthSensor->Close()
+            depthSensor->Close();
         }
         return cR;
     }
