@@ -2664,8 +2664,8 @@ public:
 		bool result = true;
 		bool res;
 		Logger::getLogger().log("Reseting default controls", "Setup()", LOG_INFO);
-		Sensor depthSensor = cam.GetDepthSensor();
-		Sensor colorSensor = cam.GetColorSensor();
+		Sensor* depthSensor = cam.GetDepthSensor();
+		Sensor* colorSensor = cam.GetColorSensor();
 
 		//Logger::getLogger().log("Disabling AutoExposure priority for Color Sensor", "Setup()");
 		//res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO_PRIORITY, 0);
@@ -2673,20 +2673,20 @@ public:
 		//result = result && res;
 
 		Logger::getLogger().log("Enabling AutoExposure for Color Sensor", "Setup()");
-		res = colorSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 3);
+		res = colorSensor->SetControl(V4L2_CID_EXPOSURE_AUTO, 3);
 		Logger::getLogger().log("Enabling AutoExposure for Color Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
 		result = result && res;
 
 		Logger::getLogger().log("Enabling AutoExposure for Depth Sensor", "Setup()");
-		res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 3);
+		res = depthSensor->SetControl(V4L2_CID_EXPOSURE_AUTO, 3);
 		Logger::getLogger().log("Enabling AutoExposure for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
 		result = result && res;
 		Logger::getLogger().log("Enabling Laser power mode for Depth Sensor", "Setup()");
-		res = depthSensor.SetControl(DS5_CAMERA_CID_LASER_POWER, 1);
+		res = depthSensor->SetControl(DS5_CAMERA_CID_LASER_POWER, 1);
 		Logger::getLogger().log("Enabling Laser power mode for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
 		result = result && res;
 		Logger::getLogger().log("Setting Laser Power to 150 for Depth Sensor", "Setup()");
-		res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 150);
+		res = depthSensor->SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 150);
 		Logger::getLogger().log("Setting Laser Power to 150 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Setup()");
 		result = result && res;
 		std::this_thread::sleep_for(std::chrono::seconds(2));

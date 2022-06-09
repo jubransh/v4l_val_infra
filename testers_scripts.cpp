@@ -83,7 +83,7 @@ TEST_F(TestersScripts, StreamingScript)
     hmc.parameter2 = 1; // On
 
     auto depthSensor = cam.GetDepthSensor();
-    depthSensor.copyFrameData = true;
+    depthSensor->copyFrameData = true;
 
     // Depth Configuration
     Resolution r = {0};
@@ -94,9 +94,9 @@ TEST_F(TestersScripts, StreamingScript)
     dP.resolution = r;
     dP.fps = 30;
 
-    depthSensor.Configure(dP);
+    depthSensor->Configure(dP);
 
-    depthSensor.Start(save_depthFrameArrived);
+    depthSensor->Start(save_depthFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
@@ -113,8 +113,8 @@ TEST_F(TestersScripts, StreamingScript)
             break;
     }
 
-    depthSensor.Stop();
-    depthSensor.Close();
+    depthSensor->Stop();
+    depthSensor->Close();
 
     for (int i = 0; i < framesList.size(); i++)
     {

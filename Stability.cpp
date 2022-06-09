@@ -34,6 +34,7 @@ public:
     bool _isRandom;
     bool _isContent;
     bool _isMix = false;
+    bool _isReset = false;
     std::string _profilesToRun;
     void configure(int StreamDuration, int Iterations, bool isRandom, bool isContent, std::string profilesToRun="")
     {
@@ -72,6 +73,11 @@ public:
     void setIsMix(bool isMix)
     {
         _isMix = isMix;
+    }
+
+    void setIsReset(bool isReset)
+    {
+        _isReset = isReset;
     }
 
     vector<Profile> getRandomProfile(vector<vector<StreamType>> streams)
@@ -170,25 +176,25 @@ public:
             contentMetrics.push_back(&met_freeze);
         }
 
-        Sensor depthSensor = cam.GetDepthSensor();
-        Sensor irSensor = cam.GetIRSensor();
-        Sensor colorSensor = cam.GetColorSensor();
-        Sensor imuSensor = cam.GetIMUSensor();
+        Sensor* depthSensor = cam.GetDepthSensor();
+        Sensor* irSensor = cam.GetIRSensor();
+        Sensor* colorSensor = cam.GetColorSensor();
+        Sensor* imuSensor = cam.GetIMUSensor();
 
         if (_isContent)
         {
-            depthSensor.copyFrameData = true;
-            irSensor.copyFrameData = true;
-            colorSensor.copyFrameData = true;
+            depthSensor->copyFrameData = true;
+            irSensor->copyFrameData = true;
+            colorSensor->copyFrameData = true;
             bool res;
             Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor", "Test");
-		    res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 90);
+		    res = depthSensor->SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 90);
 		    Logger::getLogger().log("Setting Laser Power to 90 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
             // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor", "Test");
-		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
+		    // res = depthSensor->SetControl(V4L2_CID_EXPOSURE_AUTO, 1);
 		    // Logger::getLogger().log("Disabling AutoExposure for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
             // Logger::getLogger().log("Setting Exposure to 50 for Depth Sensor", "Test");
-		    // res = depthSensor.SetControl(V4L2_CID_EXPOSURE_ABSOLUTE, 50);
+		    // res = depthSensor->SetControl(V4L2_CID_EXPOSURE_ABSOLUTE, 50);
 		    // Logger::getLogger().log("Setting Exposure Power to 50 for Depth Sensor: " + (string)(res ? "Passed" : "Failed"), "Test");
         }
 
@@ -199,6 +205,10 @@ public:
 
         for (int i = 0; i < _iterations; i++)
         {
+            if (_isReset && i%10==0)
+            {
+                cam.HWReset();
+            }
             DepthUsed = false;
             ColorUsed = false;
             IRUsed = false;
@@ -243,22 +253,22 @@ public:
                 if (StreamCollection[i].streamType == StreamType::Depth_Stream)
                 {
                     Logger::getLogger().log("Depth Profile Used: " + StreamCollection[i].GetText(), "Test");
-                    depthSensor.Configure(StreamCollection[i]);
+                    depthSensor->Configure(StreamCollection[i]);
                 }
                 else if (StreamCollection[i].streamType == StreamType::IR_Stream)
                 {
                     Logger::getLogger().log("IR Profile Used: " + StreamCollection[i].GetText(), "Test");
-                    irSensor.Configure(StreamCollection[i]);
+                    irSensor->Configure(StreamCollection[i]);
                 }
                 else if (StreamCollection[i].streamType == StreamType::Color_Stream)
                 {
                     Logger::getLogger().log("Color Profile Used: " + StreamCollection[i].GetText(), "Test");
-                    colorSensor.Configure(StreamCollection[i]);
+                    colorSensor->Configure(StreamCollection[i]);
                 }
                 else if (StreamCollection[i].streamType == StreamType::Imu_Stream)
                 {
                     Logger::getLogger().log("IMU Profile Used: " + StreamCollection[i].GetText(), "Test");
-                    imuSensor.Configure(StreamCollection[i]);
+                    imuSensor->Configure(StreamCollection[i]);
                 }
             }
             long startTime = TimeUtils::getCurrentTimestamp();
@@ -266,26 +276,26 @@ public:
             if (ColorUsed)
             {
                 color_collectFrames= true;
-                colorSensor.Start(AddFrame);
+                colorSensor->Start(AddFrame);
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
                 //slept+=1;
             }
             if (DepthUsed)
             {
                 depth_collectFrames = true;
-                depthSensor.Start(AddFrame);
+                depthSensor->Start(AddFrame);
                // std::this_thread::sleep_for(std::chrono::seconds(1));
                 //slept+=1;
             }
             if (IRUsed)
             {
                 ir_collectFrames = true;
-                irSensor.Start(AddFrame);
+                irSensor->Start(AddFrame);
             }
             if (ImuUsed)
             {
                 imu_collectFrames = true;
-                imuSensor.Start(AddFrame);
+                imuSensor->Start(AddFrame);
             }
 
             std::this_thread::sleep_for(std::chrono::seconds(testDuration));
@@ -298,28 +308,28 @@ public:
             if (ColorUsed)
             {
                 color_collectFrames= false;
-                colorSensor.Stop();
-                colorSensor.Close();
+                colorSensor->Stop();
+                colorSensor->Close();
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (DepthUsed)
             {
                 depth_collectFrames = false;
-                depthSensor.Stop();
-                depthSensor.Close();
+                depthSensor->Stop();
+                depthSensor->Close();
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (IRUsed)
             {
                 ir_collectFrames = false;
-                irSensor.Stop();
-                irSensor.Close();
+                irSensor->Stop();
+                irSensor->Close();
             }
             if (ImuUsed)
             {
                 imu_collectFrames = false;
-                imuSensor.Stop();
-                imuSensor.Close();
+                imuSensor->Stop();
+                imuSensor->Close();
             }
             
 
@@ -397,6 +407,19 @@ TEST_F(StabilityTest, Normal_60FPS)
     run(streams);
 }
 
+TEST_F(StabilityTest, Reset)
+{
+    vector<vector<StreamType>> streams;
+    vector<StreamType> sT;
+    sT.push_back(StreamType::Depth_Stream);
+    sT.push_back(StreamType::IR_Stream);
+    sT.push_back(StreamType::Color_Stream);
+    sT.push_back(StreamType::Imu_Stream);
+    streams.push_back(sT);
+    setIsReset(true);
+    configure(30, 500, false, false, "z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30+imu_0x0_400");
+    run(streams);
+}
 TEST_F(StabilityTest, Random)
 {
     vector<vector<StreamType>> streams;

@@ -635,6 +635,19 @@ private:
     enum v4l2_buf_type mdType = V4L2_BUF_TYPE_META_CAPTURE;
 
 public:
+
+    bool getIsClosed()
+    {
+        return isClosed;
+    }
+    bool getOpenMetaD()
+    {
+        return openMetaD;
+    }
+    SensorType getType()
+    {
+        return type;
+    }
     bool copyFrameData = false;
     int GetFileDescriptor()
     {
@@ -750,6 +763,13 @@ public:
 
     double GetControl(__u32 controlId)
     {
+        bool wasClosed;
+        if(isClosed)
+            wasClosed=true;
+        else
+            wasClosed=false;
+        if (wasClosed)
+            Init(getType(),getOpenMetaD());
         struct v4l2_ext_control control
         {
             0
@@ -772,7 +792,8 @@ public:
         ext.controls = &control;
         ext.count = 1;
         int ret = ioctl(dataFileDescriptor, VIDIOC_G_EXT_CTRLS, &ext);
-
+        if (wasClosed)
+            Close();
         if (0 != ret)
         {
             // throw std::runtime_error("Failed to get control " + controlId);
@@ -799,6 +820,13 @@ public:
         {
             0
         };
+        bool wasClosed;
+        if(isClosed)
+            wasClosed=true;
+        else
+            wasClosed=false;
+        if (wasClosed)
+            Init(getType(),getOpenMetaD());
         if (controlId==V4L2_CID_ANALOGUE_GAIN)
             ext.ctrl_class= V4L2_CTRL_CLASS_IMAGE_SOURCE;
         else
@@ -806,6 +834,8 @@ public:
         ext.controls = &control;
         ext.count = 1;
         int ret = ioctl(dataFileDescriptor, VIDIOC_S_EXT_CTRLS, &ext);
+        if (wasClosed)
+            Close();
         return (0 == ret);
     }
 
@@ -1393,6 +1423,100 @@ private:
     }
 
 public:
+  bool HWReset(int timeout=10)
+      {
+          Sensor* depthSensor=GetDepthSensor();
+          if (depthSensor->getIsClosed())
+              depthSensor->Init(depthSensor->getType(),depthSensor->getOpenMetaD());
+          string serial_number_before;
+          string serial_number_after;
+  
+           for(int i=0; i<10; i++)
+          {
+              try
+              {
+                  serial_number_before = CalcSerialNumber();
+                  break;
+                  
+              }
+              catch(const std::exception& e)
+              {
+              }
+          }
+          
+          // Perform HW Reset
+  
+          HWMonitorCommand hmc = {0};
+  
+          
+          hmc.dataSize = 0;
+          hmc.opCode = 0x20; // HW reset opcode
+  
+          auto cR = SendHWMonitorCommand(hmc);
+          if (cR.Result)
+          {
+  
+              Logger::getLogger().log("Camera HW reset performed", "Camera");
+          }
+          else
+          {
+              // throw std::runtime_error("Failed to perform camera HW reset");
+              Logger::getLogger().log("Camera HW reset Failed ", "Camera", LOG_ERROR);
+              depthSensor->Close();
+              return false;
+          }
+          
+          bool cameraConnected=false;
+          for(int i=0; i<timeout; i++)
+          {
+              try
+              {
+                  serial_number_after = CalcSerialNumber();
+                  
+              }
+              catch(const std::exception& e)
+              {
+              }
+              if (serial_number_after!=serial_number_before)
+                  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+              else
+              {
+                  Logger::getLogger().log("Camera recognized after HW reset", "Camera");
+                  cameraConnected=true;
+                  break;
+              }
+          }
+          if (!cameraConnected)
+              Logger::getLogger().log("Failed to recognize the camera after HW reset", "Camera", LOG_ERROR);
+          std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+          depthSensor->Close();
+          return cameraConnected;
+          
+  
+      }
+      
+      string CalcSerialNumber()
+    {
+        string serial_number;
+        HWMonitorCommand hmc = {0};
+        // GVD command
+        hmc.dataSize = 0;
+        hmc.opCode = 0x10; // GVD
+
+        auto cR = SendHWMonitorCommand(hmc);
+        if (cR.Result)
+        {
+            stringstream ss;
+            ss << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[48]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[49]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[50]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[51]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[52]) << std::hex << setfill('0') << setw(2) << unsigned(cR.Data[53]) << endl;
+            serial_number = ss.str();
+            serial_number.erase(std::remove(serial_number.begin(), serial_number.end(), '\n'), serial_number.end());
+        }
+        else
+        {
+            throw std::runtime_error("Failed to Read Serial number");
+        }
+        return serial_number;
+    };
     string GetFwVersion()
     {
         return fwVersion;
@@ -1486,42 +1610,42 @@ public:
         return sensors;
     }
 
-    Sensor GetDepthSensor()
+    Sensor* GetDepthSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "Depth Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get Depth Sensor ");
     }
 
-    Sensor GetIRSensor()
+    Sensor* GetIRSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "IR Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get IR Sensor ");
     }
 
-    Sensor GetColorSensor()
+    Sensor* GetColorSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "Color Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get Color Sensor ");
     }
 
-    Sensor GetIMUSensor()
+    Sensor* GetIMUSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
             if (sensors[i].GetName() == "IMU Sensor")
-                return sensors[i];
+                return &sensors[i];
         }
         throw std::runtime_error("Failed to get IMU Sensor ");
     }
@@ -1532,7 +1656,14 @@ public:
 
         // preapare the depth sensor where the HWMonitor command should be run with
         auto depthSensor = GetDepthSensor();
-        int fd = depthSensor.GetFileDescriptor();
+        bool wasClosed;
+        if (depthSensor->getIsClosed())
+            wasClosed = true;
+        else
+            wasClosed = false;
+        if (wasClosed)
+            depthSensor->Init(depthSensor->getType(), depthSensor->getOpenMetaD());
+        int fd = depthSensor->GetFileDescriptor();
 
         // init the byte array of the hwmc
         int buffSize = 1028;
@@ -1580,6 +1711,10 @@ public:
         if (0 != ioctl(fd, VIDIOC_S_EXT_CTRLS, &ext))
         {
             cR.Result = false;
+            if (wasClosed)
+            {
+                depthSensor->Close();
+            }
             return cR;
         }
 
@@ -1599,7 +1734,10 @@ public:
         {
             cR.Result = false;
         }
-
+        if (wasClosed)
+        {
+            depthSensor->Close();
+        }
         return cR;
     }
 
@@ -1617,7 +1755,8 @@ public:
         else
         {
             Logger::getLogger().log("Failed to get Asic temperature from Camera", "Camera", LOG_ERROR);
-            throw std::runtime_error("Failed to get Asic temperature from Camera");
+            //throw std::runtime_error("Failed to get Asic temperature from Camera");
+            return -1;
         }
     }
     int GetProjectorTemperature()
@@ -1634,7 +1773,8 @@ public:
         else
         {
             Logger::getLogger().log("Failed to get Projector temperature from Camera", "Camera", LOG_ERROR);
-            throw std::runtime_error("Failed to get Projector temperature from Camera");
+            //throw std::runtime_error("Failed to get Projector temperature from Camera");
+            return -1;
         }
     }
     // For debugging

@@ -42,11 +42,11 @@ public:
         contentMetrics.push_back(&met_corrupted);
         contentMetrics.push_back(&met_freeze);
 
-        Sensor depthSensor = cam.GetDepthSensor();
-        Sensor colorSensor = cam.GetColorSensor();
+        Sensor* depthSensor = cam.GetDepthSensor();
+        Sensor* colorSensor = cam.GetColorSensor();
 
-        depthSensor.copyFrameData = true;
-        colorSensor.copyFrameData = true;
+        depthSensor->copyFrameData = true;
+        colorSensor->copyFrameData = true;
 
         Logger::getLogger().log("Depth Profile Used: " + depth_profile.GetText(), "Test");
         Logger::getLogger().log("Color Profile Used: " + color_profile.GetText(), "Test");
@@ -58,16 +58,16 @@ public:
         if (_is_depth_over_color)
         {
             Logger::getLogger().log("Configuring color sensor", "Test", LOG_INFO);
-            colorSensor.Configure(color_profile);
+            colorSensor->Configure(color_profile);
             Logger::getLogger().log("Starting color sensor", "Test", LOG_INFO);
-            colorSensor.Start(AddFrame);
+            colorSensor->Start(AddFrame);
         }
         else
         {
             Logger::getLogger().log("Configuring depth sensor", "Test", LOG_INFO);
-            depthSensor.Configure(depth_profile);
+            depthSensor->Configure(depth_profile);
             Logger::getLogger().log("Starting depth sensor", "Test", LOG_INFO);
-            depthSensor.Start(AddFrame);
+            depthSensor->Start(AddFrame);
         }
         Logger::getLogger().log("going to sleep for 1 second between sensors", "Test", LOG_INFO);
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -84,16 +84,16 @@ public:
             if (_is_depth_over_color)
             {
                 Logger::getLogger().log("Configuring depth sensor", "Test", LOG_INFO);
-                depthSensor.Configure(depth_profile);
+                depthSensor->Configure(depth_profile);
                 Logger::getLogger().log("Starting depth sensor", "Test", LOG_INFO);
-                depthSensor.Start(AddFrame);
+                depthSensor->Start(AddFrame);
             }
             else
             {
                 Logger::getLogger().log("Configuring color sensor", "Test", LOG_INFO);
-                colorSensor.Configure(color_profile);
+                colorSensor->Configure(color_profile);
                 Logger::getLogger().log("Starting color sensor", "Test", LOG_INFO);
-                colorSensor.Start(AddFrame);
+                colorSensor->Start(AddFrame);
             }
 
             Logger::getLogger().log("Collecting frames for " + to_string(testDuration) + "seconds", "Test", LOG_INFO);
@@ -107,14 +107,14 @@ public:
             if (_is_depth_over_color)
             {
                 Logger::getLogger().log("Stopping depth sensor", "Test", LOG_INFO);
-                depthSensor.Stop();
-                depthSensor.Close();
+                depthSensor->Stop();
+                depthSensor->Close();
             }
             else
             {
                 Logger::getLogger().log("Stopping color sensor", "Test", LOG_INFO);
-                colorSensor.Stop();
-                colorSensor.Close();
+                colorSensor->Stop();
+                colorSensor->Close();
             }
 
             met_corrupted.setParams(MetricDefaultTolerances::get_tolerance_corrupted());
@@ -131,14 +131,14 @@ public:
         if (_is_depth_over_color)
         {
             Logger::getLogger().log("Stopping color sensor", "Test", LOG_INFO);
-            colorSensor.Stop();
-            colorSensor.Close();
+            colorSensor->Stop();
+            colorSensor->Close();
         }
         else
         {
             Logger::getLogger().log("Stopping depth sensor", "Test", LOG_INFO);
-            depthSensor.Stop();
-            depthSensor.Close();
+            depthSensor->Stop();
+            depthSensor->Close();
         }
 
         Logger::getLogger().log("Test Summary:", "Run");

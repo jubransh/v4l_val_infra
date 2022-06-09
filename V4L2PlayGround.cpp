@@ -243,8 +243,8 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
 
     Camera cam;
     cam.Init();
-    auto depthSensor = cam.GetDepthSensor();
-    auto colorSensor = cam.GetColorSensor();
+    Sensor* depthSensor = cam.GetDepthSensor();
+    Sensor* colorSensor = cam.GetColorSensor();
 
     cout << "=================================================" << endl;
     cout << "Camera FW: " << cam.GetFwVersion() << endl;
@@ -253,7 +253,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
     // Print the sensor supported resolutions of depth sensor
     cout << "Supported Depth resolutions are: " << endl;
-    auto sR = depthSensor.GetSupportedResolutions();
+    auto sR = depthSensor->GetSupportedResolutions();
     for (int i = 0; i < sR.size(); i++)
     {
         cout << sR[i].width << "x" << sR[i].height << endl;
@@ -263,7 +263,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
     // Print the sensor supported resolutions of color sensor
     cout << "Supported Color resolutions are: " << endl;
-    sR = colorSensor.GetSupportedResolutions();
+    sR = colorSensor->GetSupportedResolutions();
     for (int i = 0; i < sR.size(); i++)
     {
         cout << sR[i].width << "x" << sR[i].height << endl;
@@ -273,7 +273,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
     // Print the sensor supported Formats of depth sensor
     cout << "Supported Depth Formats are: " << endl;
-    vector<uint32_t> fmt = depthSensor.GetSupportedFormats();
+    vector<uint32_t> fmt = depthSensor->GetSupportedFormats();
     for (int i = 0; i < fmt.size(); i++)
     {
         cout << fmt[i] << endl;
@@ -283,7 +283,7 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
     // Print the sensor supported Formats of color sensor
     cout << "Supported Color Formats are: " << endl;
-    fmt = colorSensor.GetSupportedFormats();
+    fmt = colorSensor->GetSupportedFormats();
     for (int i = 0; i < fmt.size(); i++)
     {
         cout << fmt[i] << endl;
@@ -291,15 +291,15 @@ TEST_F(V4L2BasicTest, SetGetControlsExample)
     cout << "=================================================" << endl;
 
     // Get Laser Power
-    auto val = depthSensor.GetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER);
+    auto val = depthSensor->GetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER);
     cout << "Curr laser power control value is: " << val << endl;
 
     // Set Laser power
-    auto res = depthSensor.SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 150);
+    auto res = depthSensor->SetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER, 150);
     cout << "Setting laser power control value was: " << ((res) ? "Succeeded" : "Failed") << endl;
 
     // Get Laser Power Again
-    val = depthSensor.GetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER);
+    val = depthSensor->GetControl(DS5_CAMERA_CID_MANUAL_LASER_POWER);
     cout << "Curr laser power control value is: " << val << endl;
 
     cout << endl;
@@ -313,9 +313,9 @@ TEST_F(V4L2BasicTest, SaveImagesDepthStreamingExample)
 
     Camera cam;
     cam.Init();
-    Sensor depthSensor = cam.GetDepthSensor();
-    depthSensor.copyFrameData = true;
-    // depthSensor.copyFrameData = true;
+    Sensor* depthSensor = cam.GetDepthSensor();
+    depthSensor->copyFrameData = true;
+    // depthSensor->copyFrameData = true;
 
     // Depth Configuration
     Resolution r = {0};
@@ -327,13 +327,13 @@ TEST_F(V4L2BasicTest, SaveImagesDepthStreamingExample)
     dP.fps = 60;
     dP.streamType = StreamType::Depth_Stream;
 
-    depthSensor.Configure(dP);
-    depthSensor.Start(depthFrameArrived);
+    depthSensor->Configure(dP);
+    depthSensor->Start(depthFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    depthSensor.Stop();
-    depthSensor.Close();
+    depthSensor->Stop();
+    depthSensor->Close();
 }
 
 TEST_F(V4L2BasicTest, SaveImagesIRStreamingExample)
@@ -345,7 +345,7 @@ TEST_F(V4L2BasicTest, SaveImagesIRStreamingExample)
     Camera cam;
     cam.Init(false);
     auto irSensor = cam.GetIRSensor();
-    irSensor.copyFrameData = true;
+    irSensor->copyFrameData = true;
 
     // Depth Configuration
     Resolution r = {0};
@@ -357,15 +357,15 @@ TEST_F(V4L2BasicTest, SaveImagesIRStreamingExample)
     dP.fps = 30;
     dP.streamType = StreamType::IR_Stream;
 
-    irSensor.Configure(dP);
+    irSensor->Configure(dP);
 
-    irSensor.Start(depthFrameArrived);
+    irSensor->Start(depthFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    irSensor.Stop();
+    irSensor->Stop();
 
-    irSensor.Close();
+    irSensor->Close();
 }
 
 TEST_F(V4L2BasicTest, SaveImagesColorStreamingExample)
@@ -377,7 +377,7 @@ TEST_F(V4L2BasicTest, SaveImagesColorStreamingExample)
     Camera cam;
     cam.Init();
     auto colorSensor = cam.GetColorSensor();
-    colorSensor.copyFrameData = true;
+    colorSensor->copyFrameData = true;
 
     // Color Configuration
     Resolution cR = {0};
@@ -389,15 +389,15 @@ TEST_F(V4L2BasicTest, SaveImagesColorStreamingExample)
     cP.fps = 30;
     cP.streamType = StreamType::Color_Stream;
 
-    colorSensor.Configure(cP);
+    colorSensor->Configure(cP);
 
-    colorSensor.Start(colorFrameArrived);
+    colorSensor->Start(colorFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    colorSensor.Stop();
+    colorSensor->Stop();
 
-    colorSensor.Close();
+    colorSensor->Close();
 }
 
 TEST_F(V4L2BasicTest, DepthStreamingExample)
@@ -408,8 +408,8 @@ TEST_F(V4L2BasicTest, DepthStreamingExample)
 
     Camera cam;
     cam.Init();
-    auto depthSensor = cam.GetDepthSensor();
-    // depthSensor.copyFrameData = true;
+    Sensor* depthSensor = cam.GetDepthSensor();
+    // depthSensor->copyFrameData = true;
 
     // Depth Configuration
     Resolution r = {0};
@@ -421,13 +421,13 @@ TEST_F(V4L2BasicTest, DepthStreamingExample)
     dP.fps = 30;
     dP.streamType = StreamType::Depth_Stream;
 
-    depthSensor.Configure(dP);
-    depthSensor.Start(depthFrameArrived);
+    depthSensor->Configure(dP);
+    depthSensor->Start(depthFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    depthSensor.Stop();
-    depthSensor.Close();
+    depthSensor->Stop();
+    depthSensor->Close();
 }
 
 TEST_F(V4L2BasicTest, IRStreamingExample)
@@ -438,7 +438,7 @@ TEST_F(V4L2BasicTest, IRStreamingExample)
 
     Camera cam;
     cam.Init(false);
-    auto depthSensor = cam.GetDepthSensor();
+    Sensor* depthSensor = cam.GetDepthSensor();
 
     // Depth Configuration
     Resolution r = {0};
@@ -450,15 +450,15 @@ TEST_F(V4L2BasicTest, IRStreamingExample)
     dP.fps = 30;
     dP.streamType = StreamType::IR_Stream;
 
-    depthSensor.Configure(dP);
+    depthSensor->Configure(dP);
 
-    depthSensor.Start(depthFrameArrived);
+    depthSensor->Start(depthFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    depthSensor.Stop();
+    depthSensor->Stop();
 
-    depthSensor.Close();
+    depthSensor->Close();
 }
 
 TEST_F(V4L2BasicTest, ColorStreamingExample)
@@ -481,15 +481,15 @@ TEST_F(V4L2BasicTest, ColorStreamingExample)
     cP.fps = 30;
     cP.streamType = StreamType::Color_Stream;
 
-    colorSensor.Configure(cP);
+    colorSensor->Configure(cP);
 
-    colorSensor.Start(colorFrameArrived);
+    colorSensor->Start(colorFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    colorSensor.Stop();
+    colorSensor->Stop();
 
-    colorSensor.Close();
+    colorSensor->Close();
 }
 
 TEST_F(V4L2BasicTest, MultiStreamingExample)
@@ -501,9 +501,9 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
     Camera cam;
     cam.Init(false);
     // cam.Init(false);
-    auto depthSensor = cam.GetDepthSensor();
-    auto colorSensor = cam.GetColorSensor();
-    auto irSensor = cam.GetIRSensor();
+    Sensor* depthSensor = cam.GetDepthSensor();
+    Sensor* colorSensor = cam.GetColorSensor();
+    Sensor* irSensor = cam.GetIRSensor();
 
     // Depth Configuration
     Resolution r = {0};
@@ -532,24 +532,24 @@ TEST_F(V4L2BasicTest, MultiStreamingExample)
     cP.resolution = cR;
     cP.fps = 30;
 
-    colorSensor.Configure(cP);
-    depthSensor.Configure(dP);
-    irSensor.Configure(iP);
+    colorSensor->Configure(cP);
+    depthSensor->Configure(dP);
+    irSensor->Configure(iP);
 
 
-    colorSensor.Start(colorFrameArrived);
-    depthSensor.Start(depthFrameArrived);
-    irSensor.Start(irFrameArrived);
+    colorSensor->Start(colorFrameArrived);
+    depthSensor->Start(depthFrameArrived);
+    irSensor->Start(irFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    colorSensor.Stop();
-    depthSensor.Stop();
-    irSensor.Stop();
+    colorSensor->Stop();
+    depthSensor->Stop();
+    irSensor->Stop();
 
-    colorSensor.Close();
-    depthSensor.Close();
-    irSensor.Close();
+    colorSensor->Close();
+    depthSensor->Close();
+    irSensor->Close();
 
     //print frames data
     for (int i = 0; i < depthFrames.size(); i++)
@@ -584,8 +584,8 @@ TEST_F(V4L2BasicTest, StreamTestPattern)
     hmc.parameter1 = 7; // Test Pattern
     hmc.parameter2 = 1; // On
 
-    auto depthSensor = cam.GetDepthSensor();
-    auto colorSensor = cam.GetColorSensor();
+    Sensor* depthSensor = cam.GetDepthSensor();
+    Sensor* colorSensor = cam.GetColorSensor();
 
     // Depth Configuration
     Resolution r = {0};
@@ -605,11 +605,11 @@ TEST_F(V4L2BasicTest, StreamTestPattern)
     cP.resolution = cR;
     cP.fps = 30;
 
-    depthSensor.Configure(dP);
-    // colorSensor.Configure(cP);
+    depthSensor->Configure(dP);
+    // colorSensor->Configure(cP);
 
-    depthSensor.Start(depthFrameArrived);
-    // colorSensor.Start(colorFrameArrived);
+    depthSensor->Start(depthFrameArrived);
+    // colorSensor->Start(colorFrameArrived);
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
     cout << "Enabled Pattern" << endl;
@@ -622,11 +622,11 @@ TEST_F(V4L2BasicTest, StreamTestPattern)
 
     std::this_thread::sleep_for(std::chrono::seconds(4));
 
-    depthSensor.Stop();
-    // colorSensor.Stop();
+    depthSensor->Stop();
+    // colorSensor->Stop();
 
-    // colorSensor.Close();
-    depthSensor.Close();
+    // colorSensor->Close();
+    depthSensor->Close();
 
     // ASSERT_TRUE(cResult.Result);
     // if (cResult.Result){
