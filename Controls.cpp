@@ -289,13 +289,14 @@ public:
                     else
                         prevValue = cntrl._values[i - 1];
 
-                    fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
-                    frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
-                    frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
-                    seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
-                    idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    // fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    // frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    // frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    // seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    // idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    // cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevValue);
+                    // met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
                     cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevValue);
-                    met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
                 }
                 else
                 {
@@ -304,15 +305,24 @@ public:
                         prevExposure = cntrl._values[cntrl._values.size() - 1];
                     else
                         prevExposure = cntrl._values[i - 1];
-
-                    fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
-                    frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
-                    frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
-                    seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
-                    idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+                    
                     cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevExposure);
-                    met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+
+                    // fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+                    // frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+                    // frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+                    // seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+                    // idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
+                    // cntrlMetric.setParams(MetricDefaultTolerances::get_tolerance_ControlLatency(), changeTime, cntrl._mDName, cntrl._values[i], prevExposure);
+                    // met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i] * 100, changeTime, cntrl._mDName, cntrl._values[i] * 100);
                 }
+                    fpsMetric.setParams(MetricDefaultTolerances::get_tolerance_FpsValidity(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    frmIntervalMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    frmPercMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    seqFrmMetric.setParams(MetricDefaultTolerances::get_tolerance_SequentialFrameDrops(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    idMetric.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
+                    
+                    met_md_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness(), cntrl._values[i], changeTime, cntrl._mDName, cntrl._values[i]);
 
                 frmSizeMetric.setParams(MetricDefaultTolerances::get_tolerance_FrameSize());
 

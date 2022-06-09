@@ -2155,8 +2155,8 @@ public:
 		_tolerance = tolerance;
 		_changeTime = changeTime;
 		_metaDataName = metaDataName;
-		if (_metaDataName == "exposureTime")
-			value = value * 100;
+		// if (_metaDataName == "exposureTime")
+			// value = value * 100;
 		_value = value;
 	}
 	void setParams(int tolerance, double changeTime, string metaDataName, double value, double prev_exposure)
@@ -2164,8 +2164,8 @@ public:
 		_tolerance = tolerance;
 		_changeTime = changeTime;
 		_metaDataName = metaDataName;
-		if (_metaDataName == "exposureTime")
-			value = value * 100;
+		// if (_metaDataName == "exposureTime")
+		// 	value = value * 100;
 		_value = value;
 		_prev_exposure = prev_exposure * 100;
 		_autoExposureOff = true;

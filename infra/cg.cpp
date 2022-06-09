@@ -36,11 +36,13 @@ public:
             conf._controlID = V4L2_CID_EXPOSURE_ABSOLUTE;
             // conf._controlID = V4L2_CID_EXPOSURE;
             conf._mDName = "exposureTime";
-            conf._values.push_back(10);
-            conf._values.push_back(155);
-            conf._values.push_back(322);
-            conf._values.push_back(655);
-            conf._values.push_back(1650);            
+
+            conf._values.push_back(1);
+            conf._values.push_back(10020);
+            conf._values.push_back(15520);
+            conf._values.push_back(32220);
+            conf._values.push_back(65520);            
+            conf._values.push_back(165000);            
         }
         else if (controlName == "Gain")
         {
