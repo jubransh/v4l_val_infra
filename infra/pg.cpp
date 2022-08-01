@@ -97,6 +97,11 @@ private:
             prof.pixelFormat =V4L2_PIX_FMT_Z16;
             prof.streamType = StreamType::Depth_Stream;
             }
+        else if (formatStr == "uyvu")
+        {
+            prof.pixelFormat = V4L2_PIX_FMT_Z16;
+            prof.streamType = StreamType::Depth_Stream;
+        }
         else if (formatStr=="yuyv")
             {
             prof.pixelFormat =V4L2_PIX_FMT_YUYV;

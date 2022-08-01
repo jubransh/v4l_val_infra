@@ -668,16 +668,16 @@ public:
         {
         case SensorType::Depth:
         {
-            videoNode = {"/dev/video0"};
-            Logger::getLogger().log("Openning /dev/video0", "Sensor");
+            videoNode = {"/dev/video17"};
+            Logger::getLogger().log("Openning /dev/video17", "Sensor");
 
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
             if (openMD)
             {
-                Logger::getLogger().log("Openning /dev/video1", "Sensor");
-                videoNode = {"/dev/video1"};
+                Logger::getLogger().log("Openning /dev/video16", "Sensor");
+                videoNode = {"/dev/video16"};
                 metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
                 // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
             }
@@ -691,8 +691,8 @@ public:
         }
         case SensorType::IR:
         {
-            videoNode = {"/dev/video4"};
-            Logger::getLogger().log("Openning /dev/video4", "Sensor");
+            videoNode = {"/dev/video18"};
+            Logger::getLogger().log("Openning /dev/video18", "Sensor");
 
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
@@ -715,8 +715,8 @@ public:
 
         case SensorType::Color:
         {
-            Logger::getLogger().log("Openning /dev/video2", "Sensor");
-            videoNode = {"/dev/video2"};
+            Logger::getLogger().log("Openning /dev/video19", "Sensor");
+            videoNode = {"/dev/video19"};
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
@@ -1527,7 +1527,7 @@ public:
         return serial;
     };
 
-    void Init(bool openMD = true)
+    void Init(bool openMD = false)
     {
         Logger::getLogger().log("Initializing camera sensors", "Camera");
         sensors.clear();
