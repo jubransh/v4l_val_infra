@@ -162,6 +162,10 @@ public:
         case V4L2_PIX_FMT_YUYV:
             return "YUYV";
             break;
+        case V4L2_PIX_FMT_UYVY:
+            return "UYVY";
+            break;
+            
         case 0:
             if (streamType == StreamType::Imu_Stream)
                 return "XYZ";
@@ -674,13 +678,13 @@ public:
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-            if (openMD)
+            /*if (openMD)
             {
                 Logger::getLogger().log("Openning /dev/video16", "Sensor");
                 videoNode = {"/dev/video16"};
                 metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
                 // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
-            }
+            }*/
             name = "Depth Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
@@ -720,12 +724,12 @@ public:
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-            if (openMD)
+            /*if (openMD)
             {
                 Logger::getLogger().log("Openning /dev/video3", "Sensor");
                 videoNode = {"/dev/video3"};
                 metaFileDescriptor = open(videoNode.c_str(), O_RDWR);
-            }
+            }*/
             name = "Color Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
@@ -913,7 +917,8 @@ public:
         struct v4l2_format sFormat = {0};
         sFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         // sFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_Z16;
-        sFormat.fmt.pix.pixelformat = p.pixelFormat;
+        //sFormat.fmt.pix.pixelformat = p.pixelFormat;
+        sFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
         sFormat.fmt.pix.width = p.resolution.width;
         sFormat.fmt.pix.height = p.resolution.height;
         ret = ioctl(dataFileDescriptor, VIDIOC_S_FMT, &sFormat);

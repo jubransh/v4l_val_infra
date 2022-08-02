@@ -1,5 +1,8 @@
 // to compile the project, run the command:
+// IDC:
 //  g++ ./main.cpp -o main -lgtest -lpthread -lopencv_core -lopencv_imgproc -ltbb
+// IOTG:
+//  g++ ./main.cpp -o main -lgtest -lpthread -lopencv_core -lopencv_imgproc -ltbb -I/usr/include/opencv4/
 
 // #include <gtest/gtest.h>
 

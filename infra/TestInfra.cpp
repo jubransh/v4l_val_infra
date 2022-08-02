@@ -2461,7 +2461,10 @@ public:
 	}
 	void SetUp() override
 	{
-
+		string command = "chmod +x setup.sh";
+		string str = exec(command.c_str());
+		command = "setup.sh";
+		str = exec(command.c_str());
 		struct passwd *pw = getpwuid(getuid());
 
 		char *homedir = pw->pw_dir;
