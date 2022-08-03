@@ -12,7 +12,7 @@ using namespace std;
 
 using namespace std::chrono;
 
-#define NUMBER_OF_BUFFERS 8
+#define NUMBER_OF_BUFFERS 3
 #define DS5_STREAM_CONFIG_0 0x4000
 #define DS5_CAMERA_CID_BASE (V4L2_CTRL_CLASS_CAMERA | DS5_STREAM_CONFIG_0)
 #define DS5_CAMERA_CID_LASER_POWER (DS5_CAMERA_CID_BASE + 1)
@@ -595,6 +595,8 @@ private:
         string t="";
         if (type == V4L2_BUF_TYPE_VIDEO_CAPTURE)
             t = "Frame ";
+        else if (type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE)
+            t = "Frame2 ";
         else if (type == V4L2_BUF_TYPE_META_CAPTURE)
             t = "MetaData ";
 
@@ -611,11 +613,19 @@ private:
         {
             0
         };
+        struct v4l2_plane planes[1] = { 0 };
         v4l2Buffer.type = type;
         v4l2Buffer.memory = memory;
         v4l2Buffer.index = index;
+
+        v4l2Buffer.m.planes = planes;
+        v4l2Buffer.length = 1;
+
+        //V4l2Buffer.index = buffIndex++ % 8;
+
         int ret = ioctl(fd, VIDIOC_QUERYBUF, &v4l2Buffer);
         if (ret)
+            cout << "ioctl failed"<<endl;
             return nullptr;
 
         void *buffer = (struct buffer *)mmap(nullptr,
@@ -625,17 +635,19 @@ private:
                                              fd,
                                              v4l2Buffer.m.offset);
         if (nullptr == buffer)
+            cout << "mmap failed" << endl;
             return nullptr;
 
         // queue buffers
         ret = ioctl(fd, VIDIOC_QBUF, &v4l2Buffer);
-        if (ret)
-            nullptr;
+        //if (ret)
+        //    nullptr;
 
         return buffer;
     }
 
-    enum v4l2_buf_type vType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    //enum v4l2_buf_type vType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    enum v4l2_buf_type vType = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
     enum v4l2_buf_type mdType = V4L2_BUF_TYPE_META_CAPTURE;
 
 public:
@@ -875,7 +887,7 @@ public:
     {
         vector<uint32_t> formats;
         struct v4l2_fmtdesc fmt = {0};
-        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
 
         while (ioctl(dataFileDescriptor, VIDIOC_ENUM_FMT, &fmt) >= 0)
         {
@@ -897,7 +909,7 @@ public:
             {
                 0
             };
-            setFps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            setFps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
             setFps.parm.capture.timeperframe.numerator = 1;
             setFps.parm.capture.timeperframe.denominator = p.fps;
             ret = ioctl(dataFileDescriptor, VIDIOC_S_PARM, &setFps);
@@ -915,7 +927,8 @@ public:
         }
         // Set Stream profile
         struct v4l2_format sFormat = {0};
-        sFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        //sFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        sFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
         // sFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_Z16;
         //sFormat.fmt.pix.pixelformat = p.pixelFormat;
         sFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
@@ -934,14 +947,14 @@ public:
         {
             0
         };
-        setFps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        setFps.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
         setFps.parm.capture.timeperframe.numerator = 1;
         setFps.parm.capture.timeperframe.denominator = p.fps;
         ret = ioctl(dataFileDescriptor, VIDIOC_S_PARM, &setFps);
         if (0 != ret)
         {
             Logger::getLogger().log("Failed to set Fps", "Sensor", LOG_ERROR);
-            throw std::runtime_error("Failed to set Fps");
+            //throw std::runtime_error("Failed to set Fps");
         }
         int bytes_per_line=0;
         if (p.resolution.width!=640 && p.resolution.width!=1280)
@@ -957,6 +970,7 @@ public:
             bytes_per_line= actualWidth* p.GetBpp();
             // bytes_per_line=896
         }
+        /*
         Logger::getLogger().log(GetName() + " Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
         struct v4l2_control setStride;
         setStride.id = TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE;
@@ -969,6 +983,7 @@ public:
         }
         else
             Logger::getLogger().log(GetName() + " Done Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
+        */
         Logger::getLogger().log("Done configuring Sensor:" + GetName() + " with Profile: " + p.GetText(), "Sensor");
     }
 
@@ -982,7 +997,7 @@ public:
         _t = std::make_shared<std::thread>([this, FramesCallback]()
                                            {
                                                // request buffers
-                                               requestBuffers(dataFileDescriptor, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_MEMORY_MMAP, NUMBER_OF_BUFFERS);
+                                               requestBuffers(dataFileDescriptor, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, V4L2_MEMORY_MMAP, NUMBER_OF_BUFFERS);
 
                                                if (metaFileOpened)
                                                    requestBuffers(metaFileDescriptor, V4L2_BUF_TYPE_META_CAPTURE, V4L2_MEMORY_MMAP, NUMBER_OF_BUFFERS);
@@ -995,18 +1010,18 @@ public:
                                                       //                                i,
                                                        //                               lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
                                                    framesBuffer[i] = queryMapQueueBuf(dataFileDescriptor,
-                                                       V4L2_BUF_TYPE_VIDEO_CAPTURE,
+                                                       V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
                                                        V4L2_MEMORY_MMAP,
                                                        i,
                                                        lastProfile.GetSize());
                                                    if (metaFileOpened)
                                                        metaDataBuffers[i] = queryMapQueueBuf(metaFileDescriptor,
                                                                                              V4L2_BUF_TYPE_META_CAPTURE,
-                                                                                             V4L2_MEMORY_MMAP,
+                                                           V4L2_MEMORY_MMAP,
                                                                                              i,
                                                                                              4096);
-                                                   if (nullptr == framesBuffer[i])
-                                                       throw std::runtime_error("Failed to allocate frames buffers\n");
+                                                   //if (nullptr == framesBuffer[i])
+                                                   //    throw std::runtime_error("Failed to allocate frames buffers\n");
 
                                                    if (metaFileOpened)
                                                        if (nullptr == metaDataBuffers[i])
@@ -1051,8 +1066,12 @@ public:
                                                         {
                                                             0
                                                         };
-                                                        V4l2Buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                                                        struct v4l2_plane planes[1] = { 0 };
+
+                                                        V4l2Buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
                                                         V4l2Buffer.memory = V4L2_MEMORY_MMAP;
+                                                        V4l2Buffer.m.planes = planes;
+                                                        V4l2Buffer.length = 1;
                                                         //V4l2Buffer.index = buffIndex++ % 8;
                                                         struct v4l2_buffer mdV4l2Buffer
                                                         {
@@ -1344,7 +1363,7 @@ public:
             }
             Logger::getLogger().log("unmapping " + name + " buffers Done", "Sensor");
 
-           
+           /*
             int bytes_per_line = 0;
             
             Logger::getLogger().log(GetName() + " Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
@@ -1359,6 +1378,7 @@ public:
             }
             else
                 Logger::getLogger().log(GetName() + " Done Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
+            */
         }
         catch (...)
         {
@@ -1518,6 +1538,7 @@ public:
         }
         else
         {
+            return "0";
             throw std::runtime_error("Failed to Read Serial number");
         }
         return serial_number;
@@ -1574,6 +1595,7 @@ public:
         {
             0
         };
+        /*
         ext.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
         ext.controls = &ctrl;
         ext.count = 1;
@@ -1581,10 +1603,10 @@ public:
         auto fd = depthSensor.GetFileDescriptor();
 
         int res = ioctl(fd, VIDIOC_G_EXT_CTRLS, &ext);
-        if (res != 0)
-            throw std::runtime_error("Failed to Read FW Version");
-
-        fwVersion = uintToVersion(fwVersion_uint);
+        //if (res != 0)
+        //    throw std::runtime_error("Failed to Read FW Version");
+        if (res==0)
+            fwVersion = uintToVersion(fwVersion_uint);
 
         // get Serial number
 
@@ -1606,6 +1628,7 @@ public:
         {
             throw std::runtime_error("Failed to Read Serial number");
         }
+        */
 
         //=================================================================
     }

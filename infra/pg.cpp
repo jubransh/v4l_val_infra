@@ -387,6 +387,8 @@ public:
 
         //============ Depth + IR + Color =================
             //Y8
+        depth_ir_color.push_back("z16_848x480_30+y8_1280x720_30+yuyv_848x480_30");
+        /*
         depth_ir_color.push_back("z16_424x240_5+y8_424x240_5+yuyv_424x240_5");
         depth_ir_color.push_back("z16_424x240_15+y8_424x240_15+yuyv_424x240_15");
         depth_ir_color.push_back("z16_424x240_30+y8_424x240_30+yuyv_424x240_30");
@@ -424,7 +426,7 @@ public:
         depth_ir_color.push_back("z16_1280x720_5+y8i_1280x720_5+yuyv_1280x720_5");
         depth_ir_color.push_back("z16_1280x720_15+y8i_1280x720_15+yuyv_1280x720_15");
         depth_ir_color.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_1280x720_30");
-
+        */
         //============ Depth + IMU =================
         depth_imu.push_back("z16_640x480_5+imu_0x0_50");
         depth_imu.push_back("z16_640x480_15+imu_0x0_50");

@@ -393,6 +393,7 @@ public:
 		struct passwd *pw = getpwuid(getuid());
 
 		char *homedir = pw->pw_dir;
+		return "/home/test";
 		return homedir;
 	}
 	static bool isDirExist(const std::string &path)
@@ -2463,8 +2464,15 @@ public:
 	{
 		string command = "chmod +x setup.sh";
 		string str = exec(command.c_str());
-		command = "setup.sh";
+		Logger::getLogger().log(str, "Setup()", LOG_INFO);
+
+		command = "chmod +x SerDes_D457.txt";
 		str = exec(command.c_str());
+		Logger::getLogger().log(str, "Setup()", LOG_INFO);
+
+		command = "./setup.sh";
+		str = exec(command.c_str());
+		Logger::getLogger().log(str, "Setup()", LOG_INFO);
 		struct passwd *pw = getpwuid(getuid());
 
 		char *homedir = pw->pw_dir;
