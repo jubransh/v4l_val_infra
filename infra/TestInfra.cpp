@@ -38,6 +38,8 @@ using namespace std;
 #include <direct.h> // _mkdir
 #endif
 
+Profile running_profile;
+
 int RawDataMAxSize = 10000000;
 bool calcSystemTSMetrics = false;
 
@@ -200,6 +202,130 @@ void addToPnpList(Sample s)
 	cpuSamples.push_back(s.Cpu_per);
 	memSamples.push_back(s.Mem_MB - memoryBaseLine);
 }
+void write_to_bin_file(string filePath, uint8_t *ptr, size_t len)
+{
+    try
+    {
+        ofstream fp;
+        fp.open(filePath.c_str(), ios ::binary);
+        fp.write((char *)ptr, len);
+        fp.close();
+    }
+    catch (const std::exception &e)
+    {
+        cout << "Error: " << endl;
+    }
+}
+
+class FileUtils
+{
+private:
+public:
+	static string getHomeDir()
+	{
+
+		struct passwd *pw = getpwuid(getuid());
+
+		char *homedir = pw->pw_dir;
+		return homedir;
+	}
+	static bool isDirExist(const std::string &path)
+	{
+#if defined(_WIN32)
+		struct _stat info;
+		if (_stat(path.c_str(), &info) != 0)
+		{
+			return false;
+		}
+		return (info.st_mode & _S_IFDIR) != 0;
+#else
+		struct stat info;
+		if (stat(path.c_str(), &info) != 0)
+		{
+			return false;
+		}
+		return (info.st_mode & S_IFDIR) != 0;
+#endif
+	}
+
+	static string join(string base, string subPath)
+	{
+#if defined(_WIN32)
+		string fullPath = base + "\\" + subPath;
+		return fullPath;
+#else
+		string fullPath = base + "/" + subPath;
+		return fullPath;
+#endif
+	}
+
+	static bool makePath(const std::string &path)
+	{
+		if (!isDirExist(path))
+		{
+#if defined(_WIN32)
+			int ret = _mkdir(path.c_str());
+#else
+			mode_t mode = 0755;
+			int ret = mkdir(path.c_str(), mode);
+#endif
+			if (ret == 0)
+				return true;
+
+			switch (errno)
+			{
+			case ENOENT:
+				// parent didn't exist, try to create it
+				{
+					int pos = path.find_last_of('/');
+					if (pos == std::string::npos)
+#if defined(_WIN32)
+						pos = path.find_last_of('\\');
+					if (pos == std::string::npos)
+#endif
+						return false;
+					if (!makePath(path.substr(0, pos)))
+						return false;
+				}
+				// now, try to create again
+#if defined(_WIN32)
+				return 0 == _mkdir(path.c_str());
+#else
+				return 0 == mkdir(path.c_str(), mode);
+#endif
+
+			case EEXIST:
+				// done!
+				return isDirExist(path);
+
+			default:
+				return false;
+			}
+		}
+		else
+			cout << "directory already exists" << endl;
+		return true;
+	}
+};
+
+
+// implemetnt the callback
+void save_FrameArrived(Frame f)
+{
+    // if ( f.ID >= 10)
+    // {
+        // string fm = running_profile.GetFormatText();
+		string testBasePath1 = FileUtils::join(FileUtils::getHomeDir()+"/Logs", sid);
+        string w = to_string(running_profile.resolution.width);
+        string h = to_string(running_profile.resolution.height);
+        string fps = to_string(running_profile.fps);
+
+        string fileName =  w + "_" + h + "_" + fps + "_" + to_string(f.ID) +".bin";
+        string imagePath = File_Utils::join(testBasePath1, fileName);
+        write_to_bin_file(imagePath, f.Buff, running_profile.resolution.width * running_profile.resolution.height * running_profile.GetBpp());
+    //     isCollectFrames = false;
+    // }
+}
 
 void AddFrame(Frame frame)
 {
@@ -241,6 +367,7 @@ void AddFrame(Frame frame)
     }
 		break;
 	case StreamType::Color_Stream:
+		save_FrameArrived(frame);
 		if (color_collectFrames)
 
     {
@@ -383,96 +510,6 @@ public:
 	}
 };
 
-class FileUtils
-{
-private:
-public:
-	static string getHomeDir()
-	{
-
-		struct passwd *pw = getpwuid(getuid());
-
-		char *homedir = pw->pw_dir;
-		return homedir;
-	}
-	static bool isDirExist(const std::string &path)
-	{
-#if defined(_WIN32)
-		struct _stat info;
-		if (_stat(path.c_str(), &info) != 0)
-		{
-			return false;
-		}
-		return (info.st_mode & _S_IFDIR) != 0;
-#else
-		struct stat info;
-		if (stat(path.c_str(), &info) != 0)
-		{
-			return false;
-		}
-		return (info.st_mode & S_IFDIR) != 0;
-#endif
-	}
-
-	static string join(string base, string subPath)
-	{
-#if defined(_WIN32)
-		string fullPath = base + "\\" + subPath;
-		return fullPath;
-#else
-		string fullPath = base + "/" + subPath;
-		return fullPath;
-#endif
-	}
-
-	static bool makePath(const std::string &path)
-	{
-		if (!isDirExist(path))
-		{
-#if defined(_WIN32)
-			int ret = _mkdir(path.c_str());
-#else
-			mode_t mode = 0755;
-			int ret = mkdir(path.c_str(), mode);
-#endif
-			if (ret == 0)
-				return true;
-
-			switch (errno)
-			{
-			case ENOENT:
-				// parent didn't exist, try to create it
-				{
-					int pos = path.find_last_of('/');
-					if (pos == std::string::npos)
-#if defined(_WIN32)
-						pos = path.find_last_of('\\');
-					if (pos == std::string::npos)
-#endif
-						return false;
-					if (!makePath(path.substr(0, pos)))
-						return false;
-				}
-				// now, try to create again
-#if defined(_WIN32)
-				return 0 == _mkdir(path.c_str());
-#else
-				return 0 == mkdir(path.c_str(), mode);
-#endif
-
-			case EEXIST:
-				// done!
-				return isDirExist(path);
-
-			default:
-				return false;
-			}
-		}
-		else
-			cout << "directory already exists" << endl;
-		return true;
-	}
-};
 
 struct MultiProfile
 {

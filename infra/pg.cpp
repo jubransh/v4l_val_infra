@@ -322,22 +322,23 @@ public:
         depth_ir.push_back("z16_1280x720_30+y8i_1280x720_30");
 
         //============ Depth + Color =================
-         depth_color.push_back("z16_424x240_5+yuyv_424x240_5");
-         depth_color.push_back("z16_424x240_15+yuyv_424x240_15");
-         depth_color.push_back("z16_424x240_30+yuyv_424x240_30");
-         depth_color.push_back("z16_424x240_60+yuyv_424x240_60");
-         depth_color.push_back("z16_424x240_90+yuyv_424x240_90");
+        //  depth_color.push_back("z16_424x240_5+yuyv_424x240_5");
+        //  depth_color.push_back("z16_424x240_15+yuyv_424x240_15");
+        //  depth_color.push_back("z16_424x240_30+yuyv_424x240_30");
+        //  depth_color.push_back("z16_424x240_60+yuyv_424x240_60");
+        //  depth_color.push_back("z16_424x240_90+yuyv_424x240_90");
 
 
-        depth_color.push_back("z16_640x480_5+yuyv_640x480_5");
-        depth_color.push_back("z16_640x480_15+yuyv_640x480_15");
+        // depth_color.push_back("z16_640x480_5+yuyv_640x480_5");
+        // depth_color.push_back("z16_640x480_15+yuyv_640x480_15");
         depth_color.push_back("z16_640x480_30+yuyv_640x480_30");
-        depth_color.push_back("z16_640x480_60+yuyv_640x480_60");
+        // depth_color.push_back("z16_640x480_60+yuyv_640x480_60");
+        // depth_color.push_back("z16_640x480_90+yuyv_640x480_90");
         
 
-        depth_color.push_back("z16_1280x720_5+yuyv_1280x720_5");
-        depth_color.push_back("z16_1280x720_15+yuyv_1280x720_15");
-        depth_color.push_back("z16_1280x720_30+yuyv_1280x720_30");
+        // depth_color.push_back("z16_1280x720_5+yuyv_1280x720_5");
+        // depth_color.push_back("z16_1280x720_15+yuyv_1280x720_15");
+        // depth_color.push_back("z16_1280x720_30+yuyv_1280x720_30");
 
         //============ IR + Color =================
             //Y8
@@ -382,11 +383,11 @@ public:
 
         //============ Depth + IR + Color =================
             //Y8
-        depth_ir_color.push_back("z16_424x240_5+y8_424x240_5+yuyv_424x240_5");
-        depth_ir_color.push_back("z16_424x240_15+y8_424x240_15+yuyv_424x240_15");
-        depth_ir_color.push_back("z16_424x240_30+y8_424x240_30+yuyv_424x240_30");
-        depth_ir_color.push_back("z16_424x240_60+y8_424x240_60+yuyv_424x240_60");
-        depth_ir_color.push_back("z16_424x240_90+y8_424x240_90+yuyv_424x240_90");
+        // depth_ir_color.push_back("z16_424x240_5+y8_424x240_5+yuyv_424x240_5");
+        // depth_ir_color.push_back("z16_424x240_15+y8_424x240_15+yuyv_424x240_15");
+        // depth_ir_color.push_back("z16_424x240_30+y8_424x240_30+yuyv_424x240_30");
+        // depth_ir_color.push_back("z16_424x240_60+y8_424x240_60+yuyv_424x240_60");
+        // depth_ir_color.push_back("z16_424x240_90+y8_424x240_90+yuyv_424x240_90");
 
 
         depth_ir_color.push_back("z16_640x480_5+y8_640x480_5+yuyv_640x480_5");
@@ -394,31 +395,31 @@ public:
         depth_ir_color.push_back("z16_640x480_30+y8_640x480_30+yuyv_640x480_30");
         depth_ir_color.push_back("z16_640x480_60+y8_640x480_60+yuyv_640x480_60");
         
-        depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_640x480_30");
+        // depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_640x480_30");
 
         depth_ir_color.push_back("z16_1280x720_5+y8_1280x720_5+yuyv_1280x720_5");
         depth_ir_color.push_back("z16_1280x720_15+y8_1280x720_15+yuyv_1280x720_15");
         depth_ir_color.push_back("z16_1280x720_30+y8_1280x720_30+yuyv_1280x720_30");
 
-            //Y8i
+        //     //Y8i
 
-        depth_ir_color.push_back("z16_424x240_5+y8i_424x240_5+yuyv_424x240_5");
-        depth_ir_color.push_back("z16_424x240_15+y8i_424x240_15+yuyv_424x240_15");
-        depth_ir_color.push_back("z16_424x240_30+y8i_424x240_30+yuyv_424x240_30");
-        depth_ir_color.push_back("z16_424x240_60+y8i_424x240_60+yuyv_424x240_60");
-        depth_ir_color.push_back("z16_424x240_90+y8i_424x240_90+yuyv_424x240_90");
+        // depth_ir_color.push_back("z16_424x240_5+y8i_424x240_5+yuyv_424x240_5");
+        // depth_ir_color.push_back("z16_424x240_15+y8i_424x240_15+yuyv_424x240_15");
+        // depth_ir_color.push_back("z16_424x240_30+y8i_424x240_30+yuyv_424x240_30");
+        // depth_ir_color.push_back("z16_424x240_60+y8i_424x240_60+yuyv_424x240_60");
+        // depth_ir_color.push_back("z16_424x240_90+y8i_424x240_90+yuyv_424x240_90");
 
 
-        depth_ir_color.push_back("z16_640x480_5+y8i_640x480_5+yuyv_640x480_5");
-        depth_ir_color.push_back("z16_640x480_15+y8i_640x480_15+yuyv_640x480_15");
-        depth_ir_color.push_back("z16_640x480_30+y8i_640x480_30+yuyv_640x480_30");
-        depth_ir_color.push_back("z16_640x480_60+y8i_640x480_60+yuyv_640x480_60");
+        // depth_ir_color.push_back("z16_640x480_5+y8i_640x480_5+yuyv_640x480_5");
+        // depth_ir_color.push_back("z16_640x480_15+y8i_640x480_15+yuyv_640x480_15");
+        // depth_ir_color.push_back("z16_640x480_30+y8i_640x480_30+yuyv_640x480_30");
+        // depth_ir_color.push_back("z16_640x480_60+y8i_640x480_60+yuyv_640x480_60");
 
-        depth_ir_color.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_640x480_30");
+        // depth_ir_color.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_640x480_30");
 
-        depth_ir_color.push_back("z16_1280x720_5+y8i_1280x720_5+yuyv_1280x720_5");
-        depth_ir_color.push_back("z16_1280x720_15+y8i_1280x720_15+yuyv_1280x720_15");
-        depth_ir_color.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_1280x720_30");
+        // depth_ir_color.push_back("z16_1280x720_5+y8i_1280x720_5+yuyv_1280x720_5");
+        // depth_ir_color.push_back("z16_1280x720_15+y8i_1280x720_15+yuyv_1280x720_15");
+        // depth_ir_color.push_back("z16_1280x720_30+y8i_1280x720_30+yuyv_1280x720_30");
 
         //============ Depth + IMU =================
         depth_imu.push_back("z16_640x480_5+imu_0x0_50");

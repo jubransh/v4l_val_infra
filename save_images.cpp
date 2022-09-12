@@ -37,8 +37,8 @@ void write_to_bin_file(string filePath, uint8_t *ptr, size_t len)
 // implemetnt the callback
 void save_FrameArrived(Frame f)
 {
-    if (isCollectFrames && f.ID >= 10)
-    {
+    // if (isCollectFrames && f.ID >= 10)
+    // {
         string fm = running_profile.GetFormatText();
         string w = to_string(running_profile.resolution.width);
         string h = to_string(running_profile.resolution.height);
@@ -47,8 +47,8 @@ void save_FrameArrived(Frame f)
         string fileName = fm + "_" + w + "_" + h + "_" + fps + "_" + to_string(f.ID) +".bin";
         string imagePath = File_Utils::join(scriptPath, fileName);
         write_to_bin_file(imagePath, f.Buff, running_profile.resolution.width * running_profile.resolution.height * running_profile.GetBpp());
-        isCollectFrames = false;
-    }
+        // isCollectFrames = false;
+    // }
 }
 
 vector<vector<Profile>> get_profiles(vector<StreamType> streamTypes)
@@ -82,15 +82,15 @@ TEST_F(SaveImagesScript, SaveDepthImagesScript)
     vector<vector<Profile>> profiles = get_profiles(streams);
 
     auto depthSensor = cam.GetDepthSensor();
-    depthSensor.copyFrameData = true;
+    depthSensor->copyFrameData = true;
 
     for (int j = 0; j < profiles.size(); j++)
     {
         for (int i = 0; i < profiles[j].size(); i++)
         {
             running_profile = profiles[j][i];
-            depthSensor.Configure(profiles[j][i]);
-            depthSensor.Start(save_FrameArrived);
+            depthSensor->Configure(profiles[j][i]);
+            depthSensor->Start(save_FrameArrived);
 
             isCollectFrames = true;
 
@@ -101,8 +101,8 @@ TEST_F(SaveImagesScript, SaveDepthImagesScript)
                     break;
             }
 
-            depthSensor.Stop();
-            depthSensor.Close();
+            depthSensor->Stop();
+            depthSensor->Close();
         }
     }
 }
@@ -131,15 +131,15 @@ TEST_F(SaveImagesScript, SaveIRImagesScript)
     vector<vector<Profile>> profiles = get_profiles(streams);
 
     auto irSensor = cam.GetIRSensor();
-    irSensor.copyFrameData = true;
+    irSensor->copyFrameData = true;
 
     for (int j = 0; j < profiles.size(); j++)
     {
         for (int i = 0; i < profiles[j].size(); i++)
         {
             running_profile = profiles[j][i];
-            irSensor.Configure(profiles[j][i]);
-            irSensor.Start(save_FrameArrived);
+            irSensor->Configure(profiles[j][i]);
+            irSensor->Start(save_FrameArrived);
 
             isCollectFrames = true;
 
@@ -150,8 +150,8 @@ TEST_F(SaveImagesScript, SaveIRImagesScript)
                     break;
             }
 
-            irSensor.Stop();
-            irSensor.Close();
+            irSensor->Stop();
+            irSensor->Close();
         }
     }
 }
@@ -181,27 +181,29 @@ TEST_F(SaveImagesScript, SaveColorImagesScript)
     vector<vector<Profile>> profiles = get_profiles(streams);
 
     auto colorSensor = cam.GetColorSensor();
-    colorSensor.copyFrameData = true;
+    colorSensor->copyFrameData = true;
 
     for (int j = 0; j < profiles.size(); j++)
     {
         for (int i = 0; i < profiles[j].size(); i++)
         {
             running_profile = profiles[j][i];
-            colorSensor.Configure(profiles[j][i]);
-            colorSensor.Start(save_FrameArrived);
+            colorSensor->Configure(profiles[j][i]);
+            colorSensor->Start(save_FrameArrived);
 
             isCollectFrames = true;
 
-            for (int i = 0; i < 1000; i++)
+            for (int i = 0; i < 10; i++)
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                if (!isCollectFrames)
-                    break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                // if (!isCollectFrames)
+                //     break;
             }
 
-            colorSensor.Stop();
-            colorSensor.Close();
+            colorSensor->Stop();
+            colorSensor->Close();
+            break;
         }
+        break;
     }
 }
