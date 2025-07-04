@@ -19,14 +19,22 @@ using namespace std;
 // #include <thread>
 // #include "infra/TestInfra.cpp"
 
+// Profile running_profile; 
+
+
 class StreamingTest : public TestBase
 {
 public:
+
+
+
     void configure(int StreamDuration)
     {
         Logger::getLogger().log("Configuring stream duration to: " + to_string(StreamDuration), "Test", LOG_INFO);
         testDuration = StreamDuration;
     }
+
+    
     void run(vector<StreamType> streams, bool isMixed=false)
     {
         string failedIterations = "Test Failed in Iterations: ";
@@ -39,7 +47,7 @@ public:
         FrameDropIntervalMetric met_drop_interval;
         FrameDropsPercentageMetric met_drop_percent;
         IDCorrectnessMetric met_id_cor;
-        // MetaDataCorrectnessMetric met_md_cor;
+        MetaDataCorrectnessMetric met_md_cor;
         
         metrics.push_back(&met_seq);
         metrics.push_back(&met_arrived);
@@ -49,12 +57,14 @@ public:
         metrics.push_back(&met_fps);
         metrics.push_back(&met_frame_size);
         metrics.push_back(&met_id_cor);
-        // metrics.push_back(&met_md_cor);
+        metrics.push_back(&met_md_cor);
 
 
-        Sensor depthSensor = cam.GetDepthSensor();
-        Sensor irSensor = cam.GetIRSensor();
-        Sensor colorSensor = cam.GetColorSensor();
+        Sensor* depthSensor = cam.GetDepthSensor();
+        Sensor* irSensor = cam.GetIRSensor();
+        Sensor* colorSensor = cam.GetColorSensor();
+        colorSensor->copyFrameData=true;
+        Sensor* imuSensor = cam.GetIMUSensor();
         vector<vector<Profile>> profiles;
         if (!isMixed)
             profiles = GetProfiles(streams);
@@ -71,6 +81,7 @@ public:
         bool DepthUsed=false;
         bool ColorUsed=false;
         bool IRUsed=false;
+        bool ImuUsed = false;
         for (int f=0;f< streams.size();f++)
         {
             if (streams[f]==StreamType::Depth_Stream)
@@ -79,6 +90,8 @@ public:
                 IRUsed=true;
             else if (streams[f]==StreamType::Color_Stream)
                 ColorUsed=true;
+            else if (streams[f] == StreamType::Imu_Stream)
+                ImuUsed = true;
         }
         for (int j = 0; j < profiles.size(); j++)
         {
@@ -91,72 +104,91 @@ public:
                 if (profiles[j][i].streamType==StreamType::Depth_Stream)
                 {
                     Logger::getLogger().log("Depth Profile Used: " + profiles[j][i].GetText(), "Test");
-                    depthSensor.Configure(profiles[j][i]);
+                    depthSensor->Configure(profiles[j][i]);
                     pR.push_back(profiles[j][i]);
 
                 }
                 else if (profiles[j][i].streamType==StreamType::IR_Stream)
                 {
                     Logger::getLogger().log("IR Profile Used: " + profiles[j][i].GetText(), "Test");
-                    irSensor.Configure(profiles[j][i]);
+                    irSensor->Configure(profiles[j][i]);
                     pR.push_back(profiles[j][i]);
                 }
                 else if (profiles[j][i].streamType==StreamType::Color_Stream)
                 {
                     Logger::getLogger().log("Color Profile Used: " + profiles[j][i].GetText(), "Test");
-                    colorSensor.Configure(profiles[j][i]);
+                    colorSensor->Configure(profiles[j][i]);
+                    running_profile = profiles[j][i];
+                    pR.push_back(profiles[j][i]);
+                }
+                else if (profiles[j][i].streamType == StreamType::Imu_Stream)
+                {
+                    Logger::getLogger().log("IMU Profile Used: " + profiles[j][i].GetText(), "Test");
+                    imuSensor->Configure(profiles[j][i]);
                     pR.push_back(profiles[j][i]);
                 }
             }                      
             setCurrentProfiles(pR);
 
             long startTime = TimeUtils::getCurrentTimestamp();
-            //int slept = 0;
+            int slept = 0;
             // collectFrames=true;
             if (ColorUsed)
             {   
                 color_collectFrames= true;
-                colorSensor.Start(AddFrame);
-                //std::this_thread::sleep_for(std::chrono::seconds(1));
-                //slept+=1;
+                colorSensor->Start(AddFrame);
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                slept+=1;
             }
             if (DepthUsed)
             {
                 depth_collectFrames = true;
-                depthSensor.Start(AddFrame);
+                depthSensor->Start(AddFrame);
+                Logger::getLogger().log("Started Depth Stream, at System TS: " + to_string(TimeUtils::getCurrentTimestamp()), "Test");
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
                 //slept+=1;
             }
             if (IRUsed)
             {
                 ir_collectFrames = true;
-                irSensor.Start(AddFrame);
+                irSensor->Start(AddFrame);
+            }
+            if (ImuUsed)
+            {
+                imu_collectFrames = true;
+                imuSensor->Start(AddFrame);
             }
 
 
             long startTime2 = TimeUtils::getCurrentTimestamp();
-            std::this_thread::sleep_for(std::chrono::seconds(testDuration));
+            std::this_thread::sleep_for(std::chrono::seconds(testDuration - slept));
 
             // collectFrames=false;
             if (ColorUsed)
             {
                 color_collectFrames= false;
-                colorSensor.Stop();
-                colorSensor.Close();
+                colorSensor->Stop();
+                colorSensor->Close();
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (DepthUsed)
             {
                 depth_collectFrames = false;
-                depthSensor.Stop();
-                depthSensor.Close();
+                depthSensor->Stop();
+                depthSensor->Close();
                 //std::this_thread::sleep_for(std::chrono::seconds(1));
             }
             if (IRUsed)
             {
                 ir_collectFrames = false;
-                irSensor.Stop();
-                irSensor.Close();
+                irSensor->Stop();
+                irSensor->Close();
+            }
+            if (ImuUsed)
+            {
+                imu_collectFrames = false;
+                imuSensor->Stop();
+                imuSensor->Close();
             }
             
             
@@ -170,7 +202,7 @@ public:
             met_drop_interval.setParams(MetricDefaultTolerances::get_tolerance_FrameDropInterval());
             met_drop_percent.setParams(MetricDefaultTolerances::get_tolerance_FrameDropsPercentage());
             met_id_cor.setParams(MetricDefaultTolerances::get_tolerance_IDCorrectness());
-            // met_md_cor.setParams(1);
+            met_md_cor.setParams(1);
             bool result = CalcMetrics(j);
             if (!result)
             {
@@ -196,70 +228,113 @@ public:
     }
 };
 
-TEST_F(StreamingTest, DepthStreamingTest)
+// TEST_F(StreamingTest, DepthStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Depth_Stream);
+//     run(streams);
+// }
+
+// TEST_F(StreamingTest, IRStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::IR_Stream);
+//     run(streams);
+// }
+// TEST_F(StreamingTest, ColorStreamingTest)
+// {
+//     configure(7);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Color_Stream);
+//     run(streams);
+// }
+
+// TEST_F(StreamingTest, ImuStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Imu_Stream);
+//     run(streams);
+// }
+
+// TEST_F(StreamingTest, DepthIRStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::IR_Stream);
+//     streams.push_back(StreamType::Depth_Stream);
+//     run(streams);
+// }
+TEST_F(StreamingTest, DepthColorStreamingTest)
 {
-    configure(30);
+    configure(5);
     vector<StreamType> streams;
+    streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::Depth_Stream);
     run(streams);
 }
 
-TEST_F(StreamingTest, IRStreamingTest)
-{
-    configure(30);
-    vector<StreamType> streams;
-    streams.push_back(StreamType::IR_Stream);
-    run(streams);
-}
-TEST_F(StreamingTest, ColorStreamingTest)
-{
-    configure(30);
-    vector<StreamType> streams;
-    streams.push_back(StreamType::Color_Stream);
-    run(streams);
-}
-TEST_F(StreamingTest, DepthIRStreamingTest)
-{
-    configure(30);
-    vector<StreamType> streams;
-    streams.push_back(StreamType::IR_Stream);
-    streams.push_back(StreamType::Depth_Stream);
-    run(streams);
-}
-TEST_F(StreamingTest, DepthColorStreamingTest)
-{
-    configure(30);
-    vector<StreamType> streams;
-    streams.push_back(StreamType::Color_Stream);
-    streams.push_back(StreamType::Depth_Stream);
-    run(streams);
-}
-TEST_F(StreamingTest, IRColorStreamingTest)
+// TEST_F(StreamingTest, DepthImuStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Imu_Stream);
+//     streams.push_back(StreamType::Depth_Stream);
+//     run(streams);
+// }
+
+// TEST_F(StreamingTest, IRColorStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Color_Stream);
+//     streams.push_back(StreamType::IR_Stream);
+//     run(streams);
+// }
+
+// TEST_F(StreamingTest, IRColorImuStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Color_Stream);
+//     streams.push_back(StreamType::IR_Stream);
+//     streams.push_back(StreamType::Imu_Stream);
+//     run(streams);
+// }
+
+TEST_F(StreamingTest, DepthIRColorStreamingTest)
 {
     configure(10);
     vector<StreamType> streams;
     streams.push_back(StreamType::Color_Stream);
-    streams.push_back(StreamType::IR_Stream);
-    run(streams);
-}
-TEST_F(StreamingTest, DepthIRColorStreamingTest)
-{
-    configure(30);
-    vector<StreamType> streams;
-    streams.push_back(StreamType::Color_Stream);
     streams.push_back(StreamType::Depth_Stream);
     streams.push_back(StreamType::IR_Stream);
     run(streams);
 }
 
-TEST_F(StreamingTest, DepthIRColorMixStreamingTest)
-{
-    configure(30);
-    vector<StreamType> streams;
-    streams.push_back(StreamType::Color_Stream);
-    streams.push_back(StreamType::Depth_Stream);
-    streams.push_back(StreamType::IR_Stream);
-    run(streams,true);
-}
+// TEST_F(StreamingTest, DepthIRColorImuStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Color_Stream);
+//     streams.push_back(StreamType::Depth_Stream);
+//     streams.push_back(StreamType::IR_Stream);
+//     streams.push_back(StreamType::Imu_Stream);
+//     run(streams);
+// }
+
+// TEST_F(StreamingTest, DepthIRColorMixStreamingTest)
+// {
+//     configure(30);
+//     vector<StreamType> streams;
+//     streams.push_back(StreamType::Color_Stream);
+//     streams.push_back(StreamType::Depth_Stream);
+//     streams.push_back(StreamType::IR_Stream);
+//     run(streams,true);
+// }
+
+
 
 

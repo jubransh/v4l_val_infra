@@ -8,20 +8,16 @@ paramiko.util.log_to_file("paramiko.log")
 
 time_stamp = time.strftime("%Y-%m-%d--%H-%M-%S")
 
-# hosts="143.185.115.150" # fadi's host D457-Jetson-01
-# hosts = "143.185.126.16" # shadi's host D457-Jetson-02
-# hosts = "143.185.126.8" # Ashrafs Host D457-Jetson-05
-# hosts = "143.185.116.157" # Content host D457-Jetson-04
-# hosts = "143.185.115.38,143.185.116.128,143.185.227.166"
-hosts = "143.185.116.33,143.185.115.38"
-# hosts = "143.185.115.150,143.185.126.16,143.185.126.8,143.185.116.157"
+hosts = "d457jetson03.iil.intel.com,d457jetson05.iil.intel.com,d457jetson06.iil.intel.com,d457jetson08.iil.intel.com"
+# hosts = "d457jetson08.iil.intel.com,d457jetson07.iil.intel.com,d457jetson06.iil.intel.com,d457jetson05.iil.intel.com,d457jetson03.iil.intel.com,d457jetson01.iil.intel.com"
 host_list=hosts.split(",")
-logs_folder="/home/nvidia/Logs/"
+orig_logs_folder="/home/administrator/Logs/"
+ssd_logs_folder="/media/administrator/DataUSB/storage/Logs/"
 
-collect_raw_data=True
-# collect_raw_data=False
-collect_log_file = True
-# collect_log_file = False
+# collect_raw_data=True
+collect_raw_data=False
+# collect_log_file = True
+collect_log_file = False
 
 target_folder = r"c:\log"
 download_folder=os.path.join(r"c:\D457-temp",time_stamp)
@@ -30,8 +26,14 @@ download_folder=os.path.join(r"c:\D457-temp",time_stamp)
 def get_file_from_host(host,target_folder):
     logger.info("connecting to :{}".format(host))
     transport = paramiko.Transport((host,22))
-    transport.connect(None,"nvidia","nvidia")
+    transport.connect(None,"administrator","trio_012")
     sftp = paramiko.SFTPClient.from_transport(transport)
+    try:
+        sftp.chdir(ssd_logs_folder)
+        logs_folder=ssd_logs_folder
+    except IOError as e:
+        logs_folder=orig_logs_folder
+    logger.info("Log Folder : " + logs_folder + " in host: " + host)
     sids=sftp.listdir(logs_folder)
     logger.info("going over SIDs")
     for sid in sids:
@@ -67,19 +69,19 @@ def get_file_from_host(host,target_folder):
                         else:
                             logger.error("iteration_summary.csv not found in test: "+test+" SID: "+sid+ " in host: "+host)
                         if collect_raw_data:
-                            if "raw_data.csv" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
-                                if not os.path.exists(os.path.join(target_folder, host, sid, test)):
-                                    try:
-                                        os.makedirs(os.path.join(target_folder, host, sid, test))
-                                    except:
-                                        pass
-                                logger.info(
-                                    "getting raw_data.csv from Test:" + test + " from SID:" + sid + " from host:" + host)
-                                sftp.get(logs_folder + "/" + sid + "/" + test + "/raw_data.csv",
-                                         os.path.join(target_folder, host, sid, test, "raw_data.csv"))
-                            else:
-                                logger.error(
-                                    "raw_data.csv not found in test: " + test + " SID: " + sid + " in host: " + host)
+                          
+                            if not os.path.exists(os.path.join(target_folder, host, sid, test)):
+                                try:
+                                    os.makedirs(os.path.join(target_folder, host, sid, test))
+                                except:
+                                    pass
+                            for raw in sftp.listdir(logs_folder + "/" + sid + "/" + test):
+                                if "raw_data" in raw:
+                                    logger.info(
+                                        "getting "+raw+" from Test:" + test + " from SID:" + sid + " from host:" + host)
+                                    sftp.get(logs_folder + "/" + sid + "/" + test + "/"+raw,
+                                             os.path.join(target_folder, host, sid, test, raw))
+
                         if collect_log_file:
                             if "test.log" in sftp.listdir(logs_folder + "/" + sid + "/" + test):
                                 if not os.path.exists(os.path.join(target_folder, host, sid, test)):
@@ -151,7 +153,7 @@ if __name__ == '__main__':
     # intialize "backup_results.csv" file - including unfinished tests
     backup_tests_results = open(os.path.join(target_folder, time_stamp + "_tests_results_fromIterations.csv"), "w+", newline='')
     backup_tests_results_writer = csv.writer(backup_tests_results)
-    backup_tests_results_writer.writerow(["IP","SID","Test name","Total iterations","Failed iterations","Pass rate"])
+    backup_tests_results_writer.writerow(["IP","Camera Serial","SID","Test name","Test Suite","Total iterations","Failed iterations","Pass rate"])
 
     # go over hosts in logs folder
     for host in os.listdir(download_folder):
@@ -194,6 +196,8 @@ if __name__ == '__main__':
 
                 # adding backup_test_results - go over the result csv file and get the test name, total iterations and failed iterations
                 test_name=test
+                testSuite=""
+                cameraSerial=""
                 curr_iteration = -1
                 total_iterations = 0
                 Failed_iterations = 0
@@ -212,12 +216,14 @@ if __name__ == '__main__':
                             else:
                                 line_count+=1
                                 if curr_iteration!= row["Iteration"]:
+                                    testSuite=row[" Test Suite"]
+                                    cameraSerial = row[" Camera Serial"]
                                     curr_iteration = row["Iteration"]
                                     total_iterations+=1
                                     if row["Iteration status"]=="Fail":
                                         Failed_iterations+=1
                     if total_iterations != 0:
-                        backup_tests_results_writer.writerow([host, sid, test,total_iterations, Failed_iterations, (total_iterations-Failed_iterations)/total_iterations])
+                        backup_tests_results_writer.writerow([host, cameraSerial,sid, test,testSuite, total_iterations, Failed_iterations, 100*(total_iterations-Failed_iterations)/total_iterations])
 
 
                     backup_tests_results.flush()

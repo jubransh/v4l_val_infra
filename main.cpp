@@ -1,5 +1,5 @@
 // to compile the project, run the command:
-//  g++ . / main.cpp - o main - lgtest - lpthread - lopencv_core - lopencv_imgproc - ltbb
+//  g++ ./main.cpp -o main -lgtest -lpthread -lopencv_core -lopencv_imgproc -ltbb
 
 // #include <gtest/gtest.h>
 
@@ -36,7 +36,7 @@
 #include"Controls.cpp"
 #include "Stability.cpp"
 
-#include "content_special_tests.cpp"
+//#include "content_special_tests.cpp"
 
 // #include "V4L2PlayGround.cpp"
 // #include "V4L2PlayGround2.cpp"

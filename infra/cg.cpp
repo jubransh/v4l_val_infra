@@ -36,16 +36,18 @@ public:
             conf._controlID = V4L2_CID_EXPOSURE_ABSOLUTE;
             // conf._controlID = V4L2_CID_EXPOSURE;
             conf._mDName = "exposureTime";
-            conf._values.push_back(10);
-            conf._values.push_back(155);
-            conf._values.push_back(322);
-            conf._values.push_back(655);
-            conf._values.push_back(1650);            
+
+            conf._values.push_back(1);
+            conf._values.push_back(10020);
+            conf._values.push_back(15520);
+            conf._values.push_back(32220);
+            conf._values.push_back(65520);            
+            conf._values.push_back(165000);            
         }
         else if (controlName == "Gain")
         {
             conf._controlName = "Gain";
-            conf._controlID = V4L2_CID_GAIN;
+            conf._controlID = V4L2_CID_ANALOGUE_GAIN;
             conf._mDName = "Gain";
             conf._values.push_back(16);
             conf._values.push_back(74);
@@ -130,7 +132,7 @@ public:
         else if (controlName == "Color_Gain")
         {
             conf._controlName = "Color_Gain";
-            conf._controlID = V4L2_CID_GAIN;
+            conf._controlID = V4L2_CID_ANALOGUE_GAIN;
             conf._mDName = "Gain";
             conf._values.push_back(0);
             conf._values.push_back(32);
