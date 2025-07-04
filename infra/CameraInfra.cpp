@@ -12,6 +12,8 @@ using namespace std;
 
 using namespace std::chrono;
 
+#define UPDC32(octet, crc) (crc_32_tab[((crc) ^ (octet)) & 0xff] ^ ((crc) >> 8))
+
 #define NUMBER_OF_BUFFERS 8
 #define DS5_STREAM_CONFIG_0 0x4000
 #define DS5_CAMERA_CID_BASE (V4L2_CTRL_CLASS_CAMERA | DS5_STREAM_CONFIG_0)
@@ -31,6 +33,51 @@ using namespace std::chrono;
 #define DS5_CAMERA_CID_EWB (DS5_CAMERA_CID_BASE + 14)
 #define DS5_CAMERA_CID_HWMC (DS5_CAMERA_CID_BASE + 15)
 #define TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE 0x9a206e
+
+static const uint32_t crc_32_tab[] __attribute__((section(".rodata"))) = {/* CRC polynomial 0xedb88320 */
+                                                                          0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
+                                                                          0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
+                                                                          0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
+                                                                          0xf3b97148, 0x84be41de, 0x1adad47d, 0x6ddde4eb, 0xf4d4b551, 0x83d385c7,
+                                                                          0x136c9856, 0x646ba8c0, 0xfd62f97a, 0x8a65c9ec, 0x14015c4f, 0x63066cd9,
+                                                                          0xfa0f3d63, 0x8d080df5, 0x3b6e20c8, 0x4c69105e, 0xd56041e4, 0xa2677172,
+                                                                          0x3c03e4d1, 0x4b04d447, 0xd20d85fd, 0xa50ab56b, 0x35b5a8fa, 0x42b2986c,
+                                                                          0xdbbbc9d6, 0xacbcf940, 0x32d86ce3, 0x45df5c75, 0xdcd60dcf, 0xabd13d59,
+                                                                          0x26d930ac, 0x51de003a, 0xc8d75180, 0xbfd06116, 0x21b4f4b5, 0x56b3c423,
+                                                                          0xcfba9599, 0xb8bda50f, 0x2802b89e, 0x5f058808, 0xc60cd9b2, 0xb10be924,
+                                                                          0x2f6f7c87, 0x58684c11, 0xc1611dab, 0xb6662d3d, 0x76dc4190, 0x01db7106,
+                                                                          0x98d220bc, 0xefd5102a, 0x71b18589, 0x06b6b51f, 0x9fbfe4a5, 0xe8b8d433,
+                                                                          0x7807c9a2, 0x0f00f934, 0x9609a88e, 0xe10e9818, 0x7f6a0dbb, 0x086d3d2d,
+                                                                          0x91646c97, 0xe6635c01, 0x6b6b51f4, 0x1c6c6162, 0x856530d8, 0xf262004e,
+                                                                          0x6c0695ed, 0x1b01a57b, 0x8208f4c1, 0xf50fc457, 0x65b0d9c6, 0x12b7e950,
+                                                                          0x8bbeb8ea, 0xfcb9887c, 0x62dd1ddf, 0x15da2d49, 0x8cd37cf3, 0xfbd44c65,
+                                                                          0x4db26158, 0x3ab551ce, 0xa3bc0074, 0xd4bb30e2, 0x4adfa541, 0x3dd895d7,
+                                                                          0xa4d1c46d, 0xd3d6f4fb, 0x4369e96a, 0x346ed9fc, 0xad678846, 0xda60b8d0,
+                                                                          0x44042d73, 0x33031de5, 0xaa0a4c5f, 0xdd0d7cc9, 0x5005713c, 0x270241aa,
+                                                                          0xbe0b1010, 0xc90c2086, 0x5768b525, 0x206f85b3, 0xb966d409, 0xce61e49f,
+                                                                          0x5edef90e, 0x29d9c998, 0xb0d09822, 0xc7d7a8b4, 0x59b33d17, 0x2eb40d81,
+                                                                          0xb7bd5c3b, 0xc0ba6cad, 0xedb88320, 0x9abfb3b6, 0x03b6e20c, 0x74b1d29a,
+                                                                          0xead54739, 0x9dd277af, 0x04db2615, 0x73dc1683, 0xe3630b12, 0x94643b84,
+                                                                          0x0d6d6a3e, 0x7a6a5aa8, 0xe40ecf0b, 0x9309ff9d, 0x0a00ae27, 0x7d079eb1,
+                                                                          0xf00f9344, 0x8708a3d2, 0x1e01f268, 0x6906c2fe, 0xf762575d, 0x806567cb,
+                                                                          0x196c3671, 0x6e6b06e7, 0xfed41b76, 0x89d32be0, 0x10da7a5a, 0x67dd4acc,
+                                                                          0xf9b9df6f, 0x8ebeeff9, 0x17b7be43, 0x60b08ed5, 0xd6d6a3e8, 0xa1d1937e,
+                                                                          0x38d8c2c4, 0x4fdff252, 0xd1bb67f1, 0xa6bc5767, 0x3fb506dd, 0x48b2364b,
+                                                                          0xd80d2bda, 0xaf0a1b4c, 0x36034af6, 0x41047a60, 0xdf60efc3, 0xa867df55,
+                                                                          0x316e8eef, 0x4669be79, 0xcb61b38c, 0xbc66831a, 0x256fd2a0, 0x5268e236,
+                                                                          0xcc0c7795, 0xbb0b4703, 0x220216b9, 0x5505262f, 0xc5ba3bbe, 0xb2bd0b28,
+                                                                          0x2bb45a92, 0x5cb36a04, 0xc2d7ffa7, 0xb5d0cf31, 0x2cd99e8b, 0x5bdeae1d,
+                                                                          0x9b64c2b0, 0xec63f226, 0x756aa39c, 0x026d930a, 0x9c0906a9, 0xeb0e363f,
+                                                                          0x72076785, 0x05005713, 0x95bf4a82, 0xe2b87a14, 0x7bb12bae, 0x0cb61b38,
+                                                                          0x92d28e9b, 0xe5d5be0d, 0x7cdcefb7, 0x0bdbdf21, 0x86d3d2d4, 0xf1d4e242,
+                                                                          0x68ddb3f8, 0x1fda836e, 0x81be16cd, 0xf6b9265b, 0x6fb077e1, 0x18b74777,
+                                                                          0x88085ae6, 0xff0f6a70, 0x66063bca, 0x11010b5c, 0x8f659eff, 0xf862ae69,
+                                                                          0x616bffd3, 0x166ccf45, 0xa00ae278, 0xd70dd2ee, 0x4e048354, 0x3903b3c2,
+                                                                          0xa7672661, 0xd06016f7, 0x4969474d, 0x3e6e77db, 0xaed16a4a, 0xd9d65adc,
+                                                                          0x40df0b66, 0x37d83bf0, 0xa9bcae53, 0xdebb9ec5, 0x47b2cf7f, 0x30b5ffe9,
+                                                                          0xbdbdf21c, 0xcabac28a, 0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693,
+                                                                          0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
+                                                                          0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d};
 
 class TimeUtils
 {
@@ -86,7 +133,7 @@ typedef struct
     int16_t z;
     uint64_t hwTimestamp_2;
     uint64_t skip2;
-} __attribute__((packed))IMUFrameData;
+} __attribute__((packed)) IMUFrameData;
 
 // struct IMUFrameData
 // {
@@ -195,18 +242,18 @@ public:
             bpp = 2;
             break;
         }
-        int bytes_per_line=0;
-        int actualWidth=resolution.width;
-        if (resolution.width!=640 && resolution.width!=1280)
+        int bytes_per_line = 0;
+        int actualWidth = resolution.width;
+        if (resolution.width != 640 && resolution.width != 1280)
         {
             while (true)
             {
-                if (actualWidth%64==0)
+                if (actualWidth % 64 == 0)
                     break;
                 else
-                    actualWidth+=1;
+                    actualWidth += 1;
             }
-            bytes_per_line= actualWidth* bpp;
+            bytes_per_line = actualWidth * bpp;
             return resolution.height * bytes_per_line;
         }
         return resolution.width * resolution.height * bpp;
@@ -261,7 +308,7 @@ struct CommandResult
 struct CommonMetadata
 {
     int frameId = 0;
-    double CRC = 0;
+    uint32_t CRC = 0;
     double Size = 0;
     double Timestamp = 0;
     int Type = 0;
@@ -273,11 +320,12 @@ struct CommonMetadata
     double manualExposure = 0;
     double width = 0;
     double height = 0;
+    bool CrcCorrectness = true;
 };
 struct ImuMetaData
 {
     int imuType = 0;
-    float x,y,z;
+    float x, y, z;
 };
 
 struct ColorMetadata
@@ -351,7 +399,7 @@ public:
         text += ", x=" + to_string(imuMetadata.x);
         text += ", y=" + to_string(imuMetadata.y);
         text += ", z=" + to_string(imuMetadata.z);
-       
+
         Logger::getLogger().log(text, LOG_INFO);
     }
 
@@ -440,7 +488,7 @@ struct Frame
 
 class Sensor
 {
-        // For debugging
+    // For debugging
     void PrintBytes(uint8_t buff[], int len)
     {
 
@@ -452,6 +500,7 @@ class Sensor
             cout << hex << unsigned(buff[i]) << " ";
         }
     }
+
 private:
     bool isClosed = true;
     std::shared_ptr<std::thread> _t;
@@ -523,13 +572,12 @@ private:
         string t_name = "ioctl_thread";
         int result = -1;
         bool isDone = false;
-        insideIOCTL ++;
+        insideIOCTL++;
         // thread open_thread(open, __path,__oflag);
         thread open_thread([&]()
                            {
                                 result = ioctl(fd, request, buff);
-                                isDone = true; 
-                            });
+                                isDone = true; });
 
         tm[t_name] = open_thread.native_handle();
         open_thread.detach();
@@ -541,28 +589,28 @@ private:
         while (true)
         {
 
-            //if (stopRequested)
+            // if (stopRequested)
             //{
-            //    Logger::getLogger().log(buffType + "Stop was requested While waiting for IOCTL", "Sensor");
-            //    break;
-            //}
+            //     Logger::getLogger().log(buffType + "Stop was requested While waiting for IOCTL", "Sensor");
+            //     break;
+            // }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             if (++i % 1000 == 0)
                 Logger::getLogger().log(buffType + "ioct_timeout still running", "Sensor");
-            
+
             auto delta = TimeUtils::getCurrentTimestamp() - startTime;
-            if(delta > timeput_ms)
+            if (delta > timeput_ms)
             {
                 Logger::getLogger().log(buffType + " Timeout exceeded - Delta = " + to_string(delta), "Sensor", LOG_ERROR);
                 break;
             }
 
-            if(isDone)
+            if (isDone)
                 break;
         }
 
-        if(!isDone) // the ioctl still stuck
+        if (!isDone) // the ioctl still stuck
         {
             // Kill the open thread
             Logger::getLogger().log(buffType + " did not arrive within " + to_string(timeput_ms) + "ms - Task killed", "Sensor", LOG_ERROR);
@@ -574,7 +622,7 @@ private:
                 Logger::getLogger().log(buffType + " Task killed", "Sensor", LOG_ERROR);
             }
         }
-        insideIOCTL --;
+        insideIOCTL--;
         return result;
     }
 
@@ -588,13 +636,13 @@ private:
         v4L2ReqBufferrs.memory = memory;
         v4L2ReqBufferrs.count = count;
         int ret = ioctl(fd, VIDIOC_REQBUFS, &v4L2ReqBufferrs);
-        string t="";
+        string t = "";
         if (type == V4L2_BUF_TYPE_VIDEO_CAPTURE)
             t = "Frame ";
         else if (type == V4L2_BUF_TYPE_META_CAPTURE)
             t = "MetaData ";
 
-        Logger::getLogger().log(GetName() + " Requesting "+ t +"buffers " + string((0 == ret) ? "Succeeded" : "Failed"), "Sensor", LOG_INFO);
+        Logger::getLogger().log(GetName() + " Requesting " + t + "buffers " + string((0 == ret) ? "Succeeded" : "Failed"), "Sensor", LOG_INFO);
         Logger::getLogger().log(GetName() + " Requested buffers number: " + to_string(v4L2ReqBufferrs.count), "Sensor", LOG_INFO);
 
         ASSERT_TRUE(0 == ret);
@@ -635,7 +683,6 @@ private:
     enum v4l2_buf_type mdType = V4L2_BUF_TYPE_META_CAPTURE;
 
 public:
-
     bool getIsClosed()
     {
         return isClosed;
@@ -697,13 +744,13 @@ public:
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-            //if (openMD)
+            // if (openMD)
             //{
-            //    Logger::getLogger().log("Openning /dev/video5", "Sensor");
-            //    videoNode = {"/dev/video5"};
-            //    metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
-            //    // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
-            //}
+            //     Logger::getLogger().log("Openning /dev/video5", "Sensor");
+            //     videoNode = {"/dev/video5"};
+            //     metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            //     // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            // }
             name = "IR Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
@@ -736,19 +783,19 @@ public:
         }
         case SensorType::IMU:
         {
-            videoNode = { "/dev/video5" };
+            videoNode = {"/dev/video5"};
             Logger::getLogger().log("Openning /dev/video5", "Sensor");
 
             dataFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
             // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
 
-            //if (openMD)
+            // if (openMD)
             //{
-            //    Logger::getLogger().log("Openning /dev/video5", "Sensor");
-            //    videoNode = {"/dev/video5"};
-            //    metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
-            //    // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
-            //}
+            //     Logger::getLogger().log("Openning /dev/video5", "Sensor");
+            //     videoNode = {"/dev/video5"};
+            //     metaFileDescriptor = Open_timeout(videoNode.c_str(), O_RDWR, 1000);
+            //     // dataFileDescriptor = open(videoNode.c_str(), O_RDWR);
+            // }
             name = "IMU Sensor";
             dataFileOpened = dataFileDescriptor > 0;
             metaFileOpened = metaFileDescriptor > 0;
@@ -764,12 +811,12 @@ public:
     double GetControl(__u32 controlId)
     {
         bool wasClosed;
-        if(isClosed)
-            wasClosed=true;
+        if (isClosed)
+            wasClosed = true;
         else
-            wasClosed=false;
+            wasClosed = false;
         if (wasClosed)
-            Init(getType(),getOpenMetaD());
+            Init(getType(), getOpenMetaD());
         struct v4l2_ext_control control
         {
             0
@@ -781,8 +828,8 @@ public:
         {
             0
         };
-        if (controlId==V4L2_CID_ANALOGUE_GAIN)
-            ext.ctrl_class= V4L2_CTRL_CLASS_IMAGE_SOURCE;
+        if (controlId == V4L2_CID_ANALOGUE_GAIN)
+            ext.ctrl_class = V4L2_CTRL_CLASS_IMAGE_SOURCE;
         else
             ext.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
         ext.controls = &control;
@@ -821,14 +868,14 @@ public:
             0
         };
         bool wasClosed;
-        if(isClosed)
-            wasClosed=true;
+        if (isClosed)
+            wasClosed = true;
         else
-            wasClosed=false;
+            wasClosed = false;
         if (wasClosed)
-            Init(getType(),getOpenMetaD());
-        if (controlId==V4L2_CID_ANALOGUE_GAIN)
-            ext.ctrl_class= V4L2_CTRL_CLASS_IMAGE_SOURCE;
+            Init(getType(), getOpenMetaD());
+        if (controlId == V4L2_CID_ANALOGUE_GAIN)
+            ext.ctrl_class = V4L2_CTRL_CLASS_IMAGE_SOURCE;
         else
             ext.ctrl_class = V4L2_CTRL_CLASS_CAMERA;
         ext.controls = &control;
@@ -938,18 +985,18 @@ public:
             Logger::getLogger().log("Failed to set Fps", "Sensor", LOG_ERROR);
             throw std::runtime_error("Failed to set Fps");
         }
-        int bytes_per_line=0;
-        if (p.resolution.width!=640 && p.resolution.width!=1280)
+        int bytes_per_line = 0;
+        if (p.resolution.width != 640 && p.resolution.width != 1280)
         {
-            int actualWidth=p.resolution.width;
+            int actualWidth = p.resolution.width;
             while (true)
             {
-                if (actualWidth%64==0)
+                if (actualWidth % 64 == 0)
                     break;
                 else
-                    actualWidth+=1;
+                    actualWidth += 1;
             }
-            bytes_per_line= actualWidth* p.GetBpp();
+            bytes_per_line = actualWidth * p.GetBpp();
             // bytes_per_line=896
         }
         Logger::getLogger().log(GetName() + " Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
@@ -1237,21 +1284,25 @@ public:
                                                                 md.commonMetadata.Type = type;
                                                             }
 
-                                                            //    // uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index]), sizeof(STMetaDataDepthYNormalMode) - 4);
-                                                        }
-                                                        /* // code that prints the MetaData Buffer and the metadata actual data for comparison
-                                                        if (frame.ID == 10)
-                                                        {
-                                                            u_int* newPTR = static_cast<u_int*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
-                                                            for (int i = 0; i < 52; i++)
-                                                            {
-                                                                cout << dec << newPTR[i] << " ";
+                                                            //print the raw data
+                                                            // u_int* newPTR = static_cast<u_int*>(metaDataBuffers[mdV4l2Buffer.index] + 16);
+                                                            // cout <<"========================================================================" <<endl;
+                                                            // for (size_t i = 0; i < 68/4 - 4; ++i) {
+                                                                
+                                                            //     std::cout << std::setw(2) << std::setfill('0') << std::hex << newPTR[i] << " ";
+                                                            //     //cout << hex << unsigned(newPTR[i]) << " ";
+                                                            // }
+                                                            // std::cout << std::dec << std::endl; // Reset to decimal after printing in hex
+                                                            // cout <<"========================================================================" <<endl;
+                                                            if(type == SensorType::Color || type == SensorType::Depth || type == SensorType::IR){
+                                                                uint32_t crc = crc32buf(static_cast<uint8_t*>(metaDataBuffers[mdV4l2Buffer.index] + 16), 48/*sizeof(STMetaDataExtMipiDepthIR) - 4*/);
+                                                                md.commonMetadata.CrcCorrectness = crc == md.commonMetadata.CRC;
+                                                                if(md.commonMetadata.CrcCorrectness)
+                                                                    cout << "CRC OK: " << std::hex << crc << " | " <<std::hex << md.commonMetadata.CRC << endl;
+                                                                else
+                                                                    cout<<"Crc Check Failed: " << std::hex << crc << " | " <<std::hex << md.commonMetadata.CRC << endl;                                                 
                                                             }
-                                                            cout << endl;
-                                                            md.print_MetaData();
-
                                                         }
-                                                        */
 
 
                                                         frame.frameMD = md;
@@ -1298,15 +1349,15 @@ public:
         stopRequested = true;
 
         // wait for the start thread to be terminated
-        if(cameraBusy)
+        if (cameraBusy)
         {
             _t->join();
         }
         cout << "insideIOCTL= " << insideIOCTL << endl;
-        while (insideIOCTL!=0)
+        while (insideIOCTL != 0)
         {
             cout << "insideIOCTL= " << insideIOCTL << endl;
-            cout << GetName()<< " waiting for ioctl counter: " << insideIOCTL << endl;
+            cout << GetName() << " waiting for ioctl counter: " << insideIOCTL << endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         cout << "insideIOCTL= " << insideIOCTL << endl;
@@ -1333,15 +1384,14 @@ public:
             Logger::getLogger().log("unmapping " + name + " Stream buffers", "Sensor");
             for (int i = 0; i < framesBuffer.size(); i++)
             {
-                //munmap(framesBuffer[i], lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
+                // munmap(framesBuffer[i], lastProfile.GetBpp() * lastProfile.resolution.width * lastProfile.resolution.height);
                 munmap(framesBuffer[i], lastProfile.GetSize());
                 munmap(metaDataBuffers[i], 4096);
             }
             Logger::getLogger().log("unmapping " + name + " buffers Done", "Sensor");
 
-           
             int bytes_per_line = 0;
-            
+
             Logger::getLogger().log(GetName() + " Configuring Stride to : " + to_string(bytes_per_line), "Sensor");
             struct v4l2_control setStride;
             setStride.id = TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE;
@@ -1381,6 +1431,14 @@ public:
             metaFileDescriptor = 0;
             Logger::getLogger().log(name + " MD file descriptor closed successfully", "Sensor");
         }
+    }
+
+    uint32_t crc32buf(uint8_t *buf, int len)
+    {
+        uint32_t oldcrc32 = 0xFFFFFFFF;
+        for (; len; --len, ++buf)
+            oldcrc32 = UPDC32(*buf, oldcrc32);
+        return ~oldcrc32;
     }
 };
 
@@ -1423,79 +1481,74 @@ private:
     }
 
 public:
-  bool HWReset(int timeout=10)
-      {
-          Sensor* depthSensor=GetDepthSensor();
-          if (depthSensor->getIsClosed())
-              depthSensor->Init(depthSensor->getType(),depthSensor->getOpenMetaD());
-          string serial_number_before;
-          string serial_number_after;
-  
-           for(int i=0; i<10; i++)
-          {
-              try
-              {
-                  serial_number_before = CalcSerialNumber();
-                  break;
-                  
-              }
-              catch(const std::exception& e)
-              {
-              }
-          }
-          
-          // Perform HW Reset
-  
-          HWMonitorCommand hmc = {0};
-  
-          
-          hmc.dataSize = 0;
-          hmc.opCode = 0x20; // HW reset opcode
-  
-          auto cR = SendHWMonitorCommand(hmc);
-          if (cR.Result)
-          {
-  
-              Logger::getLogger().log("Camera HW reset performed", "Camera");
-          }
-          else
-          {
-              // throw std::runtime_error("Failed to perform camera HW reset");
-              Logger::getLogger().log("Camera HW reset Failed ", "Camera", LOG_ERROR);
-              depthSensor->Close();
-              return false;
-          }
-          
-          bool cameraConnected=false;
-          for(int i=0; i<timeout; i++)
-          {
-              try
-              {
-                  serial_number_after = CalcSerialNumber();
-                  
-              }
-              catch(const std::exception& e)
-              {
-              }
-              if (serial_number_after!=serial_number_before)
-                  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-              else
-              {
-                  Logger::getLogger().log("Camera recognized after HW reset", "Camera");
-                  cameraConnected=true;
-                  break;
-              }
-          }
-          if (!cameraConnected)
-              Logger::getLogger().log("Failed to recognize the camera after HW reset", "Camera", LOG_ERROR);
-          std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-          depthSensor->Close();
-          return cameraConnected;
-          
-  
-      }
-      
-      string CalcSerialNumber()
+    bool HWReset(int timeout = 10)
+    {
+        Sensor *depthSensor = GetDepthSensor();
+        if (depthSensor->getIsClosed())
+            depthSensor->Init(depthSensor->getType(), depthSensor->getOpenMetaD());
+        string serial_number_before;
+        string serial_number_after;
+
+        for (int i = 0; i < 10; i++)
+        {
+            try
+            {
+                serial_number_before = CalcSerialNumber();
+                break;
+            }
+            catch (const std::exception &e)
+            {
+            }
+        }
+
+        // Perform HW Reset
+
+        HWMonitorCommand hmc = {0};
+
+        hmc.dataSize = 0;
+        hmc.opCode = 0x20; // HW reset opcode
+
+        auto cR = SendHWMonitorCommand(hmc);
+        if (cR.Result)
+        {
+
+            Logger::getLogger().log("Camera HW reset performed", "Camera");
+        }
+        else
+        {
+            // throw std::runtime_error("Failed to perform camera HW reset");
+            Logger::getLogger().log("Camera HW reset Failed ", "Camera", LOG_ERROR);
+            depthSensor->Close();
+            return false;
+        }
+
+        bool cameraConnected = false;
+        for (int i = 0; i < timeout; i++)
+        {
+            try
+            {
+                serial_number_after = CalcSerialNumber();
+            }
+            catch (const std::exception &e)
+            {
+            }
+            if (serial_number_after != serial_number_before)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            else
+            {
+                Logger::getLogger().log("Camera recognized after HW reset", "Camera");
+                cameraConnected = true;
+                break;
+            }
+        }
+        if (!cameraConnected)
+            Logger::getLogger().log("Failed to recognize the camera after HW reset", "Camera", LOG_ERROR);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        depthSensor->Close();
+        return cameraConnected;
+    }
+
+    string CalcSerialNumber()
     {
         string serial_number;
         HWMonitorCommand hmc = {0};
@@ -1610,7 +1663,7 @@ public:
         return sensors;
     }
 
-    Sensor* GetDepthSensor()
+    Sensor *GetDepthSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
@@ -1620,7 +1673,7 @@ public:
         throw std::runtime_error("Failed to get Depth Sensor ");
     }
 
-    Sensor* GetIRSensor()
+    Sensor *GetIRSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
@@ -1630,7 +1683,7 @@ public:
         throw std::runtime_error("Failed to get IR Sensor ");
     }
 
-    Sensor* GetColorSensor()
+    Sensor *GetColorSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
@@ -1640,7 +1693,7 @@ public:
         throw std::runtime_error("Failed to get Color Sensor ");
     }
 
-    Sensor* GetIMUSensor()
+    Sensor *GetIMUSensor()
     {
         for (int i = 0; i < sensors.size(); i++)
         {
@@ -1755,7 +1808,7 @@ public:
         else
         {
             Logger::getLogger().log("Failed to get Asic temperature from Camera", "Camera", LOG_ERROR);
-            //throw std::runtime_error("Failed to get Asic temperature from Camera");
+            // throw std::runtime_error("Failed to get Asic temperature from Camera");
             return -1;
         }
     }
@@ -1773,7 +1826,7 @@ public:
         else
         {
             Logger::getLogger().log("Failed to get Projector temperature from Camera", "Camera", LOG_ERROR);
-            //throw std::runtime_error("Failed to get Projector temperature from Camera");
+            // throw std::runtime_error("Failed to get Projector temperature from Camera");
             return -1;
         }
     }

@@ -2493,7 +2493,7 @@ public:
 			Logger::getLogger().log("Cannot open raw data file: " + rawDataPath, LOG_ERROR);
 			throw std::runtime_error("Cannot open file: " + rawDataPath);
 		}
-		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp" << endl;
+		rawDataCsv << "Iteration,StreamCombination,Stream Type,Image Format,Resolution,FPS,Gain,AutoExposure,Exposure,LaserPowerMode,LaserPower,Frame Index,MetaData Index,HW TimeStamp-Frame,HWTS-MetaData,System TimeStamp,CRC correctness" << endl;
 
 	}
 	void SetUp() override
@@ -3432,7 +3432,7 @@ public:
 				{
 					rawline = "";
 					rawline += to_string(iteration) + ",\"" + streamComb + "\",Depth," + currDepthProfile.GetFormatText() + "," + to_string(currDepthProfile.resolution.width) + "x" +
-							to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(depthFramesList[i].ID) +  "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(depthFramesList[i].hwTimestamp) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(depthFramesList[i].systemTimestamp);
+							to_string(currDepthProfile.resolution.height) + "," + to_string(currDepthProfile.fps) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(depthFramesList[i].ID) +  "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(depthFramesList[i].hwTimestamp) + "," + to_string(depthFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(depthFramesList[i].systemTimestamp) + "," + (depthFramesList[i].frameMD.commonMetadata.CrcCorrectness ? "Pass" : "Failed");
 					AppendRAwDataCVS(rawline);
 				}
 			}
@@ -3443,7 +3443,7 @@ public:
 				{
 					rawline = "";
 					rawline += to_string(iteration) + ",\"" + streamComb + "\",IR," + currIRProfile.GetFormatText() + "," + to_string(currIRProfile.resolution.width) + "x" +
-							to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(irFramesList[i].ID) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(irFramesList[i].hwTimestamp) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(irFramesList[i].systemTimestamp);
+							to_string(currIRProfile.resolution.height) + "," + to_string(currIRProfile.fps) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(irFramesList[i].ID) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(irFramesList[i].hwTimestamp) + "," + to_string(irFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(irFramesList[i].systemTimestamp) + "," + (irFramesList[i].frameMD.commonMetadata.CrcCorrectness ? "Pass" : "Failed");
 
 					AppendRAwDataCVS(rawline);
 				}
@@ -3455,7 +3455,7 @@ public:
 				{
 					rawline = "";
 					rawline += to_string(iteration) + ",\"" + streamComb + "\",Color," + currColorProfile.GetFormatText() + "," + to_string(currColorProfile.resolution.width) + "x" +
-							to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(colorFramesList[i].hwTimestamp) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp);
+							to_string(currColorProfile.resolution.height) + "," + to_string(currColorProfile.fps) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(colorFramesList[i].ID) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(colorFramesList[i].hwTimestamp) + "," + to_string(colorFramesList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(colorFramesList[i].systemTimestamp) + "," + (colorFramesList[i].frameMD.commonMetadata.CrcCorrectness ? "Pass" : "Failed");
 
 					AppendRAwDataCVS(rawline);
 				}
@@ -3467,7 +3467,7 @@ public:
 				{
 					rawline = "";
 					rawline += to_string(iteration) + ",\"" + streamComb + "\",Gyro," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
-							to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(gyroFrameList[i].ID) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(gyroFrameList[i].hwTimestamp) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(gyroFrameList[i].systemTimestamp);
+							to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(gyroFrameList[i].ID) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(gyroFrameList[i].hwTimestamp) + "," + to_string(gyroFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(gyroFrameList[i].systemTimestamp)+ "," + (gyroFrameList[i].frameMD.commonMetadata.CrcCorrectness ? "Pass" : "Failed");
 
 					AppendRAwDataCVS(rawline);
 				}
@@ -3476,7 +3476,7 @@ public:
 				{
 					rawline = "";
 					rawline += to_string(iteration) + ",\"" + streamComb + "\",Accel," + currIMUProfile.GetFormatText() + "," + to_string(currIMUProfile.resolution.width) + "x" +
-							to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(accelFrameList[i].ID) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(accelFrameList[i].hwTimestamp) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(accelFrameList[i].systemTimestamp);
+							to_string(currIMUProfile.resolution.height) + "," + to_string(currIMUProfile.fps) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Gain")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("AutoExposureMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("exposureTime")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("LaserPowerMode")) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("ManualLaserPower")) + "," + to_string(accelFrameList[i].ID) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("frameId")) +"," + to_string(accelFrameList[i].hwTimestamp) + "," + to_string(accelFrameList[i].frameMD.getMetaDataByString("Timestamp")) + "," + to_string(accelFrameList[i].systemTimestamp)+ "," + (accelFrameList[i].frameMD.commonMetadata.CrcCorrectness ? "Pass" : "Failed");
 
 					AppendRAwDataCVS(rawline);
 				}
