@@ -69,7 +69,7 @@ def get_file_from_host(host,target_folder):
                         else:
                             logger.error("iteration_summary.csv not found in test: "+test+" SID: "+sid+ " in host: "+host)
                         if collect_raw_data:
-
+                          
                             if not os.path.exists(os.path.join(target_folder, host, sid, test)):
                                 try:
                                     os.makedirs(os.path.join(target_folder, host, sid, test))
